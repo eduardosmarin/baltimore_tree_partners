@@ -1,5 +1,5 @@
 ---
-title: "exploring_baltimore_tree_data_2015_2016"
+title: "01_wrangle_data"
 author: "Eduardo (with Dexter H Locke, PhD)"
 date: "`r format(Sys.time())`"
 output: html_document
@@ -12,6 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+exploring_baltimore_tree_data_2015_2016 from Blue Water Baltimore (for now) intend to add Baltimore Tree Trust data
+
+
+# TODO combine both datasets into one.
 
 # 0 load libraries and read in data----
 ```{r message=FALSE}
@@ -46,16 +50,26 @@ list.files()
 list.files("input_data")
 ```
 
-# 1 Read in the data
 
+# 1 Read in the data
 ```{r}
 #Giveaway 2013 & 2015
 giveaway_13_15 <- 
-  readxl::read_excel("input_data/2013-15_Giveaway_Data.xlsx") 
+  readxl::read_excel("input_data/2013-15_Giveaway_Data.xlsx") |> 
+  janitor::clean_names() |> 
+  rename(  giveaway_loc = if_giveaway_giveaway_location
+         , planting_type = street_tree_giveaway_or_res_planting
+         , yard_location = x17) |> 
+  mutate(  yard_location = ifelse(yard_location == 'Backyard', 'backyard', yard_location)
+         , yard_location = ifelse(yard_location == 'Front Yard', 'front yard', yard_location))
+
+giveaway_13_15 |> tabyl(yard_location)
+giveaway_13_15 |> tabyl(notes_16, yard_location) # fixme, needs reconciliation
 
 #Giveaway 2016
 giveaway_16 <- 
-  readxl::read_excel("input_data/2016_Master_Giveaway_Data.xlsx")
+  readxl::read_excel("input_data/2016_Master_Giveaway_Data.xlsx") |> 
+  janitor::clean_names()
 
 giveaway_13_15 |> 
   glimpse()
@@ -63,9 +77,33 @@ giveaway_13_15 |>
 giveaway_16 |> 
   glimpse()
 
+giveaway_13_15 |> summary()
+giveaway_16 |> summary()
+
 ```
 
 
+## A sanity and double checks
+```{r}
+
+giveaway_13_15 |> tabyl(`(If Giveaway) Giveaway Location`) # terrible names
+giveaway_13_15 |> tabyl(`Street Tree, Giveaway, or Res Planting?`)
+
+# if its character, show the values
+giveaway_13_15 |>
+  tidylog::select(where(is.character)) |>
+  mutate_all(as.factor) |>
+  map(~levels(.))
+
+# TODO graph the number of trees over time using a line graph giveaway_13_15
+# x-axis is time
+# y-axis is number
+# line graph with points
+# and color corrisponding to yard_location
+# and seperate out city versus count
+
+
+```
 
 
 
