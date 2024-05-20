@@ -1,12 +1,22 @@
 ---
-title: "03_geocode"
+title: "04_exploring.Rmd"
 author: "Eduardo (with Dexter H Locke, PhD)"
 date: "`r format(Sys.time())`"
-output: html_document
+output:
+  html_document:
+    code_folding: hide
+    fig_width: 8
+    fig_height: 5
+    fig_caption: true
+    toc: true
+    toc_float: true
+    self_contained: true
 editor_options: 
   chunk_output_type: console
 ---
+
 Todo
+- fix lingering geocode issues (portugal?!)
 - Find out why genus_species have so many NAs and common_name too
 - Make sure to reconcile that with the iTree name
 
@@ -34,6 +44,7 @@ packs <-c(
           , 'tidygeocoder' # geo coding
           , 'leaflet' #creating the interactive mapping elements (more specific)
           , 'shiny'
+          , 'leafsync'  # linked maps
           )     
 
 # IF the packages in 'packs' are not already installed, install them
@@ -45,6 +56,13 @@ install.packages(setdiff(packs, rownames(installed.packages())))
 # lapply(packs, library, character.only = TRUE)
 # this actually loads them with library(package_name)
 vapply(packs, library, character.only = TRUE, logical(1), logical.return = TRUE, quietly = TRUE)
+
+
+# for tidycensus
+# setting for get_acs
+census_api_key('[YOUR KEY HERE]', install = TRUE, overwrite = TRUE)
+readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
 ```
 
 
@@ -129,7 +147,7 @@ bwb_total_giveaway <-
 # 2 Creating multiple maps with corresponding graph
 
 ## A General Map
-```{r}
+```{r echo=FALSE}
 # General map of all points
 general_map <- 
   leaflet() |>
@@ -299,21 +317,143 @@ giveaway_counts_city_season |>
 
 
 
+# 4 maps and graphs to make
+```{r}
+
+# Species over time
+# graph with time on horizontal
+# vertical is amount
+# color for season
+# lines per species (too many)
+bwb_total_giveaway |> 
+  st_drop_geometry() |> 
+  group_by(year, season, common_name) |> 
+  count() |> # summary() # n ranges from 1 to 192
+  filter(n > 10) |> 
+  ggplot(aes(year, n, group = common_name, color = season)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~common_name)
+
+
+# map for the top five species
+five_most_common_species <- 
+  bwb_total_giveaway |> 
+  st_drop_geometry() |> 
+  group_by(common_name) |> 
+  count() |> 
+  ungroup() |> 
+  arrange(desc(n)) |> 
+  slice(1:10)
+
+bwb_total_giveaway |> 
+  filter(common_name %in% five_most_common_species$common_name) |> 
+  mapview()
+
+
+bwb_total_giveaway |> 
+  filter(common_name %in% five_most_common_species$common_name) |> 
+  mapview(zcol = 'common_name')
+
+
+bwb_total_giveaway |> 
+  filter(common_name %in% five_most_common_species$common_name) |> 
+  mapview(zcol = 'common_name', layer.name = "Common Name")
+
+
+bwb_total_giveaway |> 
+  filter(common_name == 'Serviceberry') |> 
+  mapview(zcol = 'year', layer.name = "Common Name")
+
+m1 <- mapview(...)
+m2 <- mapview(...)
+sync(m1, m2, m3, m4, m5)
+
+```
+
+## B get census data
+```{r}
+
+vars21 <- tidycensus::load_variables('acs5', year = 2021)
+vars21 |> View()
+
+
+my_vars <- c(  'pop'      = 'B01001_001'
+             , 'medhhinc' = 'B19013_001'
+             )
+
+(MD <-
+  tidycensus::get_acs(
+      geography = 'state'
+    , state = 'MD'
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(bwb_total_giveaway)))
+
+mapview(MD)
 
 
 
-```{r message=FALSE}
+(baci <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+    st_transform(crs = st_crs(MD)))
+
+mapview(baci, zcol = 'popE') +
+  mapview(  MD
+          , color = 'black'
+          , lwd = 1
+          , alpha.regions = 0)
+
+pop_map <- mapview(baci, zcol = 'popE')
+inc_map <- mapview(baci, zcol = 'medhhincE')
+
+sync(pop_map, inc_map)
+```
+
+
+# 5 augment tree data with census
+```{r}
+
+bwb_total_giveaway_aug <- 
+  bwb_total_giveaway |> 
+  st_join(baci |> 
+            tidylog::select(-NAME)
+            )
+  
+bwb_total_giveaway_aug |> glimpse()
+
+bwb_total_giveaway_aug |> mapview(zcol = 'medhhincE')
+
+```
+
+
+
+# old sandbox
+```{r eval=FALSE, message=FALSE, include=FALSE}
 # Create an interactive map
-giveaway_total |>
+bwb_total_giveaway |>
     mapview() 
 
 # Messing with data
-giveaway_total |>
+bwb_total_giveaway |>
   filter(year == 2015) |>
   mapview() 
 
 # Messing with data
-giveaway_total |>
+bwb_total_giveaway |>
   mapview(zcol = "year") 
 
 
