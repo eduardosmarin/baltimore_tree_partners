@@ -13,21 +13,23 @@ output:
     self_contained: true
 editor_options: 
   chunk_output_type: console
+  markdown: 
+    wrap: 72
 ---
 
 Todo
-- fix lingering geocode issues (portugal?!)
-- Find out why genus_species have so many NAs and common_name too
-- Make sure to reconcile that with the iTree name
-- Option Shift K gives a list of all of the shortcuts in RStudio
 
+\- fix lingering geocode issues (portugal?!)
 
-- Leaflet Map (maybe color it by year)
-  - Shows that it is beyond Balimore City and Baltimore County,
+\- Find out why genus_species have so many NAs and common_name too -
+Make sure to reconcile that with the iTree name - Option Shift K gives a
+list of all of the shortcuts in RStudio
 
-
+-   Leaflet Map (maybe color it by year)
+    -   Shows that it is beyond Balimore City and Baltimore County,
 
 # 0 load libraries and read in data----
+
 ```{r message=FALSE}
 
 # List all of your packages here
@@ -73,14 +75,72 @@ readRenviron("~/.Renviron")
 options(tigris_use_cache = TRUE)
 ```
 
+```{r}
+## B get census data
+
+vars21 <- tidycensus::load_variables('acs5', year = 2021)
+# vars21 |> View()
+
+
+my_vars <- c(  'pop'      = 'B01001_001'
+             , 'medhhinc' = 'B19013_001'
+             )
+
+
+(MD <-
+  tidycensus::get_acs(
+      geography = 'state'
+    , state = 'MD'
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326)))
+
+mapview(MD)
+
+
+
+(cbg <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+    st_transform(crs = st_crs(MD)) |>
+    mutate(jurisdiction = case_when(
+      str_like(GEOID, '24510%') ~ "Baltimore City",
+      str_like(GEOID, '24005%') ~ "Baltimore County",
+      TRUE ~ "Neither"
+    )))
+
+# # examples / double checks
+# mapview(baci, zcol = 'popE') +
+#   mapview(  MD
+#           , color = 'black'
+#           , lwd = 1
+#           , alpha.regions = 0)
+# 
+# pop_map <- mapview(baci, zcol = 'popE')
+# inc_map <- mapview(baci, zcol = 'medhhincE')
+# 
+# sync(pop_map, inc_map)
+
+# county <-
+#   cbg |>
+#   summarize() #this is dissolve
+```
 
 # 1 Reading in the data visually as a map and cleaning
+
 ```{r message=FALSE}
-# Loading data
-bwb_giveaway <-
-    readr::read_csv("output_data/bwb_giveaway_total_final_2024-05-13.csv") |>
-    filter(!is.na(lat)) |> #Good double check
-    st_as_sf(coords = c("long","lat"), crs = 4326) 
 
 # Tree Tribble
 species_data <- 
@@ -117,8 +177,12 @@ species_data <-
   "American Plum",     "Prunus americana",         "PRAM"
   )
   
-bwb_total_giveaway <- 
-  bwb_giveaway |>
+# Loading data
+bwb_total_giveaway <-
+  read_csv("output_data/bwb_giveaway_total_final_2024-05-13.csv") |>
+  filter(!is.na(lat)) |> #Good double check
+  st_as_sf(coords = c("long","lat"), crs = 4326) |> 
+  st_join(cbg) |> 
   mutate(common_name = case_when(
     common_name == "Boxelder" ~ "Boxelder Maple",
     common_name == "Yoshino Flowering Cherry" ~ "Flowering Cherry",
@@ -129,12 +193,7 @@ bwb_total_giveaway <-
     common_name == "Ginkgo" ~ "Gingko",
     TRUE ~ common_name
   )) |>
-  filter(address != "822 Montpellier")
-  
-
-# Join bwb_total_giveaway with species_data and coalesce missing values
-bwb_total_giveaway <- 
-  bwb_total_giveaway |>
+  filter(address != "822 Montpellier") |> 
   left_join(species_data, by = "common_name") |>
   mutate(
     genus_species = coalesce(genus_species.x, genus_species.y),
@@ -155,6 +214,7 @@ bwb_total_giveaway <-
 # 2 Creating multiple maps with corresponding graph
 
 ## A General Map
+
 ```{r echo=FALSE}
 # General map of all points
 general_map <- 
@@ -186,9 +246,10 @@ general_map <-
 general_map
 ```
 
-
 # 3 Performing the a-spatial double checks
+
 ## A Time
+
 ```{r}
 # Playing with year (result is season wide)
 bwb_total_giveaway |> 
@@ -236,6 +297,7 @@ giveaway_counts_season_year |>
 ```
 
 ## B Location
+
 ```{r}
 glimpse(bwb_total_giveaway)
 
@@ -245,8 +307,6 @@ bwb_total_giveaway |>
 
 
 ```
-
-
 
 ## C Species
 
@@ -273,8 +333,8 @@ bwb_total_giveaway |>
   filter(is.na(common_name) & is.na(genus_species))
 ```
 
-
 ## D Making the count by city
+
 ```{r}
 (giveaway_counts_city_season <-
   bwb_total_giveaway |>
@@ -324,9 +384,8 @@ giveaway_counts_city_season |>
   
 ```
 
-
-
 # 4 maps and graphs to make
+
 ```{r, fig.height=4}
 
 # Species over time
@@ -376,103 +435,34 @@ bwb_total_giveaway |>
 
 ```
 
-## B get census data
-```{r}
-
-vars21 <- tidycensus::load_variables('acs5', year = 2021)
-# vars21 |> View()
-
-
-my_vars <- c(  'pop'      = 'B01001_001'
-             , 'medhhinc' = 'B19013_001'
-             )
-
-
-(MD <-
-  tidycensus::get_acs(
-      geography = 'state'
-    , state = 'MD'
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(bwb_total_giveaway)))
-
-mapview(MD)
-
-
-
-(cbg <-
-  tidycensus::get_acs(
-      geography = 'block group'
-    , state = 'MD'
-    , county = c('Baltimore City', 'Baltimore County')
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-    st_transform(crs = st_crs(MD)) |>
-    mutate(jurisdiction = case_when(
-      str_like(GEOID, '24510%') ~ "Baltimore City",
-      str_like(GEOID, '24005%') ~ "Baltimore County",
-      TRUE ~ "Neither"
-    )))
-
-mapview(baci, zcol = 'popE') +
-  mapview(  MD
-          , color = 'black'
-          , lwd = 1
-          , alpha.regions = 0)
-
-pop_map <- mapview(baci, zcol = 'popE')
-inc_map <- mapview(baci, zcol = 'medhhincE')
-
-sync(pop_map, inc_map)
-
-county <-
-  cbg |>
-  summarize() #this is dissolve
-```
-
-
-# 5 augment tree data with census
-```{r}
-
-bwb_total_giveaway_aug <- 
-  bwb_total_giveaway |> 
-  st_join(cbg |> 
-            tidylog::select(-NAME)
-            )
-  
-bwb_total_giveaway_aug |> glimpse()
-
-bwb_total_giveaway_aug |> mapview(zcol = 'medhhincE')
-
-```
-
-
-
 # old sandbox
-```{r eval=FALSE, message=FALSE, include=FALSE}
+
+\`\`\`{r eval=FALSE, message=FALSE, include=FALSE} \# 5 augment tree
+data with census
+
+bwb_total_giveaway_aug \<- bwb_total_giveaway \|\> st_join(cbg \|\>
+tidylog::select(-NAME) )
+
+bwb_total_giveaway_aug \|\> glimpse()
+
+bwb_total_giveaway_aug \|\> mapview(zcol = 'medhhincE')
+
 # Create an interactive map
-bwb_total_giveaway |>
-    mapview() 
+
+bwb_total_giveaway \|\> mapview()
 
 # Messing with data
-bwb_total_giveaway |>
-  filter(year == 2015) |>
-  mapview() 
+
+bwb_total_giveaway \|\> filter(year == 2015) \|\> mapview()
 
 # Messing with data
-bwb_total_giveaway |>
-  mapview(zcol = "year") 
 
+bwb_total_giveaway \|\> mapview(zcol = "year")
 
 # Display the map
+
 map_giveaway
 
-#Final squeaky cleaned geocoded and get the GItHub resolved, and by the wenday. Email how you going. Sit next. Finish it by next Monday: Geocoding and GitHUb Meet by Zoom Tuesdya from 9 to 11
+#Final squeaky cleaned geocoded and get the GItHub resolved, and by the
+wenday. Email how you going. Sit next. Finish it by next Monday:
+Geocoding and GitHUb Meet by Zoom Tuesdya from 9 to 11
