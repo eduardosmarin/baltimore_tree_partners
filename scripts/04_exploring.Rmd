@@ -17,8 +17,6 @@ editor_options:
   markdown: 
     wrap: 72
 ---
-
-runtime: shiny
 ### General Outline (with objectives)
 
 **WHEN**
@@ -179,6 +177,9 @@ species_data <-
   "American Plum",     "Prunus americana",         "PRAM"
   )
   
+#Quick change
+quick <- c(1,2,3)
+
 # Loading data
 bwb_total_giveaway <-
   read_csv("output_data/bwb_giveaway_total_final_2024-05-13.csv") |>
