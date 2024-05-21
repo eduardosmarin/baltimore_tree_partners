@@ -1,6 +1,6 @@
 ---
-title: "04_exploring.Rmd"
-author: "Eduardo (with Dexter H Locke, PhD)"
+title: "Exploratory Data Analysis of Blue Water Baltimore's Tree Giveaway data (2013 - 2023)"
+author: "Eduardo Marin (with Dexter H Locke)"
 date: "`r format(Sys.time())`"
 output:
   html_document:
@@ -16,37 +16,44 @@ editor_options:
   chunk_output_type: console
   markdown: 
     wrap: 72
-runtime: shiny
 ---
 
+runtime: shiny
 ### General Outline (with objectives)
 
 **WHEN**
 
-- Year Map Overview (each color based off of year, plus Shiny app (filter for years))  
-- Stacked Bar Chart of Each Year (each season as different colors)
+-   Year Map Overview (each color based off of year, plus Shiny app
+    (filter for years))\
+-   Stacked Bar Chart of Each Year (each season as different colors)
 
 **WHERE**
 
-- Three Jurisdictions Map Overview (different colors based off of the three tree giveaway distribution)  
-- Bar Chart (different colors based on the locations with count)  
-- Baltimore Neighborhood Map Overview (different colors based on density of the plantings)  
-- Bar Chart Highlighting Top 10 Planted Neighborhoods (different colors based on neighborhood), plus aggregating the rest as Other  
-- Census Tract Overview in Baltimore (different colors based on density of the plantings)  
-- Census Tract Overview in Baltimore County (different colors based on density of the plantings)  
-- Bar Graph highlighting Top 10 Locations Planted (Cleaned)
+-   Three Jurisdictions Map Overview (different colors based off of the
+    three tree giveaway distribution)\
+-   Bar Chart (different colors based on the locations with count)\
+-   Baltimore Neighborhood Map Overview (different colors based on
+    density of the plantings)\
+-   Bar Chart Highlighting Top 10 Planted Neighborhoods (different
+    colors based on neighborhood), plus aggregating the rest as Other\
+-   Census Tract Overview in Baltimore (different colors based on
+    density of the plantings)\
+-   Census Tract Overview in Baltimore County (different colors based on
+    density of the plantings)\
+-   Bar Graph highlighting Top 10 Locations Planted (Cleaned)
 
 **WHAT**
 
-- Map Overview of Top 10 Species (each species as a different color)  
-- Stacked Bar Chart (Highlighting the different species for each one)  
-- Map Overview of Top 5 Species each Season (each species as a different color, RShiny)  
-- Bar Graph of Top 5 Species for Each Year (each species as a color)
+-   Map Overview of Top 10 Species (each species as a different color)\
+-   Stacked Bar Chart (Highlighting the different species for each one)\
+-   Map Overview of Top 5 Species each Season (each species as a
+    different color, RShiny)\
+-   Bar Graph of Top 5 Species for Each Year (each species as a color)
 
 **WHO**
 
-- Map Overview with Planting to Redline Zones (RShiny with Year)  
-- Map Overview with Planting to CBT Zones (RShiny with Year)
+-   Map Overview with Planting to Redline Zones (RShiny with Year)\
+-   Map Overview with Planting to CBT Zones (RShiny with Year)
 
 ```{r message=FALSE, include=FALSE}
 
@@ -93,7 +100,7 @@ readRenviron("~/.Renviron")
 options(tigris_use_cache = TRUE)
 ```
 
-```{r}
+```{r include=FALSE}
 ## B get census data
 
 vars21 <- tidycensus::load_variables('acs5', year = 2021)
@@ -207,7 +214,8 @@ bwb_total_giveaway <-
 ```
 
 # 1 When
-```{r echo=FALSE}
+
+```{r eval=FALSE, include=FALSE}
 # Defining the UI for Shiny component
 year_ui <- fluidPage(
   titlePanel("BWB Tree Giveaway Interactive Map with Year Filter"),
@@ -286,8 +294,6 @@ general_map <-
 general_map
 ```
 
-
-
 ## A General Map
 
 # 3 Performing the a-spatial double checks
@@ -309,13 +315,13 @@ bwb_total_giveaway |>
   group_by(year, season) |>
   count())
 
-# Graphing this giveaway counts
-giveaway_counts_season_year |>
-  ggplot(aes(x = year, y = n, color = season)) +
-  geom_point() +
-  # geom_line() +
-  geom_smooth(method = "lm") +
-  geom_smooth()
+# # Graphing this giveaway counts
+# giveaway_counts_season_year |>
+#   ggplot(aes(x = year, y = n, color = season)) +
+#   geom_point() +
+#   # geom_line() +
+#   geom_smooth(method = "lm") +
+#   geom_smooth()
 
 #geom_sf is for vector spatial data, data is the first argument, matters when you have layers. In terms of the ggplot, aes defines the conditions of the graph (let's you pass it through each point). geom_point makes the point graph. ggplot can be seen as global 
 
@@ -343,18 +349,38 @@ giveaway_counts_season_year |>
 ## B Location
 
 ```{r}
+
 glimpse(bwb_total_giveaway)
 
-bwb_total_giveaway |>
+(location_counts <- 
+  bwb_total_giveaway |>
   st_drop_geometry() |>
-  tabyl(giveaway_location)
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n))
+)
 
+location_counts |> 
+  ggplot(aes(n, reorder(giveaway_location, n))) + # pushes the bars in the desc order
+  geom_col() +
+  theme_bw(16) +
+  labs(y = 'Giveaway Location'
+       , x = 'Number of trees') +
+  NULL
 
 ```
 
 ## C Species
 
 ```{r}
+# 2x check
+bwb_total_giveaway |>
+  filter(is.na(common_name) | is.na(genus_species))
+
+#Making that
+bwb_total_giveaway |>
+  filter(is.na(common_name) & is.na(genus_species))
+
 #Genus Species
 bwb_total_giveaway |>
   st_drop_geometry() |>
@@ -366,15 +392,25 @@ bwb_total_giveaway |>
   st_drop_geometry() |>
   tabyl(common_name) |>
   as_tibble() |>
-  arrange(desc(n))
+  arrange(desc(n)) |> 
+  mutate(group = rep(c("common", "rare"), each = 42))
 )
 
-bwb_total_giveaway |>
-  filter(is.na(common_name) | is.na(genus_species))
 
-#Making that
-bwb_total_giveaway |>
-  filter(is.na(common_name) & is.na(genus_species))
+giveaway_counts_common_name |> 
+  ggplot(aes(n, reorder(common_name, n))) + # pushes the bars in the desc order
+  geom_col() +
+  theme_bw(10) +
+  labs(y = 'Common Name'
+       , x = 'Number of trees'
+       , title = 'Which tree species were most and least common?'
+       , subtitle = paste0('lots of Serviceberry... they make up '
+                           , round(giveaway_counts_common_name |> slice(1) |> pull(percent) * 100, 2)
+                           , ' percent of all giveaways')
+       ) +
+  facet_wrap(~group, scales = 'free') +
+  NULL
+
 ```
 
 ## D Making the count by city
