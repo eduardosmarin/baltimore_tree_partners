@@ -4,6 +4,7 @@ author: "Eduardo (with Dexter H Locke, PhD)"
 date: "`r format(Sys.time())`"
 output:
   html_document:
+    theme: spacelab
     code_folding: hide
     fig_width: 8
     fig_height: 7
@@ -15,22 +16,39 @@ editor_options:
   chunk_output_type: console
   markdown: 
     wrap: 72
+runtime: shiny
 ---
 
-Todo
+### General Outline (with objectives)
 
-\- fix lingering geocode issues (portugal?!)
+**WHEN**
 
-\- Find out why genus_species have so many NAs and common_name too -
-Make sure to reconcile that with the iTree name - Option Shift K gives a
-list of all of the shortcuts in RStudio
+- Year Map Overview (each color based off of year, plus Shiny app (filter for years))  
+- Stacked Bar Chart of Each Year (each season as different colors)
 
--   Leaflet Map (maybe color it by year)
-    -   Shows that it is beyond Balimore City and Baltimore County,
+**WHERE**
 
-# 0 load libraries and read in data----
+- Three Jurisdictions Map Overview (different colors based off of the three tree giveaway distribution)  
+- Bar Chart (different colors based on the locations with count)  
+- Baltimore Neighborhood Map Overview (different colors based on density of the plantings)  
+- Bar Chart Highlighting Top 10 Planted Neighborhoods (different colors based on neighborhood), plus aggregating the rest as Other  
+- Census Tract Overview in Baltimore (different colors based on density of the plantings)  
+- Census Tract Overview in Baltimore County (different colors based on density of the plantings)  
+- Bar Graph highlighting Top 10 Locations Planted (Cleaned)
 
-```{r message=FALSE}
+**WHAT**
+
+- Map Overview of Top 10 Species (each species as a different color)  
+- Stacked Bar Chart (Highlighting the different species for each one)  
+- Map Overview of Top 5 Species each Season (each species as a different color, RShiny)  
+- Bar Graph of Top 5 Species for Each Year (each species as a color)
+
+**WHO**
+
+- Map Overview with Planting to Redline Zones (RShiny with Year)  
+- Map Overview with Planting to CBT Zones (RShiny with Year)
+
+```{r message=FALSE, include=FALSE}
 
 # List all of your packages here
 
@@ -81,11 +99,9 @@ options(tigris_use_cache = TRUE)
 vars21 <- tidycensus::load_variables('acs5', year = 2021)
 # vars21 |> View()
 
-
 my_vars <- c(  'pop'      = 'B01001_001'
              , 'medhhinc' = 'B19013_001'
              )
-
 
 (MD <-
   tidycensus::get_acs(
@@ -98,10 +114,6 @@ my_vars <- c(  'pop'      = 'B01001_001'
     , moe_level = 95
     ) |>
    st_transform(crs = st_crs(4326)))
-
-mapview(MD)
-
-
 
 (cbg <-
   tidycensus::get_acs(
@@ -121,26 +133,9 @@ mapview(MD)
       TRUE ~ "Neither"
     )))
 
-# # examples / double checks
-# mapview(baci, zcol = 'popE') +
-#   mapview(  MD
-#           , color = 'black'
-#           , lwd = 1
-#           , alpha.regions = 0)
-# 
-# pop_map <- mapview(baci, zcol = 'popE')
-# inc_map <- mapview(baci, zcol = 'medhhincE')
-# 
-# sync(pop_map, inc_map)
-
-# county <-
-#   cbg |>
-#   summarize() #this is dissolve
 ```
 
-# 1 Reading in the data visually as a map and cleaning
-
-```{r message=FALSE}
+```{r message=FALSE, include=FALSE}
 
 # Tree Tribble
 species_data <- 
@@ -211,11 +206,56 @@ bwb_total_giveaway <-
          
 ```
 
-# 2 Creating multiple maps with corresponding graph
-
-## A General Map
-
+# 1 When
 ```{r echo=FALSE}
+# Defining the UI for Shiny component
+year_ui <- fluidPage(
+  titlePanel("BWB Tree Giveaway Interactive Map with Year Filter"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("year", "Select Year:", choices = unique(bwb_total_giveaway$year))
+    ),
+    mainPanel(
+      leafletOutput("interactive_map")
+    )
+  )
+)
+
+# Creating the color palette of the webmap
+
+# Creating the webmap with the Shiny component
+server <- function(input, output, session) {
+  filtered_data <- reactive({
+    bwb_total_giveaway |> filter(year == input$year)
+  })
+  
+  output$interactive_map <- renderLeaflet({
+    leaflet() |>
+      addProviderTiles(providers$CartoDB.Positron) |>
+      addCircleMarkers(
+        data = filtered_data(),
+        radius = 2,
+        fillOpacity = 0.1,
+        color = "#2E6F40",
+        popup = ~paste(
+          "<b>Year:</b>", year, "<br>",
+          "<b>Season:</b>", season, "<br>",
+          "<b>Date:</b>", date, "<br>",
+          "<b>Common Name:</b>", common_name, "<br>",
+          "<b>Scientific Name:</b>", genus_species, "<br>",
+          "<b>Address:</b>", address, "<br>",
+          "<b>City:</b>", city, "<br>",
+          "<b>State:</b>", state, "<br>",
+          "<b>Zip Code:</b>", zip_code, "<br>"
+        )
+      )
+  })
+}
+
+# Run the application
+shinyApp(year_ui, server)
+
+
 # General map of all points
 general_map <- 
   leaflet() |>
@@ -245,6 +285,10 @@ general_map <-
 # Displaying the map
 general_map
 ```
+
+
+
+## A General Map
 
 # 3 Performing the a-spatial double checks
 
