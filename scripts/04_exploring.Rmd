@@ -833,5 +833,94 @@ scatter_plot_census
 
 
 
+BWB notes
+
+Sean self-taught GIS
+
+2020 on bar and line charts should be zero, not NA
+
+Cumulative? Giveaways
+
+2018 and 2019 need to double check.
+
+NA to zero on the giveaways maps
+
+Plantings need some kind of normalization
+	opportunities to plant
+
+Top neighbor plantings
+	high plantabilitiy
+	high income
+
+Switch to pre-ordering in the last two years
+	total 5 tree per household limits
+	no more than 3 understory trees per household
+
+	pre-order between 10-12 (30% don’t show up)
+	add trees for walk ups
+
+Phone call reminders
+	October
+	start planning September
+
+Giveaway locations on the map
+	origin to destination
+	need locations of giveaways
+	change the giveaway label
+
+Right tree right place
+
+Species lists need further reconciliation (with Sean)
+
+Climate suceptability
+
+
+=== HERE
+
+Questions:
+
+WATERSHED
+	Darin to send shape file
+
+Origin / destination
+	https://stackoverflow.com/questions/44283774/flow-maptravel-path-using-lat-and-long-in-r
+	https://cran.r-project.org/web/packages/od/vignettes/od.html
+	https://jcheshire.com/visualisation/mapping-flows/
+
+JEDI
+	Race/ethnicity
+	Income
+	PLACES
+		https://experience.arcgis.com/experience/22c7182a162d45788dd52a2362f8ed65/.
+
+Climate susceptibility
+	species list
+
+Other groups
+	TB giveaways
+	Grow centers
+		origin destination
+	BTT
+	Baltimore Count 
+		Nathan Fran
+		Cary
+
+PRODUCTS:
+	About page of the website
+		click through
+		let the public see when and where
+			tangible and interactive.
+		by Watershed
+	JPEGs for PowerPoints
+		simple communication tools
+	Grant support?
+
+Darin to-do:
+	2008 - 2012 data
+	2018 and 2019 need to double check
+	email connection to Baltimore County
+	September giveaway
+
+
 
 
