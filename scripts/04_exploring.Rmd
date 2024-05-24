@@ -4,7 +4,7 @@ author: "Eduardo Marin (with Dexter H Locke)"
 date: "`r format(Sys.time())`"
 output:
   html_document:
-    theme: spacelab
+    theme: flatly
     code_folding: hide
     fig_width: 8
     fig_height: 7
@@ -384,12 +384,6 @@ bwb_total_giveaway <-
     TRUE ~ "Neither"
   ))
 
-# # Making the tree giveaway layer
-# tree_giveaway_layer <- 
-#   bwb_total_giveaway |>
-#   dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, county, geometry) |>
-#   mapview(col.regions = "#344e41", layer.name = "Tree Plantings")
-
 # Making the tree giveaway by county layer
 county_colors <- c(
   "Baltimore City" = "#344e41",
@@ -489,14 +483,16 @@ bwb_jurisdiction_years_long |>
 ## e) Planting Number in Each Neighborhood of Baltimore Map
 
 ```{r}
-# Finding the number of trees giveaway within each neighborhood
-  bwb_total_giveaway |>
-  st_intersection(neighborhood_read) |>
-  st_drop_geometry() |> 
-  group_by(Name) |>
-  summarise(count = n()) |>
-  write_csv("output_data/neighborhood_count_bwb.csv")
+# Finding the number of trees giveaway within each neighborhood (ORIGINAL)
+  # bwb_total_giveaway |>
+  # st_intersection(neighborhood_read) |>
+  # st_drop_geometry() |> 
+  # group_by(Name) |>
+  # summarise(count = n()) |>
+  # write_csv("output_data/neighborhood_count_bwb.csv")
+```
 
+```{r}
 # Making the neighborhood and count layer
 legend_order_neighborhood_count <- 
   seq(0, 180, length.out = 10) 
@@ -507,7 +503,6 @@ neighborhood_read |>
     read_csv("output_data/neighborhood_count_bwb.csv")
     , by = "Name"
   ) |>
-   mutate(count = ifelse(is.na(count), 0, count)) |>
   mapview(zcol = "count", layer.name = "Giveaway Count per Neighborhood", at = legend_order_neighborhood_count)
   
 # Displaying the map
@@ -519,7 +514,11 @@ neighborhood_count_layer
 ```{r}
 # Creating the neighborhood data frame
 bwb_giveaway_neighborhood <-
-  neighborhood_count_read |>
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
   st_drop_geometry() |>
   dplyr::select(-"Shape__Are", -"Shape__Len") |>
   rename("Number of Trees" = "count") |>
@@ -555,20 +554,22 @@ ggplot(aes(x = reorder(Name, `Number of Trees`), y = `Number of Trees`)) +
 ## h) Plantings in Each Neighborhood and Year Data Table
 
 ```{r}
-# Finding the number of trees giveaway within each neighborhood and year
-neighborhood_count_year_intersect <-
-  st_intersection(bwb_total_giveaway, neighborhood_read) |>
-  st_drop_geometry() |> 
-  group_by(Name, year) |>
-  summarise(count = n())
+# # Finding the number of trees giveaway within each neighborhood and year
+#   st_intersection(bwb_total_giveaway, neighborhood_read) |>
+#   st_drop_geometry() |> 
+#   group_by(Name, year) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/neighborhood_count_year_bwb.csv")
+```
 
-neighborhood_count_year_read <-
-left_join(neighborhood_read, neighborhood_count_year_intersect, by = "Name") |>
-   mutate(count = ifelse(is.na(count), 0, count))
-
-# Creating the neighborhood and year datagrame
+```{r}
+# Creating the neighborhood and year dataframe
 bwb_giveaway_year_neighborhood <-
-  neighborhood_count_year_read |>
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_year_bwb.csv")
+    , by = "Name"
+  ) |>
   st_drop_geometry() |>
   dplyr::select(-"Shape__Are", -"Shape__Len") |>
   rename("Number of Trees" = "count", "Year" = "year") |>
@@ -577,11 +578,12 @@ bwb_giveaway_year_neighborhood <-
 # Creating the neighborhood data table
 bwb_giveaway_year_neighborhood_dt <-
   bwb_giveaway_year_neighborhood |>
+  pivot_wider(names_from = Year, values_from = `Number of Trees`) |>
+  dplyr::select("Name","2013","2014","2015","2016","2017","2018","2019","2021","2022","2023") |>
   DT::datatable()
 
 # Calling the datatable
 bwb_giveaway_year_neighborhood_dt
-
 ```
 
 # i) Giveaway Location Data Table
@@ -630,23 +632,26 @@ ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Tre
 # k) Planting Number in Each Census Tract of Baltimore and Baltimore County Map
 
 ```{r}
-# Finding the number of trees giveaway within each census block
-census_count_intersect <-
-  st_intersection(bwb_total_giveaway, cbg) |>
-  st_drop_geometry() |> 
-  group_by(NAME) |>
-  summarise(count = n())
+# # Finding the number of trees giveaway within each census block
+#   st_intersection(bwb_total_giveaway, cbg) |>
+#   st_drop_geometry() |> 
+#   group_by(NAME) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/census_count_year.csv")
+```
 
-census_count_read <-
-left_join(cbg, census_count_intersect, by = "NAME") |>
-   mutate(count = ifelse(is.na(count), 0, count))
 
+```{r}
 # Making the neighborhood and count layer
 legend_order_census_count <- 
   seq(0, 120, length.out = 7) 
 
 census_count_map <-
-  census_count_read |>
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
   
 # Displaying the map
