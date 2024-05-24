@@ -809,6 +809,25 @@ ggplot(census_count_dataframe, aes(x = count, y = `Median Household Income`)) +
 scatter_plot_census
 ```
 
+# Notes of BWB May 24th Meeting:
+## - Fix the common names
+## - Fix the 2017 and 2018 year data
+## - Fix the 2020 to make 
+## - Normalization of the neighborhoods through square miles
+## - Showing giveaways of the maps
+## - Dexter is intereseted if the giveaways are going near their location
+## - Preordering and phone calls, etc.
+## - Species list needs reconciliations
+## - Looked at the watersheds information
+## - Are neighborhood trees going to more POC communities or white communities?
+## - Running a climate susceiptibility for them to potentially change their species list
+## - Finding applicabilities between other groups. See TreeBaltimore giveaways. Do the Grow Workshops track people closeby?
+## - Reach people in lower outcome communities and we might have to deliver the trees (place more effort into that)
+## - Chicago study showed and highlighted that within the neighborhood (people wanted more help in this end)
+## - Look at Nathan Fran, the GIS person in Baltimore County. They do it erraditcally, Kary Obersten.
+## - The main is something you can embed in the website within the About section. An interactive map where the public can click around. Something for the public to see. Maybe some JPEGs to place in some Power Points, as well
+## - People can query by watershed, as well (so they can play with it)
+## - Figuring out how many actually get planted and how many actually survived. 
 
 
 
