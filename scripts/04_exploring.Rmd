@@ -17,40 +17,7 @@ editor_options:
   markdown: 
     wrap: 72
 ---
-
-### General Outline (with objectives)
-
-**WHEN**
-
--   Year Map Overview (each color based off of year, plus Shiny app
-    (filter for years))\
--   Stacked Bar Chart of Each Year (each season as different colors)
-
-**WHERE**
-
--   Three Jurisdictions Map Overview (different colors based off of the
-    three tree giveaway distribution)\
--   Bar Chart (different colors based on the locations with count)\
--   Baltimore Neighborhood Map Overview (different colors based on
-    density of the plantings)\
--   Bar Chart Highlighting Top 10 Planted Neighborhoods (different
-    colors based on neighborhood), plus aggregating the rest as Other\
--   Census Tract Overview in Baltimore (different colors based on
-    density of the plantings)\
--   Census Tract Overview in Baltimore County (different colors based on
-    density of the plantings)\
--   Bar Graph highlighting Top 10 Locations Planted (Cleaned)
-
-**WHAT**
-
--   Map Overview of Top 10 Species (each species as a different color)\
--   Stacked Bar Chart (Highlighting the different species for each one)\
--   Map Overview of Top 5 Species each Season (each species as a
-    different color, RShiny)\
-
-**WHO**
--   Map Overview with Planting to Redline Zones (RShiny with Year)\
--   Map Overview with Planting to CBT Zones (RShiny with Year)
+#### The goal of the data was a preliminary step in providing more information and trying to learn more about the when, what, why, and who. The small RMarkdown report will include interactive tables, graphs, and figures highlighting giveaway information over the years. 
 
 ```{r message=FALSE, include=FALSE}
 
@@ -62,7 +29,7 @@ packs <-c(
             'janitor'    # cleans things up, also pipe-friendly cross-tabulations
            , 'sf'         # for spatial data support
           , 'tidyverse'  # cuz
-          , 'tidylog'    # prints out what was done in dplyr and tidyr
+          # , 'tidylog'    # prints out what was done in dplyr and tidyr
           , 'magrittr'   # for the pipe
           , 'mapview'    # web maps for zooming and panning around
           #, 'beepr'      # makes noise when things are done!
@@ -138,7 +105,6 @@ my_vars <- c(  'pop'      = 'B01001_001'
     )))
 ```
 
-# Cleaning and preparing the data
 ```{r message=FALSE, include=FALSE}
 # Tree Tribble
 species_data <- 
@@ -213,9 +179,16 @@ bwb_total_giveaway <-
          
 ```
 
-# 1) When
 
-## A) Map of Tree Giveaways Each Year
+
+### A) When
+
+
+#### Let us begin with the question of **when**. Here, we will highlight tree giveaways each year and how they compare by season.
+
+
+#### **Map of Tree Giveaways Each Year**
+
 
 ```{r echo=FALSE}
 
@@ -243,7 +216,7 @@ year_map <-
 year_map
 ```
 
-## B) Interactive Total Plantings Each Year Table
+#### **Interactive Total Plantings Each Year Table**
 
 ```{r echo=FALSE}
 # Creating the year data frame
@@ -264,7 +237,7 @@ bwb_giveaway_years_dt <-
 bwb_giveaway_years_dt
 ```
 
-## C) Bar Chart of Total Plantings Each Year (Divided by Season)
+#### **Bar Chart of Total Plantings Each Year (Divided by Season)**
 
 ```{r echo=FALSE}
 # Changing the data to be able to be a stacked column chart
@@ -295,9 +268,9 @@ bwb_giveaway_years_long |>
     theme_minimal() 
 ```
 
-## D) Line Chart of Total Plantings Each Year (Divided by Season)
+#### **Line Chart of Total Plantings Each Year (Divided by Season)**
 
-```{r}
+```{r echo=FALSE}
 # Creating the line graph
 bwb_giveaway_years_long |>
   ggplot(aes(x = year, y = number_of_trees, color = season, group = season)) +
@@ -316,12 +289,18 @@ bwb_giveaway_years_long |>
   ) +
   theme_minimal() +
   NULL
-
 ```
 
-# 2) Where
 
-## a) Map of the Three Jurisdictions
+
+### B) Where
+
+
+#### The second question we must answer is **where**. Here, we will highlight the distribution of plantings. Many went to Baltimore City, Baltimore County, and outside the general area. We will also look at how these compare to plantings within Baltimore neighborhoods. Finally, we will look more closely at census tract information.
+
+
+#### **Map of the Three Jurisdictions**
+
 ```{r include=FALSE}
 # Reading in the state layer
 state_read <-
@@ -401,12 +380,12 @@ city_county_neither_map <-
   city_layer + county_layer + state_layer + tree_giveaway_county_layer
 ```
 
-```{r}
+```{r echo=FALSE}
 # Displaying the map
 city_county_neither_map
 ```
 
-## b) Interactive Plantings in Each Jurisdiction Table
+#### **Interactive Plantings in Each Jurisdiction Table**
 
 ```{r echo=FALSE}
 # Creating the jurisdiction data frame
@@ -428,9 +407,9 @@ bwb_giveaway_jurisdiction_dt <-
 bwb_giveaway_jurisdiction_dt
 ```
 
-## c) Plantings in Each Jurisdiction in Each Year Data Table
+#### **Plantings in Each Jurisdiction in Each Year Data Table**
 
-```{r}
+```{r echo=FALSE}
 # Creating the jurisdiction and year frame
 bwb_giveaway_jurisdiction_year <-
   bwb_total_giveaway |>
@@ -447,7 +426,7 @@ bwb_giveaway_jurisdiction_year_dt <-
 bwb_giveaway_jurisdiction_year_dt
 ```
 
-## d) Plantings in Each Jurisdiction in Each Year Graph
+#### **Plantings in Each Jurisdiction in Each Year Graph**
 
 ```{r echo=FALSE}
 # Changing the data to be able to be a stacked column chart
@@ -479,10 +458,30 @@ bwb_jurisdiction_years_long |>
     NULL
 ```
 
+#### **Plantings in Each Jurisdiction (Separated Graph)**
 
-## e) Planting Number in Each Neighborhood of Baltimore Map
+```{r echo=FALSE}
 
-```{r}
+## Comparing to county data
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  group_by(county, year, season) |>
+  count() |>
+  as_tibble() |>
+  arrange(desc(n)) |>
+  ggplot(aes(year, n, color = season, group = season)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~county) +
+  theme_bw(16) +
+  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
+  NULL
+  
+```
+
+#### **Planting Number in Each Neighborhood of Baltimore Map**
+
+```{r include=FALSE}
 # Finding the number of trees giveaway within each neighborhood (ORIGINAL)
   # bwb_total_giveaway |>
   # st_intersection(neighborhood_read) |>
@@ -492,7 +491,7 @@ bwb_jurisdiction_years_long |>
   # write_csv("output_data/neighborhood_count_bwb.csv")
 ```
 
-```{r}
+```{r echo=FALSE}
 # Making the neighborhood and count layer
 legend_order_neighborhood_count <- 
   seq(0, 180, length.out = 10) 
@@ -509,9 +508,9 @@ neighborhood_read |>
 neighborhood_count_layer 
 ```
 
-## f) Plantings in Each Neighborhood Data Table
+#### **Plantings in Each Neighborhood Data Table**
 
-```{r}
+```{r echo=FALSE, message=FALSE}
 # Creating the neighborhood data frame
 bwb_giveaway_neighborhood <-
   neighborhood_read |>
@@ -533,7 +532,7 @@ bwb_giveaway_neighborhood_dt <-
 bwb_giveaway_neighborhood_dt
 ```
 
-## g) Top 20 Plantings of Neighborhood Graph
+#### **Top 20 Plantings of Neighborhood Graph**
 
 ```{r echo=FALSE}
 # Getting the top 20 
@@ -551,9 +550,9 @@ ggplot(aes(x = reorder(Name, `Number of Trees`), y = `Number of Trees`)) +
   theme_minimal()
 ```
 
-## h) Plantings in Each Neighborhood and Year Data Table
+#### **Plantings in Each Neighborhood and Year Data Table**
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 # # Finding the number of trees giveaway within each neighborhood and year
 #   st_intersection(bwb_total_giveaway, neighborhood_read) |>
 #   st_drop_geometry() |> 
@@ -562,7 +561,7 @@ ggplot(aes(x = reorder(Name, `Number of Trees`), y = `Number of Trees`)) +
 #   write_csv("output_data/neighborhood_count_year_bwb.csv")
 ```
 
-```{r}
+```{r include=FALSE}
 # Creating the neighborhood and year dataframe
 bwb_giveaway_year_neighborhood <-
   neighborhood_read |>
@@ -581,13 +580,16 @@ bwb_giveaway_year_neighborhood_dt <-
   pivot_wider(names_from = Year, values_from = `Number of Trees`) |>
   dplyr::select("Name","2013","2014","2015","2016","2017","2018","2019","2021","2022","2023") |>
   DT::datatable()
+```
 
+```{r echo=FALSE}
 # Calling the datatable
 bwb_giveaway_year_neighborhood_dt
 ```
 
-# i) Giveaway Location Data Table
-```{r}
+#### **Giveaway Location Data Table**
+
+```{r echo=FALSE}
 # Creating the giveaway location data frame
 bwb_giveaway_location <- 
   bwb_total_giveaway |>
@@ -596,7 +598,9 @@ bwb_giveaway_location <-
   as_tibble() |> 
   arrange(desc(n)) |>
   slice(-1) |> # Removing the NA, will write an addendum saying "why"
-  rename("Number of Trees" = n)
+  rename("Number of Trees" = n) |>
+  mutate(percent = round(100 * percent, 2)) |>
+  mutate(valid_percent = round(100 * valid_percent, 2))
 
 # Number for subtitle
 bwb_giveaway_location_na <- 
@@ -617,8 +621,9 @@ bwb_giveaway_location_dt
 
 ```
 
-# j) Giveaway Location Data Graph
-```{r}
+#### **Giveaway Location Data Graph**
+
+```{r echo=FALSE}
 bwb_giveaway_location |>  
 ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Trees`)) +
   geom_col() +
@@ -629,9 +634,9 @@ ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Tre
   NULL
 ```
 
-# k) Planting Number in Each Census Tract of Baltimore and Baltimore County Map
+#### **Planting Number in Each Census Tract of Baltimore and Baltimore County Map**
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 # # Finding the number of trees giveaway within each census block
 #   st_intersection(bwb_total_giveaway, cbg) |>
 #   st_drop_geometry() |> 
@@ -640,8 +645,7 @@ ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Tre
 #   write_csv("output_data/census_count_year.csv")
 ```
 
-
-```{r}
+```{r include=FALSE}
 # Making the neighborhood and count layer
 legend_order_census_count <- 
   seq(0, 120, length.out = 7) 
@@ -655,35 +659,20 @@ census_count_map <-
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
   
 # Displaying the map
+```
+
+```{r echo=FALSE}
 census_count_map
 ```
 
-# l) Synced map of Hosehold Income and Giveaway Count
-
-```{r}
-# Creating the income read.
-census_income_read <- 
-  cbg |>
-  rename("Median Household Income" = medhhincE)
-
-# Creating the census income map
-
-legend_order_census_income_count <- 
-  seq(0, 200000, length.out = 9) 
-
-census_income_map <-
-  census_income_read |>
-  mapview(zcol = "Median Household Income", layer.name = "Household Income and Census Block", at = legend_order_census_income_count)
-
-#Creating a Sync map of Giveaway Count and Census Block
-sync(census_income_map, census_count_map)
-
-```
 
 
-# 3) What
-## a) Top 10 Species Planted Map
-```{r}
+### C) What
+
+#### The third question we must answer is **what**. Here, briefly, we will look more specifically at the species giveaway in the area. 
+
+#### **Top 10 Species Planted Map**
+```{r echo=FALSE}
 # Making the dataframe for the top 10 species map
 top_10_species_read <-
   bwb_total_giveaway |>
@@ -717,9 +706,9 @@ top_10_species_map <-
 top_10_species_map
 ```
 
-## b) Common Name Datatable
+#### **Common Name Datatable**
 
-```{r}
+```{r echo=FALSE}
 # Making the species dataframe
 bwb_common_read <-
   bwb_total_giveaway |>
@@ -738,9 +727,9 @@ bwb_common_read_dt
 # Top 10 common name species
 ```
 
-## c) Common Name Graph (Both Rare and Common)
+#### **Common Name Graph (Both Rare and Common)**
 
-```{r}
+```{r echo=FALSE}
 # Creating the groups for the graph
 bwb_counts_common_name <-
   bwb_common_read |>
@@ -763,105 +752,67 @@ bwb_counts_common_name |>
 
 ```
 
-## D Making the count by city
 
-```{r}
-(giveaway_counts_city_season <-
-  bwb_total_giveaway |>
-  st_drop_geometry() |>
-  group_by(city, year, season) |>
-  count() |>
-  as_tibble() |>
-  arrange(desc(n))
-)
 
-giveaway_counts_city_season |>
-  ggplot(aes(year, n, color = season, group = season)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~city) +
-  theme_bw(16) +
-  NULL
+### D) Who
 
-## 
-  bwb_total_giveaway |>
-  st_drop_geometry() |>
-  group_by(zip_code, year, season) |>
-  count() |>
-  as_tibble() |>
-  arrange(desc(n)) |>
-  ggplot(aes(year, n, color = season, group = season)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~zip_code) +
-  theme_bw(16) +
-  NULL
+#### The final question we must answer is **who**. Here, we will look more specifically at income and giveawaycount.
 
-## Comparing to county data
-  bwb_total_giveaway |>
-  st_drop_geometry() |>
-  group_by(county, year, season) |>
-  count() |>
-  as_tibble() |>
-  arrange(desc(n)) |>
-  ggplot(aes(year, n, color = season, group = season)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~county) +
-  theme_bw(16) +
-  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
-  NULL
-  
+
+#### **Synced map of Household Income and Giveaway Count**
+
+```{r echo=FALSE}
+# Creating the income read.
+census_income_read <- 
+  cbg |>
+  rename("Median Household Income" = medhhincE)
+
+# Creating the census income map
+
+legend_order_census_income_count <- 
+  seq(0, 200000, length.out = 9) 
+
+census_income_map <-
+  census_income_read |>
+  mapview(zcol = "Median Household Income", layer.name = "Household Income and Census Block", at = legend_order_census_income_count)
+
+#Creating a Sync map of Giveaway Count and Census Block
+sync(census_income_map, census_count_map)
 ```
 
-# 4 maps and graphs to make
+#### **Scatter Plot of Household Income and Giveaway Count**
+```{r include=FALSE}
+# Preparing scatter plot dataframe
+census_count_dataframe <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  rename("Median Household Income" = "medhhincE")
 
-```{r, fig.height=4}
-
-# Species over time
-# graph with time on horizontal
-# vertical is amount
-# color for season
-# lines per species (too many)
-bwb_total_giveaway |> 
-  st_drop_geometry() |> 
-  group_by(year, season, common_name) |> 
-  count() |> # summary() # n ranges from 1 to 192
-  filter(n > 10) |> 
-  ggplot(aes(year, n, group = common_name, color = season)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~common_name)
-
-
-# map for the top five species
-five_most_common_species <- 
-  bwb_total_giveaway |> 
-  st_drop_geometry() |> 
-  group_by(common_name) |> 
-  count() |> 
-  ungroup() |> 
-  arrange(desc(n)) |> 
-  slice(1:10)
-
-bwb_total_giveaway |> 
-  filter(common_name %in% five_most_common_species$common_name) |> 
-  mapview()
-
-
-bwb_total_giveaway |> 
-  filter(common_name %in% five_most_common_species$common_name) |> 
-  mapview(zcol = 'common_name')
-
-
-bwb_total_giveaway |> 
-  filter(common_name %in% five_most_common_species$common_name) |> 
-  mapview(zcol = 'common_name', layer.name = "Common Name")
-
-
-bwb_total_giveaway |> 
-  filter(common_name == 'Serviceberry') |> 
-  mapview(zcol = 'year', layer.name = "Common Name")
-
+#Using ggplot for the scatter plot
+scatter_plot_census <-
+ggplot(census_count_dataframe, aes(x = count, y = `Median Household Income`)) +
+  geom_point(color = "#abdda4") +
+  labs(
+    title = "Scatter Plot of Count vs. Median Household Income",
+    x = "Count",
+    y = "Median Household Income"
+  ) +
+  theme_minimal()
 ```
+
+
+```{r echo=FALSE}
+#Calling it
+scatter_plot_census
+```
+
+
+
+
+
+
+
 
