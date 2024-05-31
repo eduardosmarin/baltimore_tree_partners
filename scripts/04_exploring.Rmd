@@ -44,7 +44,9 @@ packs <-c(
           , 'shiny'
           , 'leafsync'  # linked maps
           , 'RColorBrewer'
-          , 'DT' 
+          , 'DT'
+          , 'openxlsx'
+          , 'mapdeck'
           )     
 
 # IF the packages in 'packs' are not already installed, install them
@@ -175,20 +177,23 @@ bwb_total_giveaway <-
   mutate(year = as.character(year)) |>
   mutate(giveaway_location = case_when(
     giveaway_location %in% c("Gwynns Falls/Leakin Park","Gwynns Falls Leakin Park", "GFLP") ~ "Gwynns Falls Leakin Park",
-    TRUE ~ giveaway_location))
-         
+    TRUE ~ giveaway_location)) |>
+  mutate(giveaway_location = case_when(
+    giveaway_location == "Rogers Forge" ~ "Rodgers Forge",
+    giveaway_location %in% c("West Towson","Westy Walk") ~ "West Towson ES",
+    giveaway_location == "Gateway Park at Darley Park" ~ "Darley Park Gateway",
+    giveaway_location == "Forestry Nursery" ~ "Herring Run Nursery",
+    giveaway_location == "Greektown - John Ruhrah EMS" ~ "John Ruhrah ES",
+    TRUE ~ giveaway_location
+  ))
+
 ```
-
-
 
 ### A) When
 
-
 #### Let us begin with the question of **when**. Here, we will highlight tree giveaways each year and how they compare by season.
 
-
 #### **Map of Tree Giveaways Each Year**
-
 
 ```{r echo=FALSE}
 
@@ -752,12 +757,9 @@ bwb_counts_common_name |>
 
 ```
 
-
-
 ### D) Who
 
 #### The final question we must answer is **who**. Here, we will look more specifically at income and giveawaycount.
-
 
 #### **Synced map of Household Income and Giveaway Count**
 
@@ -778,6 +780,7 @@ census_income_map <-
 
 #Creating a Sync map of Giveaway Count and Census Block
 sync(census_income_map, census_count_map)
+
 ```
 
 #### **Scatter Plot of Household Income and Giveaway Count**
@@ -810,28 +813,24 @@ scatter_plot_census
 ```
 
 # Notes of BWB May 24th Meeting:
-## - Fix the common names
-## - Fix the 2017 and 2018 year data
-## - Fix the 2020 to make 
-## - Normalization of the neighborhoods through square miles
-## - Showing giveaways of the maps
-## - Dexter is intereseted if the giveaways are going near their location
-## - Preordering and phone calls, etc.
-## - Species list needs reconciliations
-## - Looked at the watersheds information
-## - Are neighborhood trees going to more POC communities or white communities?
-## - Running a climate susceiptibility for them to potentially change their species list
-## - Finding applicabilities between other groups. See TreeBaltimore giveaways. Do the Grow Workshops track people closeby?
-## - Reach people in lower outcome communities and we might have to deliver the trees (place more effort into that)
-## - Chicago study showed and highlighted that within the neighborhood (people wanted more help in this end)
-## - Look at Nathan Fran, the GIS person in Baltimore County. They do it erraditcally, Kary Obersten.
-## - The main is something you can embed in the website within the About section. An interactive map where the public can click around. Something for the public to see. Maybe some JPEGs to place in some Power Points, as well
-## - People can query by watershed, as well (so they can play with it)
-## - Figuring out how many actually get planted and how many actually survived. 
-
-
-
-
+ - Fix the common names
+ - Fix the 2017 and 2018 year data
+ - Fix the 2020 to make 
+ - Normalization of the neighborhoods through square miles
+ - Showing giveaways of the maps
+ - Dexter is intereseted if the giveaways are going near their location
+ - Preordering and phone calls, etc.
+ - Species list needs reconciliations
+ - Looked at the watersheds information
+ - Are neighborhood trees going to more POC communities or white communities?
+ - Running a climate susceiptibility for them to potentially change their species list
+ - Finding applicabilities between other groups. See TreeBaltimore giveaways. Do the Grow Workshops track people closeby?
+ - Reach people in lower outcome communities and we might have to deliver the trees (place more effort into that)
+ - Chicago study showed and highlighted that within the neighborhood (people wanted more help in this end)
+ - Look at Nathan Fran, the GIS person in Baltimore County. They do it erraditcally, Kary Obersten.
+ - The main is something you can embed in the website within the About section. An interactive map where the public can click around. Something for the public to see. Maybe some JPEGs to place in some Power Points, as well
+ - People can query by watershed, as well (so they can play with it)
+- Figuring out how many actually get planted and how many actually survived. 
 
 BWB notes
 
@@ -874,7 +873,6 @@ Species lists need further reconciliation (with Sean)
 
 Climate suceptability
 
-
 === HERE
 
 Questions:
@@ -887,13 +885,14 @@ Origin / destination
 	https://cran.r-project.org/web/packages/od/vignettes/od.html
 	https://jcheshire.com/visualisation/mapping-flows/
 
+
 JEDI
 	Race/ethnicity
 	Income
 	PLACES
 		https://experience.arcgis.com/experience/22c7182a162d45788dd52a2362f8ed65/.
 
-Climate susceptibility
+Climate susceptibility (work w Nancy)
 	species list
 
 Other groups
@@ -921,6 +920,69 @@ Darin to-do:
 	email connection to Baltimore County
 	September giveaway
 
+# - Making the BWB Giveaway Location tribble
+```{r}
+# Making the tribble of giveaway_locations
+bwb_location_tribble <- 
+  tribble(
+  ~giveaway_location,                    ~lat,                 ~long,
+  "Stillmeadow Community Fellowship",    "39.28149118084636",  "-76.6997041893354",
+  "Herring Run Nursery",                 "39.372663174533386", "-76.578550239174",
+  "Ridgely Manor Park",                  "39.39538407285143",  "-76.56664381155105",
+  "Gwynns Falls Leakin Park",            "39.305631357367936", "-76.67893666401586", #Middle of the road
+  "32nd Street Farmers Market",          "39.327535288081634", "-76.61061523990948",
+  "JFX Farmers Market",                  "39.29268203155298",  "-76.60972412564519", 
+  "REI Timonium",                        "39.43890264845818",  "-76.62880958625296",
+  "West Towson ES",                      "39.404394375314446", "-76.63415717606557", #Assuming the elementary school
+  "Cromwell Valley Harvest Festival",    "39.413977875188515", "-76.54667168973407", #Assuming Cromwell Valley Park
+  "Cromwell Valley Park",                "39.413977875188515", "-76.54667168973407",
+  "John Ruhrah ES",                      "39.28432439568278",  "-76.55246223392345",
+  "Winand ES",                           "39.373018849783186", "-76.76232960664596",
+  "St Matthews Catholic Church",         "39.35582240264951",  "-76.58866546616363",
+  "Cherry Hill Urban Garden",            "39.24991878412569",  "-76.6270369680151",
+  "Langston Hughes Community Center",    "39.34257749269637",  "-76.68024157650481",
+  "Darley Park Gateway",                 "39.31530315544997",  "-76.59325254326163", 
+  "Anneslie",                            "39.37594316032152",  "-76.60440999973999",
+  "Ridgeleigh",                          "39.39532552607871",  "-76.55700617739024", #Assuming Ridgeleigh Park
+  "Rodgers Forge",                       "39.377385831798314", "-76.62046978150337", #Assuming the Stoneleigh apartment
+  "Stoneleigh",                          "39.38293280601465",  "-76.60227172784485", #Assuming a local park
+  "Washington Hill Fall Community Day",  "39.29153646657451",  "-76.59385521007198", #Assuming middle of street
+  "Chestnut Hill",                       "39.334010001213116", "-76.60617940430386"  #Assuming Chestnut Hill Park
+  )
+
+# Making the sf object
+bwb_giveaway_location_sf <-
+  bwb_giveaway_location |>
+    left_join(bwb_location_tribble, by = "giveaway_location") |>
+    st_as_sf(coords = c("long","lat"), crs = 4326) 
+```
+
+	
+```{r}
+set_token("MAPBOX_TOKEN")  ## set your mapbox token here
+
+df$Exit_Station_Lat <- as.numeric(as.character(df$Exit_Station_Lat))
+df$Exit_Station_Long <- as.numeric(as.character(df$Exit_Station_Long))
+
+mapdeck(
+  style = mapdeck_style('dark')
+  , location = c(104, 1)
+  , zoom = 8
+  , pitch = 45
+) %>%
+  add_arc(
+    data = df
+    , origin = c("Entry_Station_Long", "Entry_Station_Lat")
+    , destination = c("Exit_Station_Long", "Exit_Station_Lat")
+    , layer_id = 'arcs'
+    , stroke_from_opacity = 100
+    , stroke_to_opacity = 100
+    , stroke_width = 3
+    , stroke_from = "#ccffff"
+    , stroke_to = "#ccffff"
+  )
+
+```
 
 
 
