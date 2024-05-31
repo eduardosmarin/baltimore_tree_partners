@@ -922,7 +922,7 @@ Darin to-do:
 
 # - Making the BWB Giveaway Location tribble
 ```{r}
-# Making the tribble of giveaway_locations
+# Making the tribble of giveaway_location
 bwb_location_tribble <- 
   tribble(
   ~giveaway_location,                    ~lat,                 ~long,
