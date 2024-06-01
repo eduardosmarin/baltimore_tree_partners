@@ -925,7 +925,7 @@ Darin to-do:
 # Making the tribble of giveaway_location
 bwb_location_tribble <- 
   tribble(
-  ~giveaway_location,                    ~lat,                 ~long,
+  ~giveaway_location,                    ~entry_lat,                 ~entry_long,
   "Stillmeadow Community Fellowship",    "39.28149118084636",  "-76.6997041893354",
   "Herring Run Nursery",                 "39.372663174533386", "-76.578550239174",
   "Ridgely Manor Park",                  "39.39538407285143",  "-76.56664381155105",
@@ -953,27 +953,66 @@ bwb_location_tribble <-
 # Making the sf object
 bwb_giveaway_location_sf <-
   bwb_giveaway_location |>
-    left_join(bwb_location_tribble, by = "giveaway_location") |>
-    st_as_sf(coords = c("long","lat"), crs = 4326) 
+    left_join(bwb_location_tribble, by = "giveaway_location")
 ```
 
-	
+- You need to make an API token before you can use this package
+
+- Here is the webpage to make the token: https://account.mapbox.com/auth/signup/?route-to=%22https%3A%2F%2Faccount.mapbox.com%2Faccess-tokens%2F%22
+
+- Apparently, it appears to be pay-to-use (or at least depending on how many people access the map)
+
 ```{r}
-set_token("MAPBOX_TOKEN")  ## set your mapbox token here
+# Setting the mapbox token
+set_token("pk.eyJ1IjoiZWR1YXJkb3NtYXJpbiIsImEiOiJjbHd2OXFsam0wbnk3MmtxOHlqYW1xbXFqIn0.WyYbUxQ1_9SwZvGBEqUehA")
 
-df$Exit_Station_Lat <- as.numeric(as.character(df$Exit_Station_Lat))
-df$Exit_Station_Long <- as.numeric(as.character(df$Exit_Station_Long))
+# Making the origin destination
 
+bwb_giveaway_location_sf$entry_lat <-
+  as.numeric(as.character(bwb_giveaway_location_sf$entry_lat))
+
+bwb_giveaway_location_sf$entry_long <-
+  as.numeric(as.character(bwb_giveaway_location_sf$entry_long))
+
+# Making the ending destination
+
+## First have to find retrieve again the lat and long
+coords_bwb_total_giveaway <- 
+  st_coordinates(bwb_total_giveaway)
+
+coords_bwb_data_frame <-   
+  as.data.frame(coords_bwb_total_giveaway) |>
+  rename(ending_lat = "X", ending_long = "Y")
+
+bwb_total_giveaway_lat_long <-
+  cbind(st_drop_geometry(bwb_total_giveaway), ... = coords_bwb_data_frame) |>
+  rename("ending_long" = "....ending_lat", "ending_lat" = "....ending_long")
+
+## Re-doing what we did earlier
+
+bwb_total_giveaway_lat_long$ending_lat <-
+  as.numeric(as.character(bwb_total_giveaway_lat_long$ending_lat))
+
+bwb_total_giveaway_lat_long$ending_long <-
+  as.numeric(as.character(bwb_total_giveaway_lat_long$ending_long))
+
+## Left joining to add the entry_lat and entry_long for the same dataframe
+bwb_total_giveaway_destination <-
+left_join(bwb_total_giveaway_lat_long, bwb_giveaway_location_sf, by = "giveaway_location") |>
+  dplyr::select(-`valid_percent`,-`Number of Trees`,-`percent`) |>
+  filter(!is.na(giveaway_location))
+
+## Using mapdeck
 mapdeck(
   style = mapdeck_style('dark')
   , location = c(104, 1)
   , zoom = 8
   , pitch = 45
-) %>%
+) |>
   add_arc(
-    data = df
-    , origin = c("Entry_Station_Long", "Entry_Station_Lat")
-    , destination = c("Exit_Station_Long", "Exit_Station_Lat")
+    data = bwb_total_giveaway_destination
+    , origin = c("entry_long", "entry_lat")
+    , destination = c("ending_long", "ending_lat")
     , layer_id = 'arcs'
     , stroke_from_opacity = 100
     , stroke_to_opacity = 100
