@@ -448,6 +448,7 @@ county_colors <- c(
 
 # Creating the stacked column chart 
 bwb_jurisdiction_years_long |>
+  mutate(Year = as.numeric(Year)) |> # HERE
   ggplot(aes(x = Year, y = number_of_trees, fill = county)) +
     geom_bar(position = "dodge", stat = "identity") +
     scale_fill_manual(values = county_colors) +
