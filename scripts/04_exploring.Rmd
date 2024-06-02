@@ -1028,8 +1028,45 @@ mapdeck(
 
 ```
 
-# Another cool package that seems to do the same but in a matrix:
-https://personal.tcu.edu/kylewalker/interactive-flow-visualization-in-r.html
+# Did the following in ArcGIS Pro using the Destination Origin Link geoprocessing tool (adding the corresponding shapefile into the "too big" folder)
 
 ```{r}
-  
+
+#Reading in the shapefile
+link_read <-
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/bwb_giveaway_links/bwb_giveaway_origin_destination_link.shp") |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  rename(giveaway_location = GROUP_ID,link_length = Shape_Leng)
+
+#Adding the specific color for each link (unsure how to do continuous)
+
+link_color <- c(
+  "Stillmeadow Community Fellowship" = "#262956",  
+  "Herring Run Nursery" = "#262F5C",               
+  "Ridgely Manor Park" = "#263761",                
+  "Gwynns Falls Leakin Park" = "#254067",          
+  "32nd Street Farmers Market" = "#254B6D",        
+  "JFX Farmers Market" = "#245773",                
+  "REI Timonium" = "#236579",                      
+  "West Towson ES" = "#236579",                    
+  "Cromwell Valley Harvest Festival" = "#22757F",  
+  "Cromwell Valley Park" = "#218685",              
+  "John Ruhrah ES" = "#208C7F",                    
+  "Winand ES" = "#1F9376",                         
+  "St Matthews Catholic Church" = "#1D9A6C",       
+  "Cherry Hill Urban Garden" = "#2A9B4E",          
+  "Langston Hughes Community Center" = "#369C38",  
+  "Darley Park Gateway" = "#5C9D42",               
+  "Anneslie" = "#7E9F4D",                          
+  "Ridgeleigh" = "#9AA159",                        
+  "Rodgers Forge" = "#A39664",                     
+  "Stoneleigh" = "#A6896F",                        
+  "Washington Hill Fall Community Day" = "#A98179",
+  "Chestnut Hill" = "#AC8489"                   
+)
+
+#Making the layer of the link
+link_layer <-
+  link_read |>
+  mapview(zcol = "giveaway_location", col.regions = link_color, layer.name = "Tree Giveaway Origin and Destination")
