@@ -1002,6 +1002,10 @@ left_join(bwb_total_giveaway_lat_long, bwb_giveaway_location_sf, by = "giveaway_
   dplyr::select(-`valid_percent`,-`Number of Trees`,-`percent`) |>
   filter(!is.na(giveaway_location))
 
+bwb_total_giveaway_destination |>
+  write_csv("output_data/bwb_total_giveaway_destination")
+  
+  
 ## Using mapdeck
 mapdeck(
   style = mapdeck_style('dark')
@@ -1023,5 +1027,8 @@ mapdeck(
 
 ```
 
+# Another cool package that seems to do the same but in a matrix:
+https://personal.tcu.edu/kylewalker/interactive-flow-visualization-in-r.html
 
-
+```{r}
+  
