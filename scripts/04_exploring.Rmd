@@ -72,8 +72,161 @@ options(tigris_use_cache = TRUE)
 vars21 <- 
   tidycensus::load_variables('acs5', year = 2021)
 
+
+# B15003_001
+# Estimate!!Total:
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 
+# B15003_002
+# Estimate!!Total:!!No schooling completed
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 67
+# B15003_003
+# Estimate!!Total:!!Nursery school
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 68
+# B15003_004
+# Estimate!!Total:!!Kindergarten
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 69
+# B15003_005
+# Estimate!!Total:!!1st grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 70
+# B15003_006
+# Estimate!!Total:!!2nd grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 71
+# B15003_007
+# Estimate!!Total:!!3rd grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 72
+# B15003_008
+# Estimate!!Total:!!4th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 73
+# B15003_009
+# Estimate!!Total:!!5th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 74
+# B15003_010
+# Estimate!!Total:!!6th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 75
+# B15003_011
+# Estimate!!Total:!!7th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 76
+# B15003_012
+# Estimate!!Total:!!8th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 77
+# B15003_013
+# Estimate!!Total:!!9th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 78
+# B15003_014
+# Estimate!!Total:!!10th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 79
+# B15003_015
+# Estimate!!Total:!!11th grade
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 80
+# B15003_016
+# Estimate!!Total:!!12th grade, no diploma
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 81
+# B15003_017
+# Estimate!!Total:!!Regular high school diploma
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 82
+# B15003_018
+# Estimate!!Total:!!GED or alternative credential
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 83
+# B15003_019
+# Estimate!!Total:!!Some college, less than 1 year
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 84
+# B15003_020
+# Estimate!!Total:!!Some college, 1 or more years, no degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 85
+# B15003_021
+# Estimate!!Total:!!Associate's degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 86
+# B15003_022
+# Estimate!!Total:!!Bachelor's degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 87
+# B15003_023
+# Estimate!!Total:!!Master's degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 88
+# B15003_024
+# Estimate!!Total:!!Professional school degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+# block group
+# 89
+# B15003_025
+# Estimate!!Total:!!Doctorate degree
+# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
+
+
+
+
 my_vars <- c(  'pop'      = 'B01001_001'
              , 'medhhinc' = 'B19013_001'
+             , 'B15003_001'
+             , 'B15003_002'
+             , 'B15003_003'
+             , 'B15003_004'
+             , 'B15003_005'
+             , 'B15003_006'
+             , 'B15003_007'
+             , 'B15003_008'
+             , 'B15003_009'
+             , 'B15003_010'
+             , 'B15003_011'
+             , 'B15003_012'
+             , 'B15003_013'
+             , 'B15003_014'
+             , 'B15003_015'
+             , 'B15003_016'
+             , 'B15003_017'
+             , 'B15003_018'
+             , 'B15003_019'
+             , 'B15003_020'
+             , 'B15003_021'
+             , 'B15003_022'
+             , 'B15003_023'
+             , 'B15003_024'
+             , 'B15003_025'
              )
 
 (MD <-
@@ -104,7 +257,10 @@ my_vars <- c(  'pop'      = 'B01001_001'
       str_like(GEOID, '24510%') ~ "Baltimore City",
       str_like(GEOID, '24005%') ~ "Baltimore County",
       TRUE ~ "Neither"
-    )))
+    ))
+  , edu_base = 
+  , edu_attain = (highschool or greater / edu_base)*100
+  )
 ```
 
 ```{r message=FALSE, include=FALSE}
@@ -212,13 +368,13 @@ colors_year <- c(
 )
 
 # Create a mapview object with customized colors
-year_map <- 
+# year_map <- 
   bwb_total_giveaway |>
   dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, geometry) |>
   mapview(zcol = "year", col.regions = colors_year, layer.name = "Tree Plantings each Year")
 
-# Display the map
-year_map
+# # Display the map
+# year_map
 ```
 
 #### **Interactive Total Plantings Each Year Table**
@@ -233,13 +389,13 @@ bwb_giveaway_years <-
   mutate(Total = Fall + Spring) |>
   arrange(desc(Total))
 
-# Creating the year data table
-bwb_giveaway_years_dt <-
-  bwb_giveaway_years |>
+  # # Creating the year data table
+# bwb_giveaway_years_dt <-
+bwb_giveaway_years |>
   DT::datatable()
 
-# Calling the datatable
-bwb_giveaway_years_dt
+# # Calling the datatable
+# bwb_giveaway_years_dt
 ```
 
 #### **Bar Chart of Total Plantings Each Year (Divided by Season)**
@@ -797,7 +953,7 @@ census_count_dataframe <-
   rename("Median Household Income" = "medhhincE")
 
 #Using ggplot for the scatter plot
-scatter_plot_census <-
+# scatter_plot_census <-
 ggplot(census_count_dataframe, aes(x = count, y = `Median Household Income`)) +
   geom_point(color = "#abdda4") +
   labs(
@@ -805,7 +961,9 @@ ggplot(census_count_dataframe, aes(x = count, y = `Median Household Income`)) +
     x = "Count",
     y = "Median Household Income"
   ) +
-  theme_minimal()
+  geom_smooth(color = 'black') +
+  theme_minimal() +
+  NULL
 ```
 
 
@@ -1030,7 +1188,7 @@ mapdeck(
 
 # Did the following in ArcGIS Pro using the Destination Origin Link geoprocessing tool (adding the corresponding shapefile into the "too big" folder)
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 
 #Reading in the shapefile
 link_read <-
@@ -1086,3 +1244,4 @@ giveaway_location_layer <-
 #The combined map
 giveaway_location_link <-
   link_layer + giveaway_location_layer # TODO st_distance is how to get the distance between two things. Do this for fun (make a graph)
+```
