@@ -452,6 +452,9 @@ bwb_jurisdiction_years_long |>
   ggplot(aes(x = Year, y = number_of_trees, fill = county)) +
     geom_bar(position = "dodge", stat = "identity") +
     scale_fill_manual(values = county_colors) +
+    scale_x_continuous ( # TODO Graphs need adjustment like this
+      breaks = seq(2013, 2023) 
+    ) +
     scale_y_continuous(
       limits = c(0, 1500),         
       breaks = seq(0, 2000, by = 250),  
@@ -502,13 +505,13 @@ bwb_jurisdiction_years_long |>
 legend_order_neighborhood_count <- 
   seq(0, 180, length.out = 10) 
 
-neighborhood_count_layer <-
+neighborhood_count_layer <- # TODO - my HTML was large if I cut that off on 508 and 517, is it storing the object
 neighborhood_read |>
   left_join(
     read_csv("output_data/neighborhood_count_bwb.csv")
     , by = "Name"
   ) |>
-  mapview(zcol = "count", layer.name = "Giveaway Count per Neighborhood", at = legend_order_neighborhood_count)
+  mapview(zcol = "count", layer.name = "Giveaway Count per Neighborhood", at = legend_order_neighborhood_count) # TODO - blank needs to be zeros called NA (if it doesn't have successful join, would it run faster without)
   
 # Displaying the map
 neighborhood_count_layer 
@@ -530,7 +533,7 @@ bwb_giveaway_neighborhood <-
   arrange(desc(`Number of Trees`))
 
 # Creating the neighborhood data table
-bwb_giveaway_neighborhood_dt <-
+bwb_giveaway_neighborhood_dt <- # TODO - more code making it slower. Probably affect our storage. Sometimes you will need to make lots objects (not this time). Refactoring is the prototype (does what it does, rewriting the results of the same outcome (saves speed and memory))
   bwb_giveaway_neighborhood |>
   DT::datatable()
 
@@ -590,7 +593,7 @@ bwb_giveaway_year_neighborhood_dt <-
 
 ```{r echo=FALSE}
 # Calling the datatable
-bwb_giveaway_year_neighborhood_dt
+bwb_giveaway_year_neighborhood_dt # TODO - do this
 ```
 
 #### **Giveaway Location Data Table**
@@ -670,8 +673,6 @@ census_count_map <-
 ```{r echo=FALSE}
 census_count_map
 ```
-
-
 
 ### C) What
 
@@ -955,9 +956,8 @@ bwb_location_tribble <-
 bwb_giveaway_location_sf <-
   bwb_giveaway_location |>
     left_join(bwb_location_tribble, by = "giveaway_location")
+  
 ```
-
-- You need to make an API token before you can use this package
 
 - Here is the webpage to make the token: https://account.mapbox.com/auth/signup/?route-to=%22https%3A%2F%2Faccount.mapbox.com%2Faccess-tokens%2F%22
 
@@ -1041,32 +1041,48 @@ link_read <-
 
 #Adding the specific color for each link (unsure how to do continuous)
 
-link_color <- c(
-  "Stillmeadow Community Fellowship" = "#262956",  
-  "Herring Run Nursery" = "#262F5C",               
-  "Ridgely Manor Park" = "#263761",                
-  "Gwynns Falls Leakin Park" = "#254067",          
-  "32nd Street Farmers Market" = "#254B6D",        
-  "JFX Farmers Market" = "#245773",                
-  "REI Timonium" = "#236579",                      
-  "West Towson ES" = "#236579",                    
-  "Cromwell Valley Harvest Festival" = "#22757F",  
-  "Cromwell Valley Park" = "#218685",              
-  "John Ruhrah ES" = "#208C7F",                    
-  "Winand ES" = "#1F9376",                         
-  "St Matthews Catholic Church" = "#1D9A6C",       
-  "Cherry Hill Urban Garden" = "#2A9B4E",          
-  "Langston Hughes Community Center" = "#369C38",  
-  "Darley Park Gateway" = "#5C9D42",               
-  "Anneslie" = "#7E9F4D",                          
-  "Ridgeleigh" = "#9AA159",                        
-  "Rodgers Forge" = "#A39664",                     
-  "Stoneleigh" = "#A6896F",                        
+giveaway_location_color <- c(
+  "32nd Street Farmers Market" = "#262956",  
+  "Anneslie" = "#262F5C",
+  "Cherry Hill Urban Garden" = "#263761",
+  "Chestnut Hill" = "#254067", 
+  "Cromwell Valley Harvest Festival" = "#254B6D",
+  "Cromwell Valley Park" = "#245773",
+  "Darley Park Gateway" = "#236579",
+  "Gwynns Falls Leakin Park" = "#22757F",
+  "Herring Run Nursery" = "#218685",
+  "JFX Farmers Market" = "#208C7F",
+  "John Ruhrah ES" = "#1F9376",
+  "Langston Hughes Community Center" = "#1D9A6C",
+  "REI Timonium" = "#2A9B4E", 
+  "Ridgeleigh" = "#369C38",
+  "Ridgely Manor Park" = "#5C9D42",    
+  "Rodgers Forge" = "#7E9F4D",
+  "St Matthews Catholic Church" = "#9AA159", 
+  "Stillmeadow Community Fellowship" = "#A39664",    
+  "Stoneleigh" = "#A6896F",   
   "Washington Hill Fall Community Day" = "#A98179",
-  "Chestnut Hill" = "#AC8489"                   
-)
+  "West Towson ES" = "#AC8489",      
+  "Winand ES" = "#AF8E9D"
+  )
+    
 
 #Making the layer of the link
 link_layer <-
   link_read |>
-  mapview(zcol = "giveaway_location", col.regions = link_color, layer.name = "Tree Giveaway Origin and Destination")
+  mapview(zcol = "giveaway_location", color = giveaway_location_color, layer.name = "Tree Giveaway Origin and Destination")
+
+#Making the read for the giveaway location points
+bwb_giveaway_location_read <-
+  bwb_giveaway_location |>
+    left_join(bwb_location_tribble, by = "giveaway_location") |>
+    st_as_sf(coords = c("entry_long","entry_lat"), crs = 4326)
+
+#Making the layer of the origin points
+giveaway_location_layer <-
+  bwb_giveaway_location_read |>
+  mapview(zcol = "giveaway_location", color = giveaway_location_color, layer.name = "Giveaway Locations")
+
+#The combined map
+giveaway_location_link <-
+  link_layer + giveaway_location_layer # TODO st_distance is how to get the distance between two things. Do this for fun (make a graph)
