@@ -17,6 +17,7 @@ editor_options:
   markdown: 
     wrap: 72
 ---
+
 #### The goal of the data was a preliminary step in providing more information and trying to learn more about the when, what, why, and who. The small RMarkdown report will include interactive tables, graphs, and figures highlighting giveaway information over the years. 
 
 ```{r message=FALSE, include=FALSE}
@@ -58,7 +59,6 @@ install.packages(setdiff(packs, rownames(installed.packages())))
 # lapply(packs, library, character.only = TRUE)
 # this actually loads them with library(package_name)
 vapply(packs, library, character.only = TRUE, logical(1), logical.return = TRUE, quietly = TRUE)
-
 
 # # for tidycensus
 # setting for get_acs
@@ -198,38 +198,36 @@ vars21 <-
 # EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
 
 
-
-
 my_vars <- c(  'pop'      = 'B01001_001'
              , 'medhhinc' = 'B19013_001'
-             , 'B15003_001'
-             , 'B15003_002'
-             , 'B15003_003'
-             , 'B15003_004'
-             , 'B15003_005'
-             , 'B15003_006'
-             , 'B15003_007'
-             , 'B15003_008'
-             , 'B15003_009'
-             , 'B15003_010'
-             , 'B15003_011'
-             , 'B15003_012'
-             , 'B15003_013'
-             , 'B15003_014'
-             , 'B15003_015'
-             , 'B15003_016'
-             , 'B15003_017'
-             , 'B15003_018'
-             , 'B15003_019'
-             , 'B15003_020'
-             , 'B15003_021'
-             , 'B15003_022'
-             , 'B15003_023'
-             , 'B15003_024'
-             , 'B15003_025'
+             # , 'B15003_001'
+             # , 'B15003_002'
+             # , 'B15003_003'
+             # , 'B15003_004'
+             # , 'B15003_005'
+             # , 'B15003_006'
+             # , 'B15003_007'
+             # , 'B15003_008'
+             # , 'B15003_009'
+             # , 'B15003_010'
+             # , 'B15003_011'
+             # , 'B15003_012'
+             # , 'B15003_013'
+             # , 'B15003_014'
+             # , 'B15003_015'
+             # , 'B15003_016'
+             # , 'B15003_017'
+             # , 'B15003_018'
+             # , 'B15003_019'
+             # , 'B15003_020'
+             # , 'B15003_021'
+             # , 'B15003_022'
+             # , 'B15003_023'
+             # , 'B15003_024'
+             # , 'B15003_025'
              )
 
-(MD <-
+(maryland <-
   tidycensus::get_acs(
       geography = 'state'
     , state = 'MD'
@@ -240,6 +238,19 @@ my_vars <- c(  'pop'      = 'B01001_001'
     , moe_level = 95
     ) |>
    st_transform(crs = st_crs(4326)))
+
+(baltimore_city_counties <-
+  tidycensus::get_acs(
+      geography = 'state'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))) 
 
 (cbg <-
   tidycensus::get_acs(
@@ -257,10 +268,10 @@ my_vars <- c(  'pop'      = 'B01001_001'
       str_like(GEOID, '24510%') ~ "Baltimore City",
       str_like(GEOID, '24005%') ~ "Baltimore County",
       TRUE ~ "Neither"
-    ))
-  , edu_base = 
-  , edu_attain = (highschool or greater / edu_base)*100
-  )
+    )))
+  # , edu_base = 
+  # , edu_attain = (highschool or greater / edu_base)*100
+  # )
 ```
 
 ```{r message=FALSE, include=FALSE}
@@ -345,15 +356,14 @@ bwb_total_giveaway <-
 
 ```
 
-### A) When
+## A) When
 
-#### Let us begin with the question of **when**. Here, we will highlight tree giveaways each year and how they compare by season.
+#### Let us begin with the question of when. Here, we will highlight tree giveaways each year and how they compare by season.
 
-#### **Map of Tree Giveaways Each Year**
+#### Map of Tree Giveaways Each Year
 
 ```{r echo=FALSE}
-
-# Define the customized color palette
+## defining color palette
 colors_year <- c(
   "2013" = "#9e0142",
   "2014" = "#d53e4f", 
@@ -367,53 +377,44 @@ colors_year <- c(
   "2023" = "#5e4fa2"
 )
 
-# Create a mapview object with customized colors
-# year_map <- 
+## creating the year map 
   bwb_total_giveaway |>
   dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, geometry) |>
   mapview(zcol = "year", col.regions = colors_year, layer.name = "Tree Plantings each Year")
-
-# # Display the map
-# year_map
 ```
 
-#### **Interactive Total Plantings Each Year Table**
+#### Interactive Total Plantings Each Year Table
 
 ```{r echo=FALSE}
-# Creating the year data frame
+## creating year data frame
 bwb_giveaway_years <-
   bwb_total_giveaway |>
   st_drop_geometry() |>
   tabyl(year, season) |>
   as_tibble() |>
+  add_row(year = "2020", Fall = 0, Spring = 0) |>
   mutate(Total = Fall + Spring) |>
-  arrange(desc(Total))
-
-  # # Creating the year data table
-# bwb_giveaway_years_dt <-
+  arrange(desc(Total)) |>
+  mutate()
+  
+## creating year data table
 bwb_giveaway_years |>
   DT::datatable()
-
-# # Calling the datatable
-# bwb_giveaway_years_dt
 ```
 
-#### **Bar Chart of Total Plantings Each Year (Divided by Season)**
+#### Bar Chart of Total Plantings Each Year (Divided by Season)
 
 ```{r echo=FALSE}
-# Changing the data to be able to be a stacked column chart
-bwb_giveaway_years_long <- 
-  bwb_giveaway_years |>
-  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees")
-
-# Making the season colors
+## making the season colors
 seasons_color <- c(
   "Fall" = "#fe6b40",
   "Spring" = "#6f9c3d"
 )
 
-# Creating the stacked column chart 
-bwb_giveaway_years_long |>
+## creating the stacked column chart
+  bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
+  mutate(year = as.double(year)) |>
   ggplot(aes(x = year, y = number_of_trees, fill = season)) +
     geom_bar(position = "stack", stat = "identity") +
     scale_fill_manual(values = seasons_color) +
@@ -422,6 +423,9 @@ bwb_giveaway_years_long |>
       breaks = seq(0, 2000, by = 250),  
       labels = scales::comma  
     )  +
+    scale_x_continuous (
+      breaks = seq(2013, 2023) 
+    ) +
     labs(title = "Total Giveaways by Year and Season",
          x = "Year",
          y = "Total Giveaways",
@@ -429,11 +433,12 @@ bwb_giveaway_years_long |>
     theme_minimal() 
 ```
 
-#### **Line Chart of Total Plantings Each Year (Divided by Season)**
+#### Line Chart of Total Plantings Each Year (Divided by Season)
 
 ```{r echo=FALSE}
-# Creating the line graph
-bwb_giveaway_years_long |>
+##creating line chart
+bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
   ggplot(aes(x = year, y = number_of_trees, color = season, group = season)) +
   geom_point() +
   geom_line() +
@@ -452,28 +457,17 @@ bwb_giveaway_years_long |>
   NULL
 ```
 
-
-
 ### B) Where
 
+#### The second question we must answer is where. Here, we will highlight the distribution of plantings. Many went to Baltimore City, Baltimore County, and outside the general area. We will also look at how these compare to plantings within Baltimore neighborhoods. Finally, we will look more closely at census tract information.
 
-#### The second question we must answer is **where**. Here, we will highlight the distribution of plantings. Many went to Baltimore City, Baltimore County, and outside the general area. We will also look at how these compare to plantings within Baltimore neighborhoods. Finally, we will look more closely at census tract information.
-
-
-#### **Map of the Three Jurisdictions**
+#### Map of the Three Jurisdictions
 
 ```{r include=FALSE}
-# Reading in the state layer
-state_read <-
-  st_read("../baltimore_tree_partners_data_to_big/shapefiles/State_Boundaries/State_Boundaries.shp") |>
-  st_zm(drop = TRUE, what = "ZM") |>
-  st_transform(4326) |>
-  dplyr::select(NAME, Shape__Are, Shape__Len, geometry)
 
-# Making the state layer
+## making state layer
 state_layer <-
-  state_read |>
-  filter(NAME == "Maryland") |>
+  maryland |>
   mapview(col.regions = "#a3b18a", alpha = 0.25, layer.name = "Maryland") 
 
 # Reading in the county layer
@@ -484,7 +478,7 @@ county_read <-
 
 # Making the county layer
 county_layer <-
-  county_read |>
+ baltimore_city_county |>
   mapview(col.regions = "#588157", alpha = 0.25, layer.name = "Baltimore County") 
 
 # Reading in the neighborhood layer
@@ -1244,4 +1238,6 @@ giveaway_location_layer <-
 #The combined map
 giveaway_location_link <-
   link_layer + giveaway_location_layer # TODO st_distance is how to get the distance between two things. Do this for fun (make a graph)
+
+# Save jpegs along the way (use ggsave)
 ```
