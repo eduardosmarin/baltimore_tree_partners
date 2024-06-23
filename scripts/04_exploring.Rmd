@@ -20,6 +20,8 @@ editor_options:
 
 #### The goal of the data was a preliminary step in providing more information and trying to learn more about the when, what, why, and who. The small RMarkdown report will include interactive tables, graphs, and figures highlighting giveaway information over the years. 
 
+#### serves as the inspiration for the later graphs: https://datavizcatalogue.com/search/comparisons.html
+
 ```{r message=FALSE, include=FALSE}
 
 # List all of your packages here
@@ -48,6 +50,10 @@ packs <-c(
           , 'DT'
           , 'openxlsx'
           , 'mapdeck'
+          , 'biscale' #used with ggplot to make bivariate maps
+          , 'cowplot' #used to make more aesthetic ggplot visuals
+          , 'ggspatial' #creates a basemap for your ggplots
+          , 'classInt' #find me breaks without doing manual calculations
           )     
 
 # IF the packages in 'packs' are not already installed, install them
@@ -72,160 +78,21 @@ options(tigris_use_cache = TRUE)
 vars21 <- 
   tidycensus::load_variables('acs5', year = 2021)
 
-
-# B15003_001
-# Estimate!!Total:
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 
-# B15003_002
-# Estimate!!Total:!!No schooling completed
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 67
-# B15003_003
-# Estimate!!Total:!!Nursery school
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 68
-# B15003_004
-# Estimate!!Total:!!Kindergarten
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 69
-# B15003_005
-# Estimate!!Total:!!1st grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 70
-# B15003_006
-# Estimate!!Total:!!2nd grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 71
-# B15003_007
-# Estimate!!Total:!!3rd grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 72
-# B15003_008
-# Estimate!!Total:!!4th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 73
-# B15003_009
-# Estimate!!Total:!!5th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 74
-# B15003_010
-# Estimate!!Total:!!6th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 75
-# B15003_011
-# Estimate!!Total:!!7th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 76
-# B15003_012
-# Estimate!!Total:!!8th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 77
-# B15003_013
-# Estimate!!Total:!!9th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 78
-# B15003_014
-# Estimate!!Total:!!10th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 79
-# B15003_015
-# Estimate!!Total:!!11th grade
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 80
-# B15003_016
-# Estimate!!Total:!!12th grade, no diploma
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 81
-# B15003_017
-# Estimate!!Total:!!Regular high school diploma
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 82
-# B15003_018
-# Estimate!!Total:!!GED or alternative credential
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 83
-# B15003_019
-# Estimate!!Total:!!Some college, less than 1 year
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 84
-# B15003_020
-# Estimate!!Total:!!Some college, 1 or more years, no degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 85
-# B15003_021
-# Estimate!!Total:!!Associate's degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 86
-# B15003_022
-# Estimate!!Total:!!Bachelor's degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 87
-# B15003_023
-# Estimate!!Total:!!Master's degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 88
-# B15003_024
-# Estimate!!Total:!!Professional school degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-# block group
-# 89
-# B15003_025
-# Estimate!!Total:!!Doctorate degree
-# EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER
-
-
-my_vars <- c(  'pop'      = 'B01001_001'
-             , 'medhhinc' = 'B19013_001'
-             # , 'B15003_001'
-             # , 'B15003_002'
-             # , 'B15003_003'
-             # , 'B15003_004'
-             # , 'B15003_005'
-             # , 'B15003_006'
-             # , 'B15003_007'
-             # , 'B15003_008'
-             # , 'B15003_009'
-             # , 'B15003_010'
-             # , 'B15003_011'
-             # , 'B15003_012'
-             # , 'B15003_013'
-             # , 'B15003_014'
-             # , 'B15003_015'
-             # , 'B15003_016'
-             # , 'B15003_017'
-             # , 'B15003_018'
-             # , 'B15003_019'
-             # , 'B15003_020'
-             # , 'B15003_021'
-             # , 'B15003_022'
-             # , 'B15003_023'
-             # , 'B15003_024'
-             # , 'B15003_025'
-             )
+my_vars <- c(  'median_household_income' = 'B19013_001'
+             , 'total_population' = 'B01003_001'
+             , 'white_alone' = 'B03002_003'
+             , 'median_age' = 'B01002_001'
+             , 'total_population_over_25' = 'B15003_001'
+             , 'ed_hs_degree' = 'B15003_017'
+             , 'ed_ged_degree' = 'B15003_018'
+             , 'ed_college_less_1_year' = 'B15003_019'
+             , 'ed_college_more_1_year' = 'B15003_020'
+             , 'ed_associate_degree' = 'B15003_021'
+             , 'ed_plus_bachelor_degree' = 'B15003_022'
+             , 'ed_plus_master_degree' = 'B15003_023'
+             , 'ed_plus_professional_degree' = 'B15003_024'
+             , 'ed_plus_doctorate_degree' = 'B15003_025'
+            )
 
 (maryland <-
   tidycensus::get_acs(
@@ -265,7 +132,7 @@ my_vars <- c(  'pop'      = 'B01001_001'
     ) |>
    st_transform(crs = st_crs(4326))) 
 
-(cbg <-
+cbg <-
   tidycensus::get_acs(
       geography = 'block group'
     , state = 'Maryland'
@@ -281,10 +148,16 @@ my_vars <- c(  'pop'      = 'B01001_001'
       str_like(GEOID, '24510%') ~ "Baltimore City",
       str_like(GEOID, '24005%') ~ "Baltimore County",
       TRUE ~ "Neither"
-    )))
-  # , edu_base = 
-  # , edu_attain = (highschool or greater / edu_base)*100
-  # )
+    )) |>
+    dplyr::select(-ends_with("M")) |> 
+    rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
+    rename(NAME = NAM) |>
+    mutate(
+      at_least_hs = rowSums(across(starts_with("ed_"))),
+      at_least_college = rowSums(across(starts_with("ed_plus")))
+    ) |>
+    dplyr::select(-starts_with("ed_"))
+
 ```
 
 ```{r message=FALSE, include=FALSE}
@@ -796,7 +669,7 @@ legend_order_census_count <-
   seq(0, 120, length.out = 7) 
 
 ## making the census map
-census_count_map <-
+census_count_map_layer <-
   cbg |>
   left_join(
   read_csv("output_data/census_count_year.csv")
@@ -805,8 +678,24 @@ census_count_map <-
   mutate(count = case_when(
     is.na(count) ~ 0,
     TRUE ~ count
-  )) |>
+  )) 
+
+## making v2 layer
+legend_order_census_count_v2 <- 
+  classIntervals(
+  census_count_map_layer$`count`,
+  n = 5, # number of classes
+  style = "fisher"
+)$brks
+
+# number one census map counts
+census_count_map <-
+  census_count_map_layer |>
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
+
+census_count_map_v2 <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count_v2)
 
 ## the census map
 census_count_map
@@ -882,19 +771,18 @@ colors_species <- c(
 
 ### D) Who
 
-#### The final question we must answer is who. Here, we will look more specifically at income and giveawaycount.
+The final question we must answer is who. Here, we will look more specifically at income and giveawaycount.
 
 #### Synced map of Household Income and Giveaway Count
 
 ```{r echo=FALSE}
-
 ## creating the census income map
 legend_order_census_income_count <- 
   seq(0, 200000, length.out = 9) 
 
 census_income_map <-
   cbg |>
-  rename("Median Household Income" = medhhincE) |>
+  rename("Median Household Income" = median_household_income) |>
   mutate(`Median Household Income` = case_when(
     is.na(`Median Household Income`) ~ 0,
     TRUE ~ `Median Household Income`)) |>
@@ -902,7 +790,55 @@ census_income_map <-
 
 ## creating a Sync map of Giveaway Count and Census Block
 sync(census_income_map, census_count_map)
+```
 
+#### Bivariate map of Household Income and Giveaway Count
+```{r}
+## making the count and census data together
+cbg_census_count <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) 
+
+## setting the bivariate count and income
+bivariate_count_income <-
+  biscale::bi_class(cbg_census_count, x = median_household_income, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_income_map_pre <-
+  bivariate_count_income |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Household Income and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_income_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Median Household Income",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_income_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_income_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_income_map_legend, .25, .2, 0.2, 0.2)
+
+## calling map
+bivariate_count_income_map
 ```
 
 #### Scatter Plot of Household Income and Giveaway Count
@@ -913,7 +849,7 @@ sync(census_income_map, census_count_map)
   read_csv("output_data/census_count_year.csv")
     , by = "NAME"
   ) |>
-  rename("Median Household Income" = "medhhincE") |>
+  rename("Median Household Income" = "median_household_income") |>
 ggplot(aes(x = count, y = `Median Household Income`)) +
   geom_point(color = "#abdda4") +
   labs(
@@ -925,7 +861,362 @@ ggplot(aes(x = count, y = `Median Household Income`)) +
   NULL
 ```
 
-# Notes of BWB May 24th Meeting:
+#### Synced map of HS Education Percentage and Giveaway Count
+```{r}
+## creating the adjustments
+census_hs_education_layer <-
+  cbg_census_count |>
+  dplyr::select(GEOID, NAME, geometry, at_least_hs, total_population_over_25) |>
+  mutate(`At Least High School Degree or GED` = 100*(at_least_hs/total_population_over_25)) |>
+  mutate(`At Least High School Degree or GED` = case_when(
+    is.na(`At Least High School Degree or GED`) ~ 0,
+    TRUE ~ `At Least High School Degree or GED`)) 
+
+## creating the fisher breaks layer
+fisher_breaks_at_least_hs <- 
+  classIntervals(
+     census_hs_education_layer$`At Least High School Degree or GED`
+    , n = 5
+    , style = "fisher"
+    )$brks
+
+## creating the map
+census_hs_education_map <-
+  census_hs_education_layer |>
+  mapview(  zcol = "At Least High School Degree or GED"
+          , layer.name = "Percentage of People 25 and Over with At Least a High School Degree"
+          , at = fisher_breaks_at_least_hs)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_hs_education_map, census_count_map_v2)
+```
+
+# Making the scatter plot of Giveaway Count and Education
+```{r}
+## making scatter plot dataframe
+  census_hs_education_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  ),
+  count = as.numeric(count)) |>
+  rename(`Giveaway Count` = `count`) |>
+ggplot(aes(x = `Giveaway Count`, y = `At Least High School Degree or GED`)) +
+  geom_point(color = "#abdda4") +
+  scale_y_continuous(
+      limits = c(0, 100),         
+      breaks = seq(0, 100, by = 20),  
+      labels = scales::comma  
+    )  +
+  geom_smooth(method = "lm", color = "black", se = FALSE) + 
+  labs(
+    title = "Scatter Plot of Count vs. At Least High School Degree or GED",
+    x = "Giveaway Count",
+    y = "At Least High School Degree or GED"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+# Synced map of HS Education Percentage and Giveaway Count
+```{r}
+## creating the adjustments
+census_graduate_education_layer <-
+  cbg_census_count |>
+  dplyr::select(GEOID, NAME, geometry, at_least_college, total_population_over_25, median_household_income) |>
+  mutate(`At Least Bachelor Degree` = 100*(at_least_college/total_population_over_25)) |>
+  mutate(`At Least Bachelor Degree` = case_when(
+    is.na(`At Least Bachelor Degree`) ~ 0,
+    TRUE ~ `At Least Bachelor Degree`)) 
+
+## creating the fisher breaks layer
+fisher_breaks_at_least_hs <- 
+  classIntervals(
+     census_graduate_education_layer$`At Least Bachelor Degree`
+    , n = 5
+    , style = "fisher"
+    )$brks
+
+## creating the map
+census_graduate_education_map <-
+  census_graduate_education_layer |>
+  mapview(  zcol = "At Least Bachelor Degree"
+          , layer.name = "Percentage of People 25 and Over with At Least Bachelor Degree"
+          , at = fisher_breaks_at_least_hs)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_graduate_education_map, census_count_map_v2)
+```
+
+
+## Trying a bubble chart of income, graduate education, and giveaway counts
+```{r}
+## making the bubble chart
+  census_graduate_education_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  rename("Giveaway Count" = "count", "Median Household Income" = "median_household_income") |>
+  ggplot(aes(x = `Median Household Income`, y = `At Least Bachelor Degree`, size = `Giveaway Count`)) +
+  geom_point(alpha = 0.5, color = "#7D7F7C") + 
+  scale_size_continuous(range = c(1, 20)) + 
+  labs(
+    title = "Bubble Chart of Median Household Income, Graduate Education, and Giveaway Counts",
+    x = "Median Household Income",
+    y = "At Least Graduate Degree (%)",
+    size = "Giveaway Count"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 10),  
+    axis.title = element_text(size = 7.5)   
+  ) +
+  NULL
+```
+
+## Scatter plot of Graduate Education and Giveaway Counts
+```{r}
+  census_graduate_education_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  rename("Giveaway Count" = "count", "Median Household Income" = "median_household_income") |>
+ggplot(aes(x = `Giveaway Count`, y = `At Least Bachelor Degree`)) +
+  geom_point(color = "#abdda4") +
+  scale_y_continuous(
+      limits = c(0, 100),         
+      breaks = seq(0, 100, by = 20),  
+      labels = scales::comma  
+    )  +
+  geom_smooth(method = "lm", color = "black", se = FALSE) + 
+  labs(
+    title = "Scatter Plot of Count vs. At Least Bachelor Degree",
+    x = "Giveaway Count",
+    y = "At Least Bachelor Degree"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+## Looking at percentage white for the next map
+```{r}
+## creating the adjustments
+census_white_layer <-
+  cbg_census_count |>
+  dplyr::select(GEOID, NAME, geometry, white_alone, total_population) |>
+  mutate(`White Percentage` = 100*(white_alone/total_population)) |>
+  mutate(`White Percentage` = case_when(
+    is.na(`White Percentage`) ~ 0,
+    TRUE ~ `White Percentage`)) 
+
+## creating the fisher breaks layer
+fisher_breaks_white_percentage <- 
+  classIntervals(
+     census_white_layer$`White Percentage`
+    , n = 5
+    , style = "fisher"
+    )$brks
+
+## creating the map
+census_white_map <-
+  census_white_layer |>
+  mapview(  zcol = "White Percentage"
+          , layer.name = "White Percentage"
+          , at = fisher_breaks_white_percentage)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_white_map, census_count_map_v2)
+```
+
+## Making the bivariate map of white percentage and giveaway count
+```{r}
+## making the count and census data together
+cbg_white_count <-
+  census_white_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) 
+
+## setting the bivariate count and income
+bivariate_cbg_white_count <-
+  biscale::bi_class(cbg_white_count, x = `White Percentage`, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_white_map_pre <-
+  bivariate_cbg_white_count |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "White Percentage and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_white_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher White Percentage",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_white_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_white_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_white_map_legend, .25, .2, 0.2, 0.2)
+
+## calling map
+bivariate_count_white_map
+```
+
+## Making the scatter plot of giveaway counts and total
+```{r}
+## Scatter plot of white percentage and giveaway counts
+  census_white_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  rename("Giveaway Count" = "count") |>
+ggplot(aes(x = `Giveaway Count`, y = `White Percentage`)) +
+  geom_point(color = "#abdda4") +
+  scale_y_continuous(
+      limits = c(0, 100),         
+      breaks = seq(0, 100, by = 20),  
+      labels = scales::comma  
+    )  +
+  geom_smooth(method = "lm", color = "black", se = FALSE) + 
+  labs(
+    title = "Scatter Plot of Count vs White Percentage",
+    x = "Giveaway Count",
+    y = "White Percentage"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+## Looking at age and count synced graph
+```{r}
+## creating the adjustments
+census_age_layer <-
+  cbg_census_count |>
+  dplyr::select(GEOID, NAME, geometry, median_age) |>
+  rename('Median Age' = "median_age") |>
+
+## creating the fisher breaks layer
+fisher_breaks_age_percentage <- 
+  classIntervals(
+     census_age_layer$`Median Age`
+    , n = 5
+    , style = "fisher"
+    )$brks
+
+## creating the map
+census_age_map <-
+  census_age_layer |>
+  mapview(  zcol = "Median Age"
+          , layer.name = "Median Age and Count"
+          , at = fisher_breaks_age_percentage)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_age_map, census_count_map_v2) #kept the missing NA since making it 0 might skew the Fischer and make the map look wrong
+
+```
+
+
+## Making the scatter plot of giveaway counts and total
+```{r}
+## making the age plot map
+census_age_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count)
+    ,`Age Group` = 
+      cut(
+      `Median Age`,
+      breaks = seq(0, 100, by = 10),
+      right = FALSE,
+    )) |>
+  filter(!is.na(`Median Age`)) |>
+  rename("Giveaway Count" = "count")  |>
+  ggplot(aes(x = as.factor(`Age Group`), y = `Giveaway Count`, fill = as.factor(`Age Group`))) +
+  geom_violin(trim = FALSE) +
+  labs(
+    title = "Violin Plot of Age Groups and Giveaway Counts",
+    x = "Age Group",
+    y = "Giveaway Count"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 10),  
+    axis.title = element_text(size = 7.5), 
+    legend.position = "none"               
+  )
+
+```
+
+## Making the scatter plot of age and giveaway counts
+```{r}
+## Scatter plot of age percentage and giveaway counts
+  census_age_layer |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count)) |>
+  rename("Giveaway Count" = "count") |>
+ggplot(aes(x = `Giveaway Count`, y = `Median Age`)) +
+  geom_point(color = "#abdda4") +
+  scale_y_continuous(
+      limits = c(0, 100),         
+      breaks = seq(0, 100, by = 20),  
+      labels = scales::comma  
+    )  +
+  geom_smooth(method = "lm", color = "black", se = FALSE) + 
+  labs(
+    title = "Scatter Plot of Count vs Median Age",
+    x = "Giveaway Count",
+    y = "Median Age"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+
+# E) Random.Etc
+ Notes of BWB May 24th Meeting:
  - Fix the common names
  - Fix the 2017 and 2018 year data
  - Fix the 2020 to make 
