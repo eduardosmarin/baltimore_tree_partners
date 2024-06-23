@@ -1127,7 +1127,7 @@ ggplot(aes(x = `Giveaway Count`, y = `White Percentage`)) +
 census_age_layer <-
   cbg_census_count |>
   dplyr::select(GEOID, NAME, geometry, median_age) |>
-  rename('Median Age' = "median_age") |>
+  rename('Median Age' = "median_age")
 
 ## creating the fisher breaks layer
 fisher_breaks_age_percentage <- 
