@@ -850,12 +850,12 @@ bivariate_count_income_map
     , by = "NAME"
   ) |>
   rename("Median Household Income" = "median_household_income") |>
-ggplot(aes(x = count, y = `Median Household Income`)) +
+ggplot(aes(x = `Median Household Income`, y = count)) +
   geom_point(color = "#abdda4") +
   labs(
     title = "Scatter Plot of Count vs. Median Household Income",
-    x = "Count",
-    y = "Median Household Income"
+    x = "Median Household Income",
+    y = "Giveaway Count"
   ) +
   theme_minimal() +
   NULL
@@ -905,7 +905,7 @@ sync(census_hs_education_map, census_count_map_v2)
   ),
   count = as.numeric(count)) |>
   rename(`Giveaway Count` = `count`) |>
-ggplot(aes(x = `Giveaway Count`, y = `At Least High School Degree or GED`)) +
+ggplot(aes(x = `At Least High School Degree or GED`, y = `Giveaway Count`)) +
   geom_point(color = "#abdda4") +
   scale_y_continuous(
       limits = c(0, 100),         
@@ -915,8 +915,8 @@ ggplot(aes(x = `Giveaway Count`, y = `At Least High School Degree or GED`)) +
   geom_smooth(method = "lm", color = "black", se = FALSE) + 
   labs(
     title = "Scatter Plot of Count vs. At Least High School Degree or GED",
-    x = "Giveaway Count",
-    y = "At Least High School Degree or GED"
+    x = "At Least High School Degree or GED",
+    y = "Giveaway Count"
   ) +
   theme_minimal() +
   NULL
@@ -945,7 +945,7 @@ fisher_breaks_at_least_hs <-
 census_graduate_education_map <-
   census_graduate_education_layer |>
   mapview(  zcol = "At Least Bachelor Degree"
-          , layer.name = "Percentage of People 25 and Over with At Least Bachelor Degree"
+          , layer.name = "Percentage of People 25 and Over with At Least Bachelor Degree (%)"
           , at = fisher_breaks_at_least_hs)
 
 ## creating a Sync map of Giveaway Count and Census Block
@@ -995,7 +995,7 @@ sync(census_graduate_education_map, census_count_map_v2)
     TRUE ~ count
   )) |>
   rename("Giveaway Count" = "count", "Median Household Income" = "median_household_income") |>
-ggplot(aes(x = `Giveaway Count`, y = `At Least Bachelor Degree`)) +
+ggplot(aes(x = `At Least Bachelor Degree`, y = `Giveaway Count`)) +
   geom_point(color = "#abdda4") +
   scale_y_continuous(
       limits = c(0, 100),         
@@ -1005,8 +1005,8 @@ ggplot(aes(x = `Giveaway Count`, y = `At Least Bachelor Degree`)) +
   geom_smooth(method = "lm", color = "black", se = FALSE) + 
   labs(
     title = "Scatter Plot of Count vs. At Least Bachelor Degree",
-    x = "Giveaway Count",
-    y = "At Least Bachelor Degree"
+    x = "At Least Bachelor Degree (%)",
+    y = "Giveaway Count"
   ) +
   theme_minimal() +
   NULL
@@ -1104,7 +1104,7 @@ bivariate_count_white_map
     TRUE ~ count
   )) |>
   rename("Giveaway Count" = "count") |>
-ggplot(aes(x = `Giveaway Count`, y = `White Percentage`)) +
+ggplot(aes(x = `White Percentage`, y = `Giveaway Count`)) +
   geom_point(color = "#abdda4") +
   scale_y_continuous(
       limits = c(0, 100),         
@@ -1114,8 +1114,8 @@ ggplot(aes(x = `Giveaway Count`, y = `White Percentage`)) +
   geom_smooth(method = "lm", color = "black", se = FALSE) + 
   labs(
     title = "Scatter Plot of Count vs White Percentage",
-    x = "Giveaway Count",
-    y = "White Percentage"
+    x = "White Percentage (%)",
+    y = "Giveaway Count"
   ) +
   theme_minimal() +
   NULL
@@ -1197,7 +1197,7 @@ census_age_layer |>
     is.na(count) ~ 0,
     TRUE ~ count)) |>
   rename("Giveaway Count" = "count") |>
-ggplot(aes(x = `Giveaway Count`, y = `Median Age`)) +
+ggplot(aes(x = `Median Age`, y = `Giveaway Count`, )) +
   geom_point(color = "#abdda4") +
   scale_y_continuous(
       limits = c(0, 100),         
@@ -1207,8 +1207,8 @@ ggplot(aes(x = `Giveaway Count`, y = `Median Age`)) +
   geom_smooth(method = "lm", color = "black", se = FALSE) + 
   labs(
     title = "Scatter Plot of Count vs Median Age",
-    x = "Giveaway Count",
-    y = "Median Age"
+    x = "Median Age",
+    y = "Giveaway Count"
   ) +
   theme_minimal() +
   NULL
@@ -1446,7 +1446,7 @@ link_read <-
   st_read("../baltimore_tree_partners_data_to_big/shapefiles/bwb_giveaway_links/bwb_giveaway_origin_destination_link.shp") |>
   st_zm(drop = TRUE, what = "ZM") |>
   st_transform(4326) |>
-  rename(giveaway_location = GROUP_ID,link_length = Shape_Leng)
+  rename(giveaway_location = GROUP_ID, link_length = Shape_Leng)
 
 #Adding the specific color for each link (unsure how to do continuous)
 
@@ -1477,24 +1477,16 @@ giveaway_location_color <- c(
     
 
 #Making the layer of the link
-link_layer <-
   link_read |>
   mapview(zcol = "giveaway_location", color = giveaway_location_color, layer.name = "Tree Giveaway Origin and Destination")
 
-#Making the read for the giveaway location points
-bwb_giveaway_location_read <-
-  bwb_giveaway_location |>
-    left_join(bwb_location_tribble, by = "giveaway_location") |>
-    st_as_sf(coords = c("entry_long","entry_lat"), crs = 4326)
+#Calling in the distance
+link_layer
 
-#Making the layer of the origin points
-giveaway_location_layer <-
-  bwb_giveaway_location_read |>
-  mapview(zcol = "giveaway_location", color = giveaway_location_color, layer.name = "Giveaway Locations")
 
-#The combined map
-giveaway_location_link <-
-  link_layer + giveaway_location_layer # TODO st_distance is how to get the distance between two things. Do this for fun (make a graph)
+TODO st_distance is how to get the distance between two things. Do this for fun (make a graph)
+
+giveaway_location_link
 
 # Save jpegs along the way (use ggsave)
 ```
