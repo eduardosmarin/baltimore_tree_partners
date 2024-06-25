@@ -238,9 +238,175 @@ bwb_total_giveaway <-
     giveaway_location == "Forestry Nursery" ~ "Herring Run Nursery",
     giveaway_location == "Greektown - John Ruhrah EMS" ~ "John Ruhrah ES",
     TRUE ~ giveaway_location
-  ))
+  )) |> 
+  rowid_to_column(var = 'EM_ID')
 
 ```
+
+
+### Tapestry
+```{r}
+
+# # 2019
+# tap_path <- '/Users/dlocke/TAP/Tap2019/2019 Tapestry Complete.gdb/'
+# st_layers(tap_path)
+# 
+# # a few test queries
+# # tap_query <- 'SELECT * from TAP19_HH_bg limit 10'
+# # tap_query <- 'SELECT * from TAP19_ADULT_bg limit 10' # NO
+# # tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TLIFENAME, TSEGNAME from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
+# 
+# tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TURBZCODE, TLIFENAME, TLIFECODE, TSEGNAME, TSEGNUM from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
+# 
+# 
+# tap <- 
+#   st_read(
+#       tap_path
+#     , query = tap_query
+#     , as_tibble = TRUE
+#   ) |> 
+#   rename(GEOID_2019 = ID) |> 
+#   st_transform(st_crs(bwb_total_giveaway)) |> 
+#   st_make_valid() |> 
+#   mutate(
+#     urbanization = 
+#       factor(TURBZNAME
+#              , levels = c(
+#                  'Principal Urban Center'
+#                , 'Urban Periphery'
+#                , 'Metro Cities'
+#                , 'Suburban Periphery'
+#                , 'Semirural'
+#                , 'Rural'
+#                ))
+#     , lifemode = 
+#       factor(TLIFENAME
+#              , levels = c(
+#                  'Affluent Estates'
+#                , 'Upscale Avenues'
+#                , 'Uptown Individuals'
+#                , 'Family Landscapes'
+#                , 'GenXurban'
+#                , 'Cozy Country Living'
+#                , 'Ethnic Enclaves'
+#                , 'Middle Ground'
+#                , 'Senior Styles'
+#                , 'Rustic Outposts'
+#                , 'Midtown Singles'
+#                , 'Hometown'
+#                , 'Next Wave'
+#                , 'Scholars and Patriots')
+#              )
+#     , segment = 
+#       factor(TSEGNAME
+#              , levels = c(
+#                  'Top Tier'
+#                , 'Professional Pride'
+#                , 'Boomburbs'
+#                , 'Savvy Suburbanites'
+#                , 'Exurbanites'
+#                , 'Urban Chic'
+#                , 'Pleasantville'
+#                , 'Pacific Heights'
+#                , 'Enterprising Professionals'
+#                , 'Laptops and Lattes'
+#                , 'Metro Renters'
+#                , 'Trendsetters'
+#                , 'Soccer Moms'
+#                , 'Home Improvement'
+#                , 'Middleburg'
+#                , 'Comfortable Empty Nesters'
+#                , 'In Style'
+#                , 'Parks and Rec'
+#                , 'Rustbelt Traditions'
+#                , 'Midlife Constants'
+#                , 'Green Acres'
+#                , 'Salt of the Earth'
+#                , 'The Great Outdoors'
+#                , 'Prairie Living'
+#                , 'Rural Resort Dwellers'
+#                , 'Heartland Communities'
+#                , 'Up and Coming Families'
+#                , 'Urban Villages'
+#                , 'American Dreamers'
+#                , 'Barrios Urbanos'
+#                , 'Valley Growers'
+#                , 'Southwestern Families'
+#                , 'City Lights'
+#                , 'Emerald City'
+#                , 'Bright Young Professionals'
+#                , 'Downtown Melting Pot'
+#                , 'Front Porches'
+#                , 'Old and Newcomers'
+#                , 'Hardscrabble Road'
+#                , 'Silver & Gold'
+#                , 'Golden Years'
+#                , 'The Elders'
+#                , 'Senior Escapes'
+#                , 'Retirement Communities'
+#                , 'Social Security Set'
+#                , 'Southern Satellites'
+#                , 'Rooted Rural'
+#                , 'Diners & Miners'
+#                , 'Down the Road'
+#                , 'Rural Bypasses'
+#                , 'City Strivers'
+#                , 'Young and Restless'
+#                , 'Metro Fusion'
+#                , 'Set to Impress'
+#                , 'City Commons'
+#                , 'Family Foundations'
+#                , 'Traditional Living'
+#                , 'Small Town Simplicity'
+#                , 'Modest Income Homes'
+#                , 'International Marketplace'
+#                , 'Las Casas'
+#                , 'NeWest Residents'
+#                , 'Fresh Ambitions'
+#                , 'High Rise Renters'
+#                , 'Military Proximity'
+#                , 'College Towns'
+#                , 'Dorms to Diplomas'
+#                , 'Unclassified'
+#              ))
+#   )
+# 
+# tap |> 
+#   st_drop_geometry() |> 
+#   write_csv(file = paste0('output_data/MD_Tapestry_2019_', Sys.Date(), '.csv'))
+# 
+# tap_lu <-
+#   tap |> 
+#   st_drop_geometry() |> 
+#   distinct(urbanization, lifemode, segment) 
+# 
+# save(tap_lu, file = paste0('output_data/tap_lu_', Sys.Date(), '.RData'))
+
+# makes tap_lu a Look UP for the value
+load('output_data/tap_lu_2024-06-25.RData')
+
+tap_lu |> map(~levels(.)) # order matters!
+
+# bwb_total_giveaway_with_Tapestry_2019 <- 
+#   bwb_total_giveaway |>
+#   st_join(tap)
+# 
+# save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
+
+# makes 'bwb_total_giveaway_with_Tapestry_2019'
+load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
+
+bwb_total_giveaway_with_Tapestry_2019
+bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  group_by(segment) |> 
+  count() |> 
+  ggplot(aes(n, segment)) +
+  geom_col()
+
+
+```
+
 
 ## A) When
 
@@ -1079,13 +1245,14 @@ bivariate_count_white_map_legend <-
             dim = 3,
             xlab = "Higher White Percentage",
             ylab = "Higher Giveaway Count",
-            size = 3)
+            size = 10
+            )
 
 ## making combined map
 bivariate_count_white_map <- 
   ggdraw() +
   draw_plot(bivariate_count_white_map_pre, 0, 0, 1, 1) +
-  draw_plot(bivariate_count_white_map_legend, .25, .2, 0.2, 0.2)
+  draw_plot(bivariate_count_white_map_legend, .09, .6, 0.25, 0.25)
 
 ## calling map
 bivariate_count_white_map
@@ -1376,52 +1543,58 @@ bwb_giveaway_location_sf <-
 # Setting the mapbox token
 set_token("pk.eyJ1IjoiZWR1YXJkb3NtYXJpbiIsImEiOiJjbHd2OXFsam0wbnk3MmtxOHlqYW1xbXFqIn0.WyYbUxQ1_9SwZvGBEqUehA")
 
-# Making the origin destination
+# # Making the origin destination
+# 
+# bwb_giveaway_location_sf$entry_lat <-
+#   as.numeric(as.character(bwb_giveaway_location_sf$entry_lat))
+# 
+# bwb_giveaway_location_sf$entry_long <-
+#   as.numeric(as.character(bwb_giveaway_location_sf$entry_long))
+# 
+# # Making the ending destination
+# 
+# ## First have to find retrieve again the lat and long
+# coords_bwb_total_giveaway <- 
+#   st_coordinates(bwb_total_giveaway)
+# 
+# coords_bwb_data_frame <-   
+#   as.data.frame(coords_bwb_total_giveaway) |>
+#   rename(ending_lat = "X", ending_long = "Y")
+# 
+# bwb_total_giveaway_lat_long <-
+#   cbind(st_drop_geometry(bwb_total_giveaway), ... = coords_bwb_data_frame) |>
+#   rename("ending_long" = "....ending_lat", "ending_lat" = "....ending_long")
+# 
+# ## Re-doing what we did earlier
+# 
+# bwb_total_giveaway_lat_long$ending_lat <-
+#   as.numeric(as.character(bwb_total_giveaway_lat_long$ending_lat))
+# 
+# bwb_total_giveaway_lat_long$ending_long <-
+#   as.numeric(as.character(bwb_total_giveaway_lat_long$ending_long))
+# 
+# ## Left joining to add the entry_lat and entry_long for the same dataframe
+# bwb_total_giveaway_destination <-
+# left_join(bwb_total_giveaway_lat_long, bwb_giveaway_location_sf, by = "giveaway_location") |>
+#   dplyr::select(-`valid_percent`,-`Number of Trees`,-`percent`) |>
+#   filter(!is.na(giveaway_location))
+# 
+# bwb_total_giveaway_destination |>
+#   write_csv("output_data/bwb_total_giveaway_destination.csv")
 
-bwb_giveaway_location_sf$entry_lat <-
-  as.numeric(as.character(bwb_giveaway_location_sf$entry_lat))
+bwb_total_giveaway_destination <- 
+  read_csv('output_data/bwb_total_giveaway_destination.csv')
 
-bwb_giveaway_location_sf$entry_long <-
-  as.numeric(as.character(bwb_giveaway_location_sf$entry_long))
 
-# Making the ending destination
 
-## First have to find retrieve again the lat and long
-coords_bwb_total_giveaway <- 
-  st_coordinates(bwb_total_giveaway)
-
-coords_bwb_data_frame <-   
-  as.data.frame(coords_bwb_total_giveaway) |>
-  rename(ending_lat = "X", ending_long = "Y")
-
-bwb_total_giveaway_lat_long <-
-  cbind(st_drop_geometry(bwb_total_giveaway), ... = coords_bwb_data_frame) |>
-  rename("ending_long" = "....ending_lat", "ending_lat" = "....ending_long")
-
-## Re-doing what we did earlier
-
-bwb_total_giveaway_lat_long$ending_lat <-
-  as.numeric(as.character(bwb_total_giveaway_lat_long$ending_lat))
-
-bwb_total_giveaway_lat_long$ending_long <-
-  as.numeric(as.character(bwb_total_giveaway_lat_long$ending_long))
-
-## Left joining to add the entry_lat and entry_long for the same dataframe
-bwb_total_giveaway_destination <-
-left_join(bwb_total_giveaway_lat_long, bwb_giveaway_location_sf, by = "giveaway_location") |>
-  dplyr::select(-`valid_percent`,-`Number of Trees`,-`percent`) |>
-  filter(!is.na(giveaway_location))
-
-bwb_total_giveaway_destination |>
-  write_csv("output_data/bwb_total_giveaway_destination")
-  
   
 ## Using mapdeck
 mapdeck(
   style = mapdeck_style('dark')
   , location = c(104, 1)
   , zoom = 8
-  , pitch = 45
+  # , pitch = 45
+  , pitch = 0
 ) |>
   add_arc(
     data = bwb_total_giveaway_destination
@@ -1435,6 +1608,70 @@ mapdeck(
     , stroke_to = "#ccffff"
   )
 
+
+
+## Using mapdeck
+mapdeck(
+  style = mapdeck_style('dark')
+  , location = c(104, 1)
+  , zoom = 8
+  # , pitch = 45
+  , pitch = 0
+) |>
+  add_arc(
+    data = bwb_total_giveaway_destination |> filter(year == '2013')
+    , origin = c("entry_long", "entry_lat")
+    , destination = c("ending_long", "ending_lat")
+    , layer_id = 'arcs'
+    , stroke_from_opacity = 100
+    , stroke_to_opacity = 100
+    , stroke_width = 3
+    , stroke_from = "#ccffff"
+    , stroke_to = "#ccffff"
+  )
+
+
+
+## Using mapdeck
+mapdeck(
+  style = mapdeck_style('dark')
+  , location = c(104, 1)
+  , zoom = 8
+  # , pitch = 45
+  , pitch = 0
+) |>
+  add_arc(
+    data = bwb_total_giveaway_destination |> filter(year == '2014')
+    , origin = c("entry_long", "entry_lat")
+    , destination = c("ending_long", "ending_lat")
+    , layer_id = 'arcs'
+    , stroke_from_opacity = 100
+    , stroke_to_opacity = 100
+    , stroke_width = 3
+    , stroke_from = "#ccffff"
+    , stroke_to = "#ccffff"
+  )
+
+
+## Using mapdeck
+mapdeck(
+  style = mapdeck_style('dark')
+  , location = c(104, 1)
+  , zoom = 8
+  # , pitch = 45
+  , pitch = 0
+) |>
+  add_arc(
+    data = bwb_total_giveaway_destination |> filter(year == '2015')
+    , origin = c("entry_long", "entry_lat")
+    , destination = c("ending_long", "ending_lat")
+    , layer_id = 'arcs'
+    , stroke_from_opacity = 100
+    , stroke_to_opacity = 100
+    , stroke_width = 3
+    , stroke_from = "#ccffff"
+    , stroke_to = "#ccffff"
+  )
 ```
 
 # Did the following in ArcGIS Pro using the Destination Origin Link geoprocessing tool (adding the corresponding shapefile into the "too big" folder)
