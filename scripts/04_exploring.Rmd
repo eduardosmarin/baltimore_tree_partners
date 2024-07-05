@@ -53,7 +53,9 @@ packs <-c(
           , 'biscale' #used with ggplot to make bivariate maps
           , 'cowplot' #used to make more aesthetic ggplot visuals
           , 'ggspatial' #creates a basemap for your ggplots
-          , 'classInt' #find me breaks without doing manual calculations
+          , 'classInt' #find me breaks without doing manualcalculations
+          , 'rgl' #needs for rayshader
+          , 'rayshader' #good data viz for 3d bar graphs
           )     
 
 # IF the packages in 'packs' are not already installed, install them
@@ -396,7 +398,6 @@ tap_lu |> map(~levels(.)) # order matters!
 # makes 'bwb_total_giveaway_with_Tapestry_2019'
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
 
-bwb_total_giveaway_with_Tapestry_2019
 bwb_total_giveaway_with_Tapestry_2019 |> 
   st_drop_geometry() |> 
   group_by(segment) |> 
@@ -407,6 +408,191 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
+# Making a graph of the different lifegroups in Baltimore
+```{r}
+lifemode_colors <- c(
+    "Affluent Estates" = "#9e0142", 
+    "Upscale Avenues" = "#d53e4f", 
+    "Senior Styles" = "#f46d43", 
+    "Middle Ground" = "#fdae61", 
+    "Hometown" = "#e6f598", 
+    "GenXurban" = "#abdda4", 
+    "Uptown Individuals" = "#92b1e2", 
+    "Scholars and Patriots" = "#3288bd", 
+    "Midtown Singles" = "#5e4fa2", 
+    "Family Landscapes" = "#E83F6F", 
+    "Next Wave" = "#2274A5", 
+    "Cozy Country Living" = "#FFBF00", 
+    "Ethnic Enclaves" = "#32936F", 
+    "Rustic Outposts" = "#9F9F92",
+    "NA" = "#FFFFFF"
+)
+
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  group_by(lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal()
+```
+
+# Making a graph of the different lifegroups in Baltimore
+```{r}
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  group_by(year, lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number Bar Graph",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal() +
+  facet_wrap(~ year)
+  
+```
+
+# Making a graph of the different lifemode groups in the top ten location
+```{r}
+#finding the top the top 10
+giveaway_location_top_10 <-
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  filter(!is.na(giveaway_location)) |>
+  group_by(giveaway_location) |>
+  summarise(Total = n()) |>
+  arrange(desc(Total)) |>
+  slice(1:10) |>
+  pull(giveaway_location) #gives you a vector instead the pull command
+
+#filtering out and doing the rest
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  filter(giveaway_location %in% giveaway_location_top_10) |>
+  group_by(giveaway_location, lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  slice(1:10) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number Bar Graph",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal() +
+  facet_wrap(~ giveaway_location)
+```
+
+## Two different ways to do the slice above and blow
+
+# Making a species and groups map/idea
+```{r}
+#finding top 5 within each group
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  group_by(lifemode, common_name) |>
+  count() |>
+  rename(Count = n) |>
+  arrange(lifemode, desc(Count)) |>
+  group_by(lifemode) |>
+  slice_max(order_by = Count, n = 5, with_ties = FALSE) |> #slice max is good within each group
+  ungroup() |>
+  ggplot(aes(x = Count, y = common_name, fill = common_name)) +
+  geom_col() +
+  labs(title = "Top 5 Species in Each Lifemode Group",
+       x = "Count of Tree Giveaways",
+       y = "Species") +
+  theme_minimal() +
+  facet_wrap(~ lifemode, scales = "free_y") #scale varies across panels for the facet wrap
+
+# does not seem much different for each group in terms of what they like and not like
+```
+
+# Mapping the tapestry information
+```{r}
+#Baltimore 2019 Census Tracts
+city_cbg_2019 <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2019
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))
+
+baltimore_2019_layer <-
+  city_cbg_2019 |>
+  mapview(layer.name = "Baltimore City & County (2019)") 
+
+baltimore_giveaway_layer <-
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mapview(zcol = "lifemode", layer.name = "Baltimore's Giveaways and Tapestry Group")
+
+baltimore_giveaway_layer + baltimore_2019_layer
+```
+
+# Creating a density map
+
+#inspiration for the idea
+https://datavizproject.com/data-type/map-bar-chart/
+
+```{r}
+#forming the spatial join
+amount_city_cbg_2019 <-
+  city_cbg_2019 |>
+  dplyr::select(GEOID, NAME, geometry) |>
+  st_join(bwb_total_giveaway_with_Tapestry_2019, join = st_intersects)
+
+#summarizing and making this into one entity
+summarise_cbg_2019 <-
+  amount_city_cbg_2019 |>
+  dplyr::select(GEOID.x, NAME.x, lifemode, geometry) |>
+  rename(GEOID = GEOID.x, NAME = NAME.x) |>
+  group_by(GEOID, lifemode) |>
+  summarise(count = n()) |>
+  filter(!is.na(lifemode))
+
+#filtering for uptown_individuals
+plot_data <- 
+  summarise_cbg_2019 |>
+  filter(lifemode == "Uptown Individuals") |>
+  st_drop_geometry() |>
+  dplyr::select(count)  
+
+# Can't figure it our currently. Will read the following R Markdown file to learn more about its intricacies. Seems like a really cool package https://wcmbishop.github.io/rayshader-demo/. Will need XQuartz, however, if running on an Apple computer.
+
+# # converting to matrix
+# plot_matrix <- 
+#   as.matrix(plot_data)
+# 
+# # Plotting using rayshader
+# plot_map <- 
+#   plot_3d (
+#   hillshade = .5,
+#   plot_matrix,
+#   heightmap = 50,
+#   zscale = 50,  # Adjust the zscale for height exaggeration
+#   windowsize = c(1200, 800)  # Adjust the window size as needed
+#   )
+
+
+  
+```
 
 ## A) When
 
