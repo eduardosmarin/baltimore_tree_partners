@@ -1913,3 +1913,35 @@ giveaway_location_link
 
 # Save jpegs along the way (use ggsave)
 ```
+
+
+# watersheds
+```{r}
+
+list.files("Maryland_Watersheds_-_8_Digit_Watersheds")
+
+(
+  sheds_all <- 
+  st_read('Maryland_Watersheds_-_8_Digit_Watersheds/HYDR_Watersheds8Digit_DNR.shp'
+          , as_tibble = TRUE)
+  )
+
+sheds_to_keep <- 
+  c(  '02130901' # Black river
+    , '02130903' # Baltimore Harbor
+    , '02130905' # Gwynns Falls
+    , '02130904' # Jones Falls
+    )
+
+sheds <- 
+  sheds_all |> 
+  filter(mde8digt %in% sheds_to_keep) 
+
+sheds |> 
+  mapview()
+
+```
+
+
+
+
