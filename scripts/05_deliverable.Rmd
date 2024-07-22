@@ -17,44 +17,21 @@ editor_options:
   markdown: 
     wrap: 72
 ---
+# Blue Water Baltimore & Tree Giveaways
+An entry-level analysis from the past ten+ years (2013 to 2024)
 
-# TODO LIST
-
-GENERAL
-
-WATERSHED
-	Darin to send shape file
-
-ORIGIN/DESTINATION
-	https://stackoverflow.com/questions/44283774/flow-maptravel-path-using-lat-and-long-in-r
-	https://cran.r-project.org/web/packages/od/vignettes/od.html
-	https://jcheshire.com/visualisation/mapping-flows/
-
-JEDI
-	Race/ethnicity
-	Income
-	PLACES
-		https://experience.arcgis.com/experience/22c7182a162d45788dd52a2362f8ed65/.
-
-CLIMATE SUSCEPTIBILITY
-	species list
-
-PRODUCTS:
-	- About page of the website
-		click through
-		let the public see when and where
-			tangible and interactive.
-		by Watershed
-	- JPEGs for PowerPoints
-		simple communication tools
-	- Grant support?
-
-SHOULD LIMIT IT TO AROUND ~ 5 MAPS, 10 TABLES, and 15 GRAPHS (at the start)
+The document was prepared by Dexter H. Locke and Eduardo Marin. The research document will include the following sections with accompanying downloadable visuals. 
+- Location
+- Time
+- Species
+- Watershed
+- Demographics
+- Origin-Destination
 
 ```{r message=FALSE, include=FALSE}
+# Loading all packages
 
-# List all of your packages here
-
+## List all of your packages here
 knitr::opts_chunk$set(echo = TRUE)
 
 packs <-c(
@@ -87,28 +64,28 @@ packs <-c(
           , 'rayshader' #good data viz for 3d bar graphs
           )     
 
-# IF the packages in 'packs' are not already installed, install them
-# OTHERWISE do NOTHING
+## IF the packages in 'packs' are not already installed, install them
+## OTHERWISE do NOTHING
 if (length(setdiff(packs, rownames(installed.packages()))) > 0) {
 install.packages(setdiff(packs, rownames(installed.packages())))
 }
 
-# lapply(packs, library, character.only = TRUE)
-# this actually loads them with library(package_name)
+## lapply(packs, library, character.only = TRUE)
+## this actually loads them with library(package_name)
 vapply(packs, library, character.only = TRUE, logical(1), logical.return = TRUE, quietly = TRUE)
 
-# # for tidycensus
-# setting for get_acs
+## For tidycensus
+## Setting for get_acs
 census_api_key('58fc555c77c229747ade7d9fe50e7c71297cf91a', install = TRUE, overwrite = TRUE)
 readRenviron("~/.Renviron")
 options(tigris_use_cache = TRUE)
 ```
 
-## 00 DATA PULLING
-
 ```{r include=FALSE}
-## B get census data
-vars21 <- 
+# Pulling census data
+
+## Listing needed variables
+variables_acs <- 
   tidycensus::load_variables('acs5', year = 2021)
 
 my_vars <- c(  'median_household_income' = 'B19013_001'
@@ -190,93 +167,108 @@ cbg <-
       at_least_college = rowSums(across(starts_with("ed_plus")))
     ) |>
     dplyr::select(-starts_with("ed_"))
+```
 
+```{r eval=FALSE, include=FALSE}
+# List of Color Palette
+5-Color Palette:
+Light Blue: #6FB1E3
+Dark Blue: #1D4F8B
+Green: #6AB346
+Intermediate Blue: #4C80B9
+Dark Green: #4E7E2B
+  
+7-Color Palette:
+Light Blue: #6FB1E3
+Dark Blue: #1D4F8B
+Green: #6AB346
+Intermediate Blue 1: #5A99D1
+Intermediate Blue 2: #2F6A9E
+Light Green: #8BCF6A
+Dark Green: #4E7E2B
+  
+12-Color Palette:
+Light Blue: #6FB1E3
+Dark Blue: #1D4F8B
+Green: #6AB346
+Intermediate Blue 1: #5A99D1
+Intermediate Blue 2: #2F6A9E
+Light Green: #8BCF6A
+Dark Green: #4E7E2B
+Very Light Blue: #A0D4F5
+Very Dark Blue: #0F3658
+Very Light Green: #A4D88A
+Intermediate Green 1: #78C265
+Intermediate Green 2: #5DA84A
 ```
 
 ```{r message=FALSE, include=FALSE}
-## tree tribble
-species_data <- 
-  tribble(
-  ~common_name,        ~genus_species,            ~itree,
-  "Hackberry",         "Celtis occidentalis",     "CEOC",
-  "Willow Oak",        "Quercus phellos",         "QUPH",
-  "Black Gum",         "Nyssa sylvatica",         "NYSY",
-  "Eastern Redbud",    "Cercis canadensis",       "CECA",
-  "Sassafras",         "Sassafras albidum",       "SAAL",
-  "Chestnut Oak",      "Quercus prinus",          "QUPR",
-  "Eastern Red Cedar", "Juniperus virginiana",    "JUVI",
-  "Bald Cypress",      "Taxodium distichum",      "TADI",
-  "Black Oak",         "Quercus velutina",        "QUVE",
-  "American Holly",    "Ilex opaca",              "ILOP",
-  "Sweetbay Magnolia", "Magnolia virginiana",     "MAVI",
-  "American Sweetgum", "Liquidambar styraciflua", "LIST",
-  "Bur Oak",           "Quercus macrocarpa",      "QUMA1",
-  "Black Chokeberry",  "Aronia melanocarpa",      "ARME6",
-  "Blackhaw Viburnum", "Viburnum prunifolium",    "VIPR",
-  "Gingko",            "Ginkgo biloba",            "GIBI",
-  "American Persimmon", "Diospyros virginiana",    "DIVI",
-  "Flowering Cherry",   "Prunus yedoensis",        "PRYE",
-  "Post Oak",           "Quercus stellata",        "QUST",
-  "Chinkapin Oak",      "Quercus muehlenbergii",   "QUMU",
-  "Tulip Poplar",       "Liriodendron tulipifera", "LITU",
-  "Shortleaf Pine",     "Pinus echinata",          "PIEC",
-  "Eastern White Pine", "Pinus americana",         "PIST",
-  "Yellow Birch",       "Betula alleghaniensis",   "BEAL2",
-  "American Yellowwood","Cladrastis luteau",       "CLLU",
-  "Smooth Service Berry","Amelanchier laevis",     "AMLA",
-  "Boxelder Maple",    "Acer negundo",             "ACNE",
-  "American Linden",   "Tilia americana",          "TIAMRE",
-  "American Plum",     "Prunus americana",         "PRAM"
-  )
-  
-## loading data
-bwb_total_giveaway <-
-  read_csv("output_data/bwb_giveaway_total_final_2024-05-13.csv") |>
-  filter(!is.na(lat)) |> #Good double check
-  st_as_sf(coords = c("long","lat"), crs = 4326) |> 
-  st_join(cbg) |> 
-  mutate(common_name = case_when(
-    common_name == "Boxelder" ~ "Boxelder Maple",
-    common_name == "Yoshino Flowering Cherry" ~ "Flowering Cherry",
-    common_name == "Black Tupelo" ~ "Black Gum",
-    common_name == "Chinquapin" ~ "Chinkapin Oak",
-    common_name == "Breakfast" ~ "Other",
-    common_name == "Blackhaw Vibernum" ~ "Blackhaw Viburnum",
-    common_name == "Ginkgo" ~ "Gingko",
-    TRUE ~ common_name
-  )) |>
-  filter(address != "822 Montpellier") |> 
-  left_join(species_data, by = "common_name") |>
-  mutate(
-    genus_species = coalesce(genus_species.x, genus_species.y),
-    itree = coalesce(itree.x, itree.y)
-  ) |>
-  dplyr::select(-genus_species.x, -genus_species.y, -itree.x, -itree.y) |>
-  left_join(species_data, by = "genus_species") |>
-  mutate(
-    common_name = coalesce(common_name.x, common_name.y),
-    itree = coalesce(itree.x, itree.y)
-  ) |>
-  dplyr::select(-common_name.x, -common_name.y, -itree.x, -itree.y, -county) |>
- mutate(genus_species = ifelse(common_name == "Other", "Other", genus_species),
-       itree = ifelse(common_name == "Other", NA_character_, itree)) |>
-  mutate(year = as.character(year)) |>
-  mutate(giveaway_location = case_when(
-    giveaway_location %in% c("Gwynns Falls/Leakin Park","Gwynns Falls Leakin Park", "GFLP") ~ "Gwynns Falls Leakin Park",
-    TRUE ~ giveaway_location)) |>
-  mutate(giveaway_location = case_when(
-    giveaway_location == "Rogers Forge" ~ "Rodgers Forge",
-    giveaway_location %in% c("West Towson","Westy Walk") ~ "West Towson ES",
-    giveaway_location == "Gateway Park at Darley Park" ~ "Darley Park Gateway",
-    giveaway_location == "Forestry Nursery" ~ "Herring Run Nursery",
-    giveaway_location == "Greektown - John Ruhrah EMS" ~ "John Ruhrah ES",
-    TRUE ~ giveaway_location
-  )) |> 
-  rowid_to_column(var = 'EM_ID')
+# Reading in the shapefile and creating mapview layers
 
-```
+## Making the Maryland layer
+state_layer <-
+ maryland |>
+ mapview(col.regions = "#6FB1E3", alpha = 0.25, layer.name = "Maryland") 
 
-```{r}
+## Making the Baltimore County layer
+county_layer <-
+  baltimore_city_counties |>
+  mapview(col.regions = "#2F6A9E", alpha = 0.25, layer.name = "Baltimore County") 
+
+## Making the Baltimore city layer
+city_layer <-
+  city |>
+  rename("Name" = "NAME") |>
+  mutate("Name" = "Baltimore city") |>
+  mapview(col.regions = "#1D4F8B", alpha = 0.25, layer.name = "Baltimore City") 
+
+## Making the Baltimore neighborhood layer
+neighborhood_layer <-
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mapview(col.regions = "#0F3658", zcol = "Name", layer.name = "Baltimore's Neighborhood")
+
+## Reading in the Blue Water Giveaway data
+blue_water_giveaway_data <-
+ st_read("../baltimore_tree_partners_data_to_big/shapefiles/bwb_giveaway_final/final_blue_water_baltimore_giveaways.shp")
+
+## Making the Blue Water Giveaway layer
+giveaway_layer <-
+  blue_water_giveaway_data |>
+  mapview(col.regions = "#6AB346", alpha = 0.25, layer.name = "Total Tree Giveaways") 
+
+## Fixing the Blue Water Giveaway Data  
+neighborhood_intersect <-
+  st_intersects(blue_water_giveaway_data, neighborhood_read, sparse = FALSE) |>
+  apply(1, any)
+
+county_intersect <-
+  st_intersects(blue_water_giveaway_data, baltimore_city_counties, sparse = FALSE) |>
+  apply(1, any)
+
+blue_water_giveaway_data <-
+  blue_water_giveaway_data |>
+   mutate(county = case_when(
+    neighborhood_intersect ~ "Baltimore City",
+    county_intersect ~ "Baltimore County",
+    TRUE ~ "Neither"
+  ))
+
+## Making the Counties Layer
+county_colors <- c(
+  "Baltimore City" = "#1D4F8B",
+  "Baltimore County" = "#2F6A9E", 
+  "Neither" = "#6FB1E3"
+)
+
+tree_giveaway_county_layer <- 
+  bwb_total_giveaway |>
+  dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, county, geometry) |>
+  mapview(zcol = "county", col.regions = county_colors, layer.name = "Tree Giveaways and Location") 
+
+## Making Tapestry
 load('output_data/tap_lu_2024-06-25.RData')
 
 tap_lu |> map(~levels(.)) 
@@ -290,6 +282,140 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   ggplot(aes(n, segment)) +
   geom_col()
 ```
+
+## Location
+
+In the past eleven years of running Blue Water Baltimore's giveaway program, there has been a total of `r nrow(blue_water_giveaway_data)` tree giveaways. The number may be an overestimate since 2017 and 2018 are counted. These years were when Blue Water Baltimore partnered with TreeBaltimore. Even so, these tree plantings have reached homeowners across the state, from Frederick to Caroline County.
+
+Figure 1. Giveaway Map of Baltimore County
+```{r echo=FALSE}
+giveaway_layer + state_layer #TODO: Fix the map zoom to focus on Maryland
+```
+
+Of course, most of these tree plantings focus on homeowners within the city of Baltimore and Baltimore County. #TODO: Change the verbiage here
+
+Figure 2. Giveaway Map of Baltimore County
+```{r}
+bwb_total_giveaway |>
+mapview(zcol = "bwb_total_giveaway",  # Column with count or density
+        map.types = "OpenStreetMap", 
+        col.regions = viridis(100), 
+        legend = TRUE)
+
+bwb_total_giveaway |>
+group_by(lon, lat) |>
+summarize(count = n(), .groups = "drop") %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+
+bwb_total_giveaway |>
+mapview(zcol = "value", map.types = "OpenStreetMap", 
+        col.regions = viridis::viridis(100), 
+        legend = TRUE)
+```
+
+
+
+```{r echo=FALSE}
+## Defining color palette
+colors_year <- c(
+  "2013" = "#9e0142",
+  "2014" = "#d53e4f", 
+  "2015" = "#f46d43",
+  "2016" = "#fdae61", 
+  "2017" = "#fee08b",
+  "2018" = "#e6f598", 
+  "2019" = "#abdda4",
+  "2021" = "#92b1e2",
+  "2022" = "#3288bd", 
+  "2023" = "#5e4fa2"
+)
+
+## creating the year map 
+  bwb_total_giveaway |>
+  dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, geometry) |>
+  mapview(zcol = "year", col.regions = colors_year, layer.name = "Tree Plantings each Year")
+```
+
+#### Interactive Total Plantings Each Year Table
+
+```{r echo=FALSE}
+## creating year data frame
+bwb_giveaway_years <-
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(year, season) |>
+  as_tibble() |>
+  add_row(year = "2020", Fall = 0, Spring = 0) |>
+  mutate(Total = Fall + Spring) |>
+  arrange(desc(Total)) |>
+  mutate()
+  
+## creating year data table
+bwb_giveaway_years |>
+  DT::datatable()
+```
+
+#### Bar Chart of Total Plantings Each Year (Divided by Season)
+
+```{r echo=FALSE}
+## making the season colors
+seasons_color <- c(
+  "Fall" = "#fe6b40",
+  "Spring" = "#6f9c3d"
+)
+
+## creating the stacked column chart
+  bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
+  mutate(year = as.double(year)) |>
+  ggplot(aes(x = year, y = number_of_trees, fill = season)) +
+    geom_bar(position = "stack", stat = "identity") +
+    scale_fill_manual(values = seasons_color) +
+    scale_y_continuous(
+      limits = c(0, 2000),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    )  +
+    scale_x_continuous (
+      breaks = seq(2013, 2023) 
+    ) +
+    labs(title = "Total Giveaways by Year and Season",
+         x = "Year",
+         y = "Total Giveaways",
+         fill = "Season") +
+    theme_minimal() 
+```
+
+#### Line Chart of Total Plantings Each Year (Divided by Season)
+
+```{r echo=FALSE}
+## creating line chart
+bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
+  ggplot(aes(x = year, y = number_of_trees, color = season, group = season)) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = seasons_color) +
+  scale_y_continuous(
+      limits = c(0, 2000),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    ) +
+  labs(
+      title = "Number of Tree Giveaways by Year"
+    , x = "Year"
+    , y = "Total Giveaways"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+### B) Where
+
+#### The second question we must answer is where. Here, we will highlight the distribution of plantings. Many went to Baltimore City, Baltimore County, and outside the general area. We will also look at how these compare to plantings within Baltimore neighborhoods. Finally, we will look more closely at census tract information.
+
+#### Map of the Three Jurisdictions
 
 ```{r include=FALSE}
 ## making state layer
@@ -318,6 +444,7 @@ city_layer <-
   mapview(zcol = "Name", col.regions = "#344e41", alpha = .25, layer.name = "Baltimore City")
 
 ```
+
 
 ```{r include=FALSE}
 ## neighborhood read
@@ -360,7 +487,748 @@ city_county_neither_map <-
   city_layer + county_layer + state_layer + tree_giveaway_county_layer
 ```
 
-## 01 TAPESTRY
+```{r echo=FALSE}
+## displaying the map
+city_county_neither_map
+```
+
+#### Interactive Plantings in Each Jurisdiction Table
+
+```{r echo=FALSE}
+## creating the jurisdiction data frame 
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(county) |>
+  as_tibble() |>
+  rename("Number of Trees" = n) |>
+  arrange(desc("Number of Trees")) |>
+  mutate(percent = round(100 * percent, 2)) |>
+  DT::datatable()
+```
+
+#### Plantings in Each Jurisdiction in Each Year Data Table
+
+```{r echo=FALSE}
+## creating the jurisdiction and year frame
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  tabyl(county, year) |>
+  as_tibble() |>
+  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
+  DT::datatable()
+```
+
+#### Plantings in Each Jurisdiction in Each Year Graph
+
+```{r echo=FALSE}
+## the colors of each county
+county_colors <- c(
+  "Baltimore City" = "#344e41",
+  "Baltimore County" = "#588157", 
+  "Neither" = "#a3b18a"
+)
+
+## changing the data to be able to be a stacked column chart
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  tabyl(county, year) |>
+  as_tibble() |>
+  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
+  pivot_longer(cols = -county, names_to = "Year", values_to = "number_of_trees") |>
+  mutate(Year = as.numeric(Year)) |> 
+  ggplot(aes(x = Year, y = number_of_trees, fill = county)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    scale_fill_manual(values = county_colors) +
+    scale_x_continuous ( 
+      breaks = seq(2013, 2023) 
+    ) +
+    scale_y_continuous(
+      limits = c(0, 1500),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    )  +
+    labs(title = "Total Giveaways by Year and Jurisdiction",
+         x = "Year & County",
+         y = "Total Giveaways") +
+    theme_minimal() +
+    NULL
+```
+
+#### Plantings in Each Jurisdiction (Separated Graph)
+
+```{r echo=FALSE}
+## comparing to county data
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  group_by(county, year, season) |>
+  count() |>
+  as_tibble() |>
+  arrange(desc(n)) |>
+  ggplot(aes(year, n, color = season, group = season)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~county) +
+  theme_bw(16) +
+  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
+  NULL
+```
+
+#### Planting Number in Each Neighborhood of Baltimore Map
+
+```{r include=FALSE}
+# finding the number of trees giveaway within each neighborhood (ORIGINAL)
+  # bwb_total_giveaway |>
+  # st_intersection(neighborhood_read) |>
+  # st_drop_geometry() |> 
+  # group_by(Name) |>
+  # summarise(count = n()) |>
+  # write_csv("output_data/neighborhood_count_bwb.csv")
+```
+
+```{r echo=FALSE}
+## making the neighborhood and count layer
+legend_order_neighborhood_count <- 
+  seq(0, 180, length.out = 10) 
+
+## making the map
+neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Neighborhood", at = legend_order_neighborhood_count) 
+```
+
+#### Plantings in Each Neighborhood Data Table
+
+```{r echo=FALSE, message=FALSE}
+## creating the neighborhood data frame
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select("Name","count") |>
+  rename("Number of Trees" = "count") |>
+  arrange(desc(`Number of Trees`)) |>
+  DT::datatable()
+```
+
+#### Top 20 Plantings of Neighborhood Graph
+
+```{r echo=FALSE}
+## top 20 graph
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select("Name","count") |>
+  rename("Number of Trees" = "count") |>
+  arrange(desc(`Number of Trees`)) |>
+  slice(1:20) |>
+ggplot(aes(x = reorder(Name, `Number of Trees`), y = `Number of Trees`)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 20 Neighborhood and Number of Trees", x = "Neighborhood", y = "Number of Trees") +
+  theme_minimal()
+```
+
+#### Plantings in Each Neighborhood and Year Data Table
+
+```{r eval=FALSE, include=FALSE}
+# # Finding the number of trees giveaway within each neighborhood and year
+#   st_intersection(bwb_total_giveaway, neighborhood_read) |>
+#   st_drop_geometry() |> 
+#   group_by(Name, year) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/neighborhood_count_year_bwb.csv")
+```
+
+#### Creating the datatable of the neighborhood and year
+```{r include=FALSE}
+# Creating the neighborhood and year dataframe
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_year_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select(-"Shape__Are", -"Shape__Len") |>
+  rename("Number of Trees" = "count", "Year" = "year") |>
+  arrange(desc("Number of Trees")) |>
+  pivot_wider(names_from = Year, values_from = `Number of Trees`) |>
+  mutate("2020" = 0) |>
+  dplyr::select("Name","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023") |>
+  mutate_all(~ ifelse(is.na(.), 0, .)) |>
+  DT::datatable()
+```
+
+#### Giveaway Location Data Table
+
+```{r echo=FALSE}
+## creating the giveaway location data frame
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n)) |>
+  slice(-1) |> 
+  rename("Number of Trees" = n) |>
+  mutate(percent = round(100 * percent, 2)) |>
+  dplyr::select(-`valid_percent`) |>
+  DT::datatable()
+
+```
+
+#### Giveaway Location Data Graph
+
+```{r echo=FALSE}
+
+## number for subtitle
+bwb_giveaway_location_na <- 
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n)) |>
+  slice(1)
+
+## making the graph
+bwb_total_giveaway |>
+st_drop_geometry() |>
+tabyl(giveaway_location) |> 
+as_tibble() |> 
+arrange(desc(n)) |>
+slice(-1) |> 
+rename("Number of Trees" = n) |>
+mutate(percent = round(100 * percent, 2)) |>
+ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Trees`)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees",
+  subtitle = gsub("\\. ", ".\n", paste0("Removed the largest group being NA. The total number of NA was ", bwb_giveaway_location_na$n, "." ))) +
+  theme_minimal() +
+  NULL
+```
+
+#### Planting Number in Each Census Tract of Baltimore and Baltimore County Map
+
+```{r eval=FALSE, include=FALSE}
+# # Finding the number of trees giveaway within each census block
+#   st_intersection(bwb_total_giveaway, cbg) |>
+#   st_drop_geometry() |> 
+#   group_by(NAME) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/census_count_year.csv")
+```
+
+```{r include=FALSE}
+## making the neighborhood and count layer
+legend_order_census_count <- 
+  seq(0, 120, length.out = 7) 
+
+## making the census map
+census_count_map_layer <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) 
+
+## making v2 layer
+legend_order_census_count_v2 <- 
+  classIntervals(
+  census_count_map_layer$`count`,
+  n = 5, # number of classes
+  style = "fisher"
+)$brks
+
+# number one census map counts
+census_count_map <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
+
+census_count_map_v2 <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count_v2)
+
+## the census map
+census_count_map
+
+```
+
+
+
+#### Let us begin with the question of when. Here, we will highlight tree giveaways each year and how they compare by season.
+
+#### Map of Tree Giveaways Each Year
+
+```{r echo=FALSE}
+## defining color palette
+colors_year <- c(
+  "2013" = "#9e0142",
+  "2014" = "#d53e4f", 
+  "2015" = "#f46d43",
+  "2016" = "#fdae61", 
+  "2017" = "#fee08b",
+  "2018" = "#e6f598", 
+  "2019" = "#abdda4",
+  "2021" = "#92b1e2",
+  "2022" = "#3288bd", 
+  "2023" = "#5e4fa2"
+)
+
+## creating the year map 
+  bwb_total_giveaway |>
+  dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, geometry) |>
+  mapview(zcol = "year", col.regions = colors_year, layer.name = "Tree Plantings each Year")
+```
+
+#### Interactive Total Plantings Each Year Table
+
+```{r echo=FALSE}
+## creating year data frame
+bwb_giveaway_years <-
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(year, season) |>
+  as_tibble() |>
+  add_row(year = "2020", Fall = 0, Spring = 0) |>
+  mutate(Total = Fall + Spring) |>
+  arrange(desc(Total)) |>
+  mutate()
+  
+## creating year data table
+bwb_giveaway_years |>
+  DT::datatable()
+```
+
+#### Bar Chart of Total Plantings Each Year (Divided by Season)
+
+```{r echo=FALSE}
+## making the season colors
+seasons_color <- c(
+  "Fall" = "#fe6b40",
+  "Spring" = "#6f9c3d"
+)
+
+## creating the stacked column chart
+  bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
+  mutate(year = as.double(year)) |>
+  ggplot(aes(x = year, y = number_of_trees, fill = season)) +
+    geom_bar(position = "stack", stat = "identity") +
+    scale_fill_manual(values = seasons_color) +
+    scale_y_continuous(
+      limits = c(0, 2000),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    )  +
+    scale_x_continuous (
+      breaks = seq(2013, 2023) 
+    ) +
+    labs(title = "Total Giveaways by Year and Season",
+         x = "Year",
+         y = "Total Giveaways",
+         fill = "Season") +
+    theme_minimal() 
+```
+
+#### Line Chart of Total Plantings Each Year (Divided by Season)
+
+```{r echo=FALSE}
+## creating line chart
+bwb_giveaway_years |>
+  pivot_longer(cols = c(Fall, Spring), names_to = "season", values_to = "number_of_trees") |>
+  ggplot(aes(x = year, y = number_of_trees, color = season, group = season)) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = seasons_color) +
+  scale_y_continuous(
+      limits = c(0, 2000),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    ) +
+  labs(
+      title = "Number of Tree Giveaways by Year"
+    , x = "Year"
+    , y = "Total Giveaways"
+  ) +
+  theme_minimal() +
+  NULL
+```
+
+### B) Where
+
+#### The second question we must answer is where. Here, we will highlight the distribution of plantings. Many went to Baltimore City, Baltimore County, and outside the general area. We will also look at how these compare to plantings within Baltimore neighborhoods. Finally, we will look more closely at census tract information.
+
+#### Map of the Three Jurisdictions
+
+```{r include=FALSE}
+## making state layer
+state_layer <-
+  maryland |>
+  mapview(col.regions = "#a3b18a", alpha = 0.25, layer.name = "Maryland") 
+
+## making the county layer
+county_layer <-
+ baltimore_city_counties |>
+  mapview(col.regions = "#588157", alpha = 0.25, layer.name = "Counties") 
+
+## making the neighborhood layer
+neighborhood_layer <-
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mapview(zcol = "Name", layer.name = "Baltimore's Neighborhood")
+
+## making the city layer
+city_layer <-
+  city |>
+  rename("Name" = "NAME") |>
+  mutate("Name" = "Baltimore city") |>
+  mapview(zcol = "Name", col.regions = "#344e41", alpha = .25, layer.name = "Baltimore City")
+
+```
+
+
+```{r include=FALSE}
+## neighborhood read
+neighborhood_read <-
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) 
+  
+## fixing the column information of the giveaway layer
+neighborhood_intersect <-
+  st_intersects(bwb_total_giveaway, neighborhood_read, sparse = FALSE) |>
+  apply(1, any)
+
+county_intersect <-
+  st_intersects(bwb_total_giveaway, baltimore_city_counties, sparse = FALSE) |>
+  apply(1, any)
+
+bwb_total_giveaway <-
+  bwb_total_giveaway |>
+   mutate(county = case_when(
+    neighborhood_intersect ~ "Baltimore City",
+    county_intersect ~ "Baltimore County",
+    TRUE ~ "Neither"
+  ))
+
+## making the tree giveaway by county layer
+county_colors <- c(
+  "Baltimore City" = "#344e41",
+  "Baltimore County" = "#588157", 
+  "Neither" = "#a3b18a"
+)
+  
+tree_giveaway_county_layer <- 
+  bwb_total_giveaway |>
+  dplyr::select(giveaway_location, year, season, date, address, city, state, zip_code, county, geometry) |>
+  mapview(zcol = "county", col.regions = county_colors, layer.name = "Tree Giveaways and Location") 
+
+## making the general map of all three locations 
+city_county_neither_map <-
+  city_layer + county_layer + state_layer + tree_giveaway_county_layer
+```
+
+```{r echo=FALSE}
+## displaying the map
+city_county_neither_map
+```
+
+#### Interactive Plantings in Each Jurisdiction Table
+
+```{r echo=FALSE}
+## creating the jurisdiction data frame 
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(county) |>
+  as_tibble() |>
+  rename("Number of Trees" = n) |>
+  arrange(desc("Number of Trees")) |>
+  mutate(percent = round(100 * percent, 2)) |>
+  DT::datatable()
+```
+
+#### Plantings in Each Jurisdiction in Each Year Data Table
+
+```{r echo=FALSE}
+## creating the jurisdiction and year frame
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  tabyl(county, year) |>
+  as_tibble() |>
+  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
+  DT::datatable()
+```
+
+#### Plantings in Each Jurisdiction in Each Year Graph
+
+```{r echo=FALSE}
+## the colors of each county
+county_colors <- c(
+  "Baltimore City" = "#344e41",
+  "Baltimore County" = "#588157", 
+  "Neither" = "#a3b18a"
+)
+
+## changing the data to be able to be a stacked column chart
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  tabyl(county, year) |>
+  as_tibble() |>
+  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
+  pivot_longer(cols = -county, names_to = "Year", values_to = "number_of_trees") |>
+  mutate(Year = as.numeric(Year)) |> 
+  ggplot(aes(x = Year, y = number_of_trees, fill = county)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    scale_fill_manual(values = county_colors) +
+    scale_x_continuous ( 
+      breaks = seq(2013, 2023) 
+    ) +
+    scale_y_continuous(
+      limits = c(0, 1500),         
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    )  +
+    labs(title = "Total Giveaways by Year and Jurisdiction",
+         x = "Year & County",
+         y = "Total Giveaways") +
+    theme_minimal() +
+    NULL
+```
+
+#### Plantings in Each Jurisdiction (Separated Graph)
+
+```{r echo=FALSE}
+## comparing to county data
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  group_by(county, year, season) |>
+  count() |>
+  as_tibble() |>
+  arrange(desc(n)) |>
+  ggplot(aes(year, n, color = season, group = season)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~county) +
+  theme_bw(16) +
+  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
+  NULL
+```
+
+#### Planting Number in Each Neighborhood of Baltimore Map
+
+```{r include=FALSE}
+# finding the number of trees giveaway within each neighborhood (ORIGINAL)
+  # bwb_total_giveaway |>
+  # st_intersection(neighborhood_read) |>
+  # st_drop_geometry() |> 
+  # group_by(Name) |>
+  # summarise(count = n()) |>
+  # write_csv("output_data/neighborhood_count_bwb.csv")
+```
+
+```{r echo=FALSE}
+## making the neighborhood and count layer
+legend_order_neighborhood_count <- 
+  seq(0, 180, length.out = 10) 
+
+## making the map
+neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Neighborhood", at = legend_order_neighborhood_count) 
+```
+
+#### Plantings in Each Neighborhood Data Table
+
+```{r echo=FALSE, message=FALSE}
+## creating the neighborhood data frame
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select("Name","count") |>
+  rename("Number of Trees" = "count") |>
+  arrange(desc(`Number of Trees`)) |>
+  DT::datatable()
+```
+
+#### Top 20 Plantings of Neighborhood Graph
+
+```{r echo=FALSE}
+## top 20 graph
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select("Name","count") |>
+  rename("Number of Trees" = "count") |>
+  arrange(desc(`Number of Trees`)) |>
+  slice(1:20) |>
+ggplot(aes(x = reorder(Name, `Number of Trees`), y = `Number of Trees`)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 20 Neighborhood and Number of Trees", x = "Neighborhood", y = "Number of Trees") +
+  theme_minimal()
+```
+
+#### Plantings in Each Neighborhood and Year Data Table
+
+```{r eval=FALSE, include=FALSE}
+# # Finding the number of trees giveaway within each neighborhood and year
+#   st_intersection(bwb_total_giveaway, neighborhood_read) |>
+#   st_drop_geometry() |> 
+#   group_by(Name, year) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/neighborhood_count_year_bwb.csv")
+```
+
+#### Creating the datatable of the neighborhood and year
+```{r include=FALSE}
+# Creating the neighborhood and year dataframe
+  neighborhood_read |>
+  left_join(
+    read_csv("output_data/neighborhood_count_year_bwb.csv")
+    , by = "Name"
+  ) |>
+  st_drop_geometry() |>
+  dplyr::select(-"Shape__Are", -"Shape__Len") |>
+  rename("Number of Trees" = "count", "Year" = "year") |>
+  arrange(desc("Number of Trees")) |>
+  pivot_wider(names_from = Year, values_from = `Number of Trees`) |>
+  mutate("2020" = 0) |>
+  dplyr::select("Name","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023") |>
+  mutate_all(~ ifelse(is.na(.), 0, .)) |>
+  DT::datatable()
+```
+
+#### Giveaway Location Data Table
+
+```{r echo=FALSE}
+## creating the giveaway location data frame
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n)) |>
+  slice(-1) |> 
+  rename("Number of Trees" = n) |>
+  mutate(percent = round(100 * percent, 2)) |>
+  dplyr::select(-`valid_percent`) |>
+  DT::datatable()
+
+```
+
+#### Giveaway Location Data Graph
+
+```{r echo=FALSE}
+
+## number for subtitle
+bwb_giveaway_location_na <- 
+  bwb_total_giveaway |>
+  st_drop_geometry() |>
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n)) |>
+  slice(1)
+
+## making the graph
+bwb_total_giveaway |>
+st_drop_geometry() |>
+tabyl(giveaway_location) |> 
+as_tibble() |> 
+arrange(desc(n)) |>
+slice(-1) |> 
+rename("Number of Trees" = n) |>
+mutate(percent = round(100 * percent, 2)) |>
+ggplot(aes(x = reorder(giveaway_location, `Number of Trees`), y = `Number of Trees`)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees",
+  subtitle = gsub("\\. ", ".\n", paste0("Removed the largest group being NA. The total number of NA was ", bwb_giveaway_location_na$n, "." ))) +
+  theme_minimal() +
+  NULL
+```
+
+#### Planting Number in Each Census Tract of Baltimore and Baltimore County Map
+
+```{r eval=FALSE, include=FALSE}
+# # Finding the number of trees giveaway within each census block
+#   st_intersection(bwb_total_giveaway, cbg) |>
+#   st_drop_geometry() |> 
+#   group_by(NAME) |>
+#   summarise(count = n()) |>
+#   write_csv("output_data/census_count_year.csv")
+```
+
+```{r include=FALSE}
+## making the neighborhood and count layer
+legend_order_census_count <- 
+  seq(0, 120, length.out = 7) 
+
+## making the census map
+census_count_map_layer <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) 
+
+## making v2 layer
+legend_order_census_count_v2 <- 
+  classIntervals(
+  census_count_map_layer$`count`,
+  n = 5, # number of classes
+  style = "fisher"
+)$brks
+
+# number one census map counts
+census_count_map <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
+
+census_count_map_v2 <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count_v2)
+
+## the census map
+census_count_map
+
+```
 
 # Making a graph of the different lifegroups in Baltimore
 ```{r}
@@ -498,6 +1366,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 baltimore_giveaway_layer + baltimore_2019_layer
 ```
 
+
 # Creating a density map
 ```{r}
 #forming the spatial join
@@ -537,8 +1406,6 @@ plot_data <-
 #   zscale = 50,  # Adjust the zscale for height exaggeration
 #   windowsize = c(1200, 800)  # Adjust the window size as needed
 #   )
-
-
   
 ```
 
@@ -1106,6 +1973,7 @@ census_hs_education_map <-
 ## creating a Sync map of Giveaway Count and Census Block
 sync(census_hs_education_map, census_count_map_v2)
 ```
+
 
 # Making the scatter plot of Giveaway Count and Education
 ```{r}
