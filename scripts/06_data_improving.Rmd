@@ -1,0 +1,271 @@
+---
+title: "Deliverable for Blue Water Baltimore"
+author: "Eduardo Marin (with Dexter H Locke)"
+date: "`r format(Sys.time())`"
+output:
+  html_document:
+    theme: flatly
+    code_folding: hide
+    fig_width: 8
+    fig_height: 7
+    fig_caption: true
+    toc: true
+    toc_float: true
+    self_contained: true
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+```{r Loading Packages, message=FALSE, include=FALSE}
+# Loading all packages
+
+## List all of your packages here
+knitr::opts_chunk$set(echo = TRUE)
+
+packs <-c(
+            'janitor'    # cleans things up, also pipe-friendly cross-tabulations
+           , 'sf'         # for spatial data support
+          , 'tidyverse'  # cuz
+          # , 'tidylog'    # prints out what was done in dplyr and tidyr
+          , 'magrittr'   # for the pipe
+          , 'mapview'    # web maps for zooming and panning around
+          #, 'beepr'      # makes noise when things are done!
+          , 'tictoc'     # timing things.
+          , 'raster'
+          # , 'doParallel' # does what is says! PARALLEL
+          # 'broom.mixed',# tidiers for mixed models AND nlme::gls()
+          # , 'lubridate'   # DATES!
+          , 'tidycensus' # tidy census package
+          , 'tidygeocoder' # geo coding
+          , 'leaflet' #creating the interactive mapping elements (more specific)
+          , 'shiny'
+          , 'leafsync'  # linked maps
+          , 'RColorBrewer'
+          , 'DT'
+          , 'openxlsx'
+          , 'mapdeck'
+          , 'biscale' #used with ggplot to make bivariate maps
+          , 'cowplot' #used to make more aesthetic ggplot visuals
+          , 'ggspatial' #creates a basemap for your ggplots
+          , 'classInt' #find me breaks without doing manualcalculations
+          , 'rgl' #needs for rayshader
+          , 'rayshader' #good data viz for 3d bar graphs
+          , 'leaflet' #for heatmaps and more unique, customizable maps
+          , 'leaflet.extras'
+          , 'tidytext'
+          )     
+
+## IF the packages in 'packs' are not already installed, install them
+## OTHERWISE do NOTHING
+if (length(setdiff(packs, rownames(installed.packages()))) > 0) {
+install.packages(setdiff(packs, rownames(installed.packages())))
+}
+
+## lapply(packs, library, character.only = TRUE)
+## this actually loads them with library(package_name)
+vapply(packs, library, character.only = TRUE, logical(1), logical.return = TRUE, quietly = TRUE)
+
+
+## For tidycensus
+## Setting for get_acs
+census_api_key('58fc555c77c229747ade7d9fe50e7c71297cf91a', install = TRUE, overwrite = TRUE)
+readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
+```
+
+```{r Loading Census Data, include=FALSE}
+# Pulling census data
+## Listing needed variables
+variables_acs <- 
+  tidycensus::load_variables('acs5', year = 2021)
+
+my_vars <- c(  'median_household_income' = 'B19013_001'
+             , 'total_population' = 'B01003_001'
+             , 'households' = 'B11001_001'
+             , 'white_alone' = 'B03002_003'
+             , 'median_age' = 'B01002_001'
+             , 'total_population_over_25' = 'B15003_001'
+             , 'ed_hs_degree' = 'B15003_017'
+             , 'ed_ged_degree' = 'B15003_018'
+             , 'ed_college_less_1_year' = 'B15003_019'
+             , 'ed_college_more_1_year' = 'B15003_020'
+             , 'ed_associate_degree' = 'B15003_021'
+             , 'ed_plus_bachelor_degree' = 'B15003_022'
+             , 'ed_plus_master_degree' = 'B15003_023'
+             , 'ed_plus_professional_degree' = 'B15003_024'
+             , 'ed_plus_doctorate_degree' = 'B15003_025'
+            )
+#TODO: Education is not divided by total population but by the education 
+
+(maryland <-
+  tidycensus::get_acs(
+      geography = 'state'
+    , state = 'MD'
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326)))
+
+(baltimore_city_counties <-
+  tidycensus::get_acs(
+      geography = 'county'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))) 
+
+(city <-
+  tidycensus::get_acs(
+      geography = 'county'
+    , state = 'MD'
+    , county = 'Baltimore City'
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))) 
+
+cbg <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'Maryland'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+    st_transform(crs = st_crs(4326)) |>
+    mutate(jurisdiction = case_when(
+      str_like(GEOID, '24510%') ~ "Baltimore City",
+      str_like(GEOID, '24005%') ~ "Baltimore County",
+      TRUE ~ "Neither"
+    )) |>
+    dplyr::select(-ends_with("M")) |> 
+    rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
+    rename(NAME = NAM) |>
+    mutate(
+      at_least_hs = rowSums(across(starts_with("ed_"))),
+      at_least_college = rowSums(across(starts_with("ed_plus")))
+    )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
+    dplyr::select(-starts_with("ed_"))
+```
+
+```{r Loading Geographies, message=FALSE, include=FALSE}
+# Reading in the shapefile and creating mapview layers
+## Making the Maryland layer
+state_layer <-
+ maryland |>
+ mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", alpha = 0.25, layer.name = "Maryland") 
+
+## Making the Baltimore County layer
+county_layer <-
+  baltimore_city_counties |>
+  mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", layer.name = "Baltimore City & County") 
+
+## Making the Baltimore city layer
+city_layer <-
+  city |>
+  rename("Name" = "NAME") |>
+  mutate("Name" = "Baltimore city") |>
+  mapview(col.regions = "#525252", alpha = 0.25, layer.name = "Baltimore City") 
+
+#Making the Baltimore neighborhood read
+neighborhood_read <-
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mutate(`Area (Square Miles)` = as.numeric(st_area(geometry)) / 2.59e+6)
+
+## Making the Baltimore neighborhood layer
+neighborhood_layer <-
+  neighborhood_read |>
+  mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", zcol = "Name", layer.name = "Baltimore's Neighborhood")
+
+## Reading in the Blue Water Giveaway data
+blue_water_giveaway_data <-
+ st_read("../baltimore_tree_partners_data_to_big/shapefiles/bwb_giveaway_final/final_blue_water_baltimore_giveaways.shp")
+
+## Making the Blue Water Giveaway layer
+giveaway_layer <-
+  blue_water_giveaway_data |>
+  mapview(col.regions = "#5d6e75", alpha = 0.25, layer.name = "Total Tree Giveaways") 
+
+## Fixing the Blue Water Giveaway Data  
+neighborhood_intersect <-
+  st_intersects(blue_water_giveaway_data, neighborhood_read, sparse = FALSE) |>
+  apply(1, any) #check about intersect vs intersection
+
+county_intersect <-
+  st_intersects(blue_water_giveaway_data, baltimore_city_counties, sparse = FALSE) |>
+  apply(1, any) #check about intersect vs intersection
+
+blue_water_giveaway_data <-
+  blue_water_giveaway_data |>
+   mutate(county = case_when(
+    neighborhood_intersect ~ "Baltimore City",
+    county_intersect ~ "Baltimore County",
+    TRUE ~ "Neither"
+  ))
+
+## Reading in the Watershed Data
+blue_water_watershed_data <-
+ st_read("../baltimore_tree_partners_data_to_big/shapefiles/maryland_watersheds/HYDR_Watersheds8Digit_DNR.shp") |>
+ st_transform(4326) 
+
+## Creating filter for the Watershed Data
+watershed_names <- 
+  blue_water_watershed_data |>
+  st_intersection(baltimore_city_counties) |>
+  filter(!st_is_empty(geometry)) |>
+  st_drop_geometry() |>
+  pull(mde8name) |>
+  unique()
+
+## Making the Watershed Layer
+watershed_data <-
+  blue_water_watershed_data |>
+  filter(mde8name %in% watershed_names) |>
+  dplyr::select(mde6digt,mde6name,mde8digt,mde8name,geometry) |>
+  rename(`Watershed ID (6)` = mde6digt, `Waterhsed Name (6)` = mde6digt, `Watershed Name` = mde8name, `Watershed ID` = mde8digt)
+
+watershed_layer <-
+  watershed_data |>
+  mapview(col.regions = "#005273", alpha = 0.25, layer.name = "Watersheds")
+
+#Adding this information to the BWB Data
+blue_water_giveaway_data <-
+  blue_water_giveaway_data |>
+st_join(watershed_data, join = st_intersects) |>
+  dplyr::select(-geometry)
+```
+
+```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
+#Need to double check if there are any name repeats in the giveaway_species)
+blue_water_giveaway_data_new <-
+blue_water_giveaway_data |>
+  rename(unique_id = EM_ID, giveaway_loc = gvwy_lc, year = year, zip_code = zip_cod, first_name = frst_nm, last_name = last_nm, geo_id = GEOID, total_pop = ttl_ppl, at_least_highschool = at_lst_h, at_least_college = at_lst_c, genus_species = gns_spc, common_name = cmmn_nm, watershed_id = `Watershed ID`, watershed = `Watershed Name`, jurisdiction = jrsdctn, total_pop_under_25 = tt___25, white_alone_population = whit_ln, median_age = medin_g, block_group_name = NAME, median_income = mdn_hs_) |>
+  dplyr::select(-`Waterhsed Name (6)`,-mde6name, -white_alone_population) |>
+  mutate(zip_code = as.character(zip_code)) |>
+  dplyr::select(unique_id, year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_loc, watershed_id, watershed, geo_id, block_group_name, total_pop, total_pop_under_25, median_income, median_age, at_least_highschool, at_least_college)
+
+blue_water_giveaway_data_new |>
+st_write("deliverables/blue_water_cleaned_data.gpkg")
+  
+```
+
+
