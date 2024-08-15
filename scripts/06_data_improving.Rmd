@@ -265,6 +265,13 @@ blue_water_giveaway_data |>
 
 blue_water_giveaway_data_new |>
 st_write("deliverables/blue_water_cleaned_data.gpkg")
+
+blue_water_giveaway_data_check <- 
+  st_write("deliverables/blue_water_cleaned_data.gpkg")
+
+blue_water_giveaway_data_check |> glimpse()
+blue_water_giveaway_data_check |> summary()
+blue_water_giveaway_data_check |> map(~levels(.))
   
 ```
 
