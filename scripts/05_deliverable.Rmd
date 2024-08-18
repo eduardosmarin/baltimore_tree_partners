@@ -27,10 +27,6 @@ The document was prepared by Dexter H. Locke and Eduardo Marin. The research doc
 - Provider (1/1)
 - Species (1/1)
 - Watershed (0/1)
-  - Parse data by watershed
-  - Have they been increasing in some place and decreasing in others
-  
-  - Line chart of the giveaways for the watershed (same as county and city)
 - Demographics [JEDI & Tapestry] (0/1)
   - Income, Education, Race
   - Tapestry
@@ -246,20 +242,19 @@ blue_water_watershed_data <-
  st_transform(4326) 
 
 ## Creating filter for the Watershed Data
-watershed_names <- 
-  blue_water_watershed_data |>
-  st_intersection(baltimore_city_counties) |>
-  filter(!st_is_empty(geometry)) |>
-  st_drop_geometry() |>
-  pull(mde8name) |>
-  unique()
+watershed_to_keep <-  #DEXTER: From your changes to 04_exploring
+  c('02130901' # Black river
+    , '02130903' # Baltimore Harbor
+    , '02130905' # Gwynns Falls
+    , '02130904' # Jones Falls
+    )
 
 ## Making the Watershed Layer
 watershed_data <-
   blue_water_watershed_data |>
-  filter(mde8name %in% watershed_names) |>
+  filter(mde8digt %in% watershed_to_keep) |>
   dplyr::select(mde6digt,mde6name,mde8digt,mde8name,geometry) |>
-  rename(`Watershed ID (6)` = mde6digt, `Waterhsed Name (6)` = mde6digt, `Watershed Name` = mde8name, `Watershed ID` = mde8digt)
+  rename(`Watershed ID (6)` = mde6digt, `Watershed Name (6)` = mde6digt, `watershed` = mde8name, `watershed_id` = mde8digt) 
 
 watershed_layer <-
   watershed_data |>
@@ -922,12 +917,12 @@ top_10_species_in_top_locations <-
        y = "Total Number of Trees") +
   theme_minimal() #TODO: Fix to make sure it is arranged in descending order
 
-# ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_top_10_species_in_top_locations.svg"), #TODO: Fix to make more general file saving path
-#   plot = top_10_species_in_top_locations,
-#   width = 40,
-#   height = 15
-# )
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_top_10_species_in_top_locations.svg"), #TODO: Fix to make more general file saving path
+  plot = top_10_species_in_top_locations,
+  width = 40,
+  height = 15
+)
 
 top_10_species_in_top_locations
 ```
@@ -949,13 +944,13 @@ county_layer + watershed_layer
 table_8_watershed_count <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
-  group_by(`Watershed Name`) |>
+  group_by(watershed) |>
   count() |>
   arrange(desc(n)) |>
   rename(Count = n) |>
-  mutate(`Watershed Name` = case_when(
-    is.na(`Watershed Name`) ~ "Outside BWB Service Area",
-    TRUE ~ `Watershed Name`
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
   ))
 ```
 
@@ -966,15 +961,16 @@ Table 8. Table of Watersheds per Giveaway Count
 table_8_watershed_count_datatable <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(`Watershed Name`) |>
+  tabyl(watershed) |>
   arrange(desc(n)) |>
   mutate(percent = round(100 * percent, 2)) |>
   dplyr::select(-valid_percent) |>
   rename(Count = n, Percent = percent) |>
-  mutate(`Watershed Name` = case_when(
-    is.na(`Watershed Name`) ~ "Outside BWB Service Area",
-    TRUE ~ `Watershed Name`
-  ))
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
+  )) |>
+  rename(Watershed = watershed)
 
 table_8_watershed_count_datatable |>
 DT::datatable()
@@ -982,24 +978,23 @@ DT::datatable()
 
 In terms of watersheds, it is important to see how many plants have gone to these areas over time. The following graph will highlight this and help distinguish if there is any statistical significance.
 
-Graph 8. Number of counts per watershed per year
+Graph 8. Number of Counts per Watershed per Year (per Season)
 ```{r}
 graph_8_watersheds_count <-
   blue_water_giveaway_data |>
-  mutate(`Watershed Name` = case_when(
-    is.na(`Watershed Name`) ~ "Outside BWB Service Area",
-    TRUE ~ `Watershed Name`
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
   )) |>
   st_drop_geometry() |>
-  group_by(season, year, `Watershed Name`) |>
-  rename(`Watershed` = `Watershed Name`) |>
+  rename(Watershed = watershed) |>
+  group_by(year, Watershed) |>
   summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
-  rename(Season = season, Year = year) |>
+  rename(Year = year) |>
   mutate(Year = as.double(Year)) |>
-  ggplot(aes(x = Year, y = `Number of Giveaways`, color = Season, group = Season)) +
+  ggplot(aes(x = Year, y = `Number of Giveaways`, color = season, group = season)) +
   geom_line() + 
   geom_point() + 
-  scale_color_manual(values = graph_1_season_colors) +
   facet_wrap(~ `Watershed`, scales = "free_y") +
   scale_x_continuous(
     breaks = seq(2013, 2023, by = 2)
@@ -1009,7 +1004,148 @@ graph_8_watersheds_count <-
        y = "Total Giveaways",
        color = "Season") +
   theme_minimal()
+  
+graph_8_watersheds_count 
 
-#TODO: make sure the code isn't the, just write the ggsave (don't save it out and delete the old ones, and the news ones, the number might have to change)
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.png"), 
+  plot = graph_8_watersheds_count,
+  width = 40,
+  height = 15
+)
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.svg"), 
+  plot = graph_8_watersheds_count,
+  width = 40,
+  height = 15
+)
 ```
+
+Here is a version of this but as a table.
+
+Table 9. Table of Watersheds per Giveaway Count (per Season)
+```{r}
+table_9_watersheds_count_year <-
+  blue_water_giveaway_data |>
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
+  )) |>
+  st_drop_geometry() |>
+  rename(Watershed = watershed) |>
+  group_by(year, Watershed, season) |>
+  summarise(`Number of Giveaways` = n(), .groups = "drop") |>
+  pivot_wider(names_from = c("year","season"), values_from = `Number of Giveaways`) |>
+  rename_with(~ str_replace_all(., "_", ", "))
+
+table_9_watersheds_count_year |>
+  DT::datatable()
+```
+
+Besides understanding the breakdown of each watershed by season, it is also important to understand the breakdown overall. In the following graph, it will highlight the total amount of plantings in each watershed per year.  
+
+Graph 9. Number of Giveaway Counts per Watershed (per Year)
+```{r}
+graph_9_watersheds_count_year <-
+  blue_water_giveaway_data |>
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
+  )) |>
+  st_drop_geometry() |>
+  rename(Watershed = watershed) |>
+  group_by(season, year, Watershed) |>
+  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
+  rename(Year = year) |>
+  mutate(Year = as.double(Year)) |>
+  ggplot(aes(x = Year, y = `Number of Giveaways`)) +
+  geom_col(fill = "#519342") + 
+  scale_color_manual(values = graph_1_season_colors) +
+  facet_wrap(~ `Watershed`, scales = "free_y") +
+  scale_x_continuous(
+    breaks = seq(2013, 2023, by = 2)
+  ) +
+  labs(title = "Total Giveaways by Year for Each Watershed",
+       x = "Year",
+       y = "Total Giveaways") +
+  theme_minimal()
+  
+graph_9_watersheds_count_year 
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.png"), 
+  plot = graph_9_watersheds_count_year,
+  width = 40,
+  height = 15
+)
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.svg"), 
+  plot = graph_9_watersheds_count_year,
+  width = 40,
+  height = 15
+)
+```
+
+Table 10. Table of Watersheds per Giveaway Count (per Year)
+```{r}
+table_10_watersheds_count_year <-
+  blue_water_giveaway_data |>
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
+  )) |>
+  st_drop_geometry() |>
+  rename(Watershed = watershed) |>
+  group_by(year, Watershed) |>
+  summarise(`Number of Giveaways` = n(), .groups = "drop") |>
+  arrange(Watershed, `year`) |>
+  pivot_wider(names_from = "year", values_from = `Number of Giveaways`)
+
+table_10_watersheds_count_year |>
+   DT::datatable()
+```
+
+Graph 10. Five (5) Popular Species per Watershed
+```{r}
+graph_10_watersheds_species_count <-
+  blue_water_giveaway_data |>
+  mutate(watershed = case_when(
+    is.na(watershed) ~ "Outside BWB Service Area",
+    TRUE ~ watershed
+  )) |>
+  st_drop_geometry() |>
+  rename(Watershed = watershed, `Common Name` = cmmn_nm) |>
+  group_by(Watershed, `Common Name`) |>
+  summarise(`Number of Giveaways` = n(), .groups = "drop") |>
+  arrange(Watershed, desc(`Number of Giveaways`)) |>
+  group_by(Watershed) |>
+  slice_head(n = 5) |>
+  ggplot(aes(x = `Number of Giveaways`, y = `Common Name`)) +
+  geom_col(fill = "#519342") + 
+  facet_wrap(~ `Watershed`, scales = "free_y") +
+  labs(title = "Total Giveaways by Species",
+       x = "Total Giveaways",
+       y = "Top Five (5) Species" ) +
+  theme_minimal()
+  
+graph_10_watersheds_species_count 
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.png"), 
+  plot = graph_10_watersheds_species_count,
+  width = 40,
+  height = 15
+)
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.svg"), 
+  plot = graph_10_watersheds_species_count,
+  width = 40,
+  height = 15
+)
+```
+
+As you can see here, the most common types of the 
 
