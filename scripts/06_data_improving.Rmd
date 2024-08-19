@@ -292,7 +292,11 @@ blue_water_baltimore_data_new |>
 st_write("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check <- 
+<<<<<<< HEAD
 st_write("output_data/blue_water_cleaned_data.gpkg")
+=======
+  st_read("output_data/blue_water_cleaned_data.gpkg")
+>>>>>>> 61e98c78b0f0f93615cfb823a25a994ccba2ace1
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
