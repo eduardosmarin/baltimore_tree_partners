@@ -115,6 +115,31 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
     ) |>
    st_transform(crs = st_crs(4326))) 
 
+cbg <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'Maryland'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+    st_transform(crs = st_crs(4326)) |>
+    mutate(jurisdiction = case_when(
+      str_like(GEOID, '24510%') ~ "Baltimore City",
+      str_like(GEOID, '24005%') ~ "Baltimore County",
+      TRUE ~ "Neither"
+    )) |>
+    dplyr::select(-ends_with("M")) |> 
+    rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
+    rename(NAME = NAM) |>
+    mutate(
+      at_least_hs = rowSums(across(starts_with("ed_"))),
+      at_least_college = rowSums(across(starts_with("ed_plus")))
+    )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
+    dplyr::select(-starts_with("ed_"))
 
 #############################################################################################################
 # This was supposed to be done in 02_double_checks. However, these, after the original meeting, were deemed incorrect or needed to be changed/added (which were done in the 04_explirng instead)
@@ -207,11 +232,11 @@ neighborhood_read <-
   mutate(`Area (Square Miles)` = as.numeric(st_area(geometry)) / 2.59e+6)
 
 neighborhood_intersect <-
-  st_intersects(blue_water_baltimore_data, neighborhood_read, sparse = FALSE) |>
+  st_intersection(blue_water_baltimore_data, neighborhood_read) |>
   apply(1, any) 
 
 county_intersect <-
-  st_intersects(blue_water_baltimore_data, baltimore_city_counties, sparse = FALSE) |>
+  st_intersection(blue_water_baltimore_data, baltimore_city_counties) |>
   apply(1, any) 
 
 blue_water_baltimore_data <-
@@ -267,7 +292,7 @@ blue_water_baltimore_data_new |>
 st_write("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check <- 
-  st_write("output_data/blue_water_cleaned_data.gpkg")
+st_write("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
