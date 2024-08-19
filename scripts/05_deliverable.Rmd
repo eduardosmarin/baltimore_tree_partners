@@ -265,7 +265,30 @@ blue_water_giveaway_data <-
   blue_water_giveaway_data |>
 st_join(watershed_data, join = st_intersects) |>
   dplyr::select(-geometry)
+```
 
+```{r}
+census_count_map_layer <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) 
+
+legend_order_census_count <- 
+  classIntervals(
+  census_count_map_layer$`count`,
+  n = 6, # number of classes
+  style = "fisher"
+)$brks
+
+census_count_map <-
+  census_count_map_layer |>
+  mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
 ```
 
 ```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
@@ -988,7 +1011,7 @@ graph_8_watersheds_count <-
   )) |>
   st_drop_geometry() |>
   rename(Watershed = watershed) |>
-  group_by(year, Watershed) |>
+  group_by(year, Watershed, season) |>
   summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
   rename(Year = year) |>
   mutate(Year = as.double(Year)) |>
@@ -1148,4 +1171,25 @@ ggsave(
 ```
 
 As you can see here, the most common types of the 
+
+## Justice, Equity, Diversity, and Inclusion
+
+We will first begin looking at income to see if  
+
+```{r}
+## creating the census income map
+legend_order_census_income_count <- 
+  seq(0, 200000, length.out = 9) 
+
+census_income_map <-
+  cbg |>
+  rename("Median Household Income" = median_household_income) |>
+  mutate(`Median Household Income` = case_when(
+    is.na(`Median Household Income`) ~ 0,
+    TRUE ~ `Median Household Income`)) |>
+  mapview(zcol = "Median Household Income", layer.name = "Household Income and Census Block", at = legend_order_census_income_count)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_income_map, census_count_map)
+```
 
