@@ -224,26 +224,14 @@ blue_water_baltimore_data <-
   ))
 
 ### Fixing the Blue Water Giveaway Data with the county as mentioned earlier
-neighborhood_read <-
-  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
-  dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
-  st_zm(drop = TRUE, what = "ZM") |>
-  st_transform(4326) |>
-  mutate(`Area (Square Miles)` = as.numeric(st_area(geometry)) / 2.59e+6)
 
-neighborhood_intersect <-
-  st_intersection(blue_water_baltimore_data, neighborhood_read) |>
-  apply(1, any) 
-
-county_intersect <-
-  st_intersection(blue_water_baltimore_data, baltimore_city_counties) |>
-  apply(1, any) 
-
-blue_water_baltimore_data <-
+  blue_water_baltimore_data <-
   blue_water_baltimore_data |>
-   mutate(county = case_when(
-    neighborhood_intersect ~ "Baltimore City",
-    county_intersect ~ "Baltimore County",
+  st_join(baltimore_city_counties[, c("NAME")], join = st_intersects) |>
+  rename(county = NAME.y, NAME = NAME.x) |>
+  mutate(county = case_when(
+    county == "Baltimore County, Maryland" ~ "Baltimore County",
+    county == "Baltimore city, Maryland" ~ "Baltimore City",
     TRUE ~ "Neither"
   ))
 
@@ -279,24 +267,19 @@ st_join(watershed_data, join = st_intersects) |>
   rename(geoid = GEOID, block_group_name = NAME)
 ```
 
-
 ```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
 #DEXTER: This is just removing the first `Watershed Name" and "ID" which isn't needed and the white_alone population. Besides that, it is making zip_code a character and reordering the columns to how you described in the email.
 blue_water_baltimore_data_new <-
 blue_water_baltimore_data |>
   dplyr::select(-`Watershed Name (6)`,-mde6name, -white_alone) |>
   mutate(zip_code = as.character(zip_code)) |>
-  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, at_least_hs, at_least_college, geometry)
+  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, medxian_household_income, median_age, at_least_hs, at_least_college, geometry)
 
 blue_water_baltimore_data_new |>
 st_write("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check <- 
-<<<<<<< HEAD
-st_write("output_data/blue_water_cleaned_data.gpkg")
-=======
-  st_read("output_data/blue_water_cleaned_data.gpkg")
->>>>>>> 61e98c78b0f0f93615cfb823a25a994ccba2ace1
+st_read("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
