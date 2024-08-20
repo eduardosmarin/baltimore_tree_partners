@@ -780,7 +780,7 @@ Table 6. Table of the Species for the Giveaways
   DT::datatable()
 ```
 
-In the case here, this visually displays the same information, highlighting how distinct the most common and least ocmmon species are in the amount of species give away.
+In the case here, this visually displays the same information, highlighting how distinct the most common and least common species are in the amount of species give away.
 
 Graph 5. Graph of the Most Common and Rare Tree Species
 ```{r echo=FALSE}

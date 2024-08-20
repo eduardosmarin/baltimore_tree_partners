@@ -75,6 +75,8 @@ readRenviron("~/.Renviron")
 options(tigris_use_cache = TRUE)
 ```
 
+
+
 ```{r Loading Tapestry, echo=TRUE, message=FALSE}
 #ORIGINAL from 04_exploring,Rmd
 
@@ -115,6 +117,8 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
     ) |>
    st_transform(crs = st_crs(4326))) 
 
+
+# TODO decide if you want income to come from 2020 census
 cbg <-
   tidycensus::get_acs(
       geography = 'block group'
@@ -279,12 +283,12 @@ blue_water_baltimore_data_new |>
 st_write("output_data/blue_water_cleaned_data.gpkg", append = FALSE)
 
 blue_water_baltimore_data_check <- 
-st_read("output_data/blue_water_cleaned_data.gpkg")
+  st_read("output_data/blue_water_cleaned_data.gpkg")
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
-
+blue_water_baltimore_data_check |> mapview(zcol = 'median_household_income')
 ################################################################################
 # These all have NA median_household_income for some reason??
 #
