@@ -119,7 +119,7 @@ cbg <-
   tidycensus::get_acs(
       geography = 'block group'
     , state = 'Maryland'
-    , county = c('Baltimore City', 'Baltimore County')
+    # , county = c('Baltimore City', 'Baltimore County')
     , variables = my_vars
     , year = 2021
     , geometry = TRUE
@@ -273,10 +273,10 @@ blue_water_baltimore_data_new <-
 blue_water_baltimore_data |>
   dplyr::select(-`Watershed Name (6)`,-mde6name, -white_alone) |>
   mutate(zip_code = as.character(zip_code)) |>
-  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, medxian_household_income, median_age, at_least_hs, at_least_college, geometry)
+  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, at_least_hs, at_least_college, geometry)
 
 blue_water_baltimore_data_new |>
-st_write("output_data/blue_water_cleaned_data.gpkg")
+st_write("output_data/blue_water_cleaned_data.gpkg", append = FALSE)
 
 blue_water_baltimore_data_check <- 
 st_read("output_data/blue_water_cleaned_data.gpkg")
@@ -284,7 +284,77 @@ st_read("output_data/blue_water_cleaned_data.gpkg")
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
-  
+
+################################################################################
+# These all have NA median_household_income for some reason??
+#
+#      Block Group 1, Census Tract 1511, Baltimore city, Maryland
+# Block Group 1, Census Tract 4903.03, Baltimore County, Maryland
+# Block Group 1, Census Tract 4083.04, Baltimore County, Maryland
+#    Block Group 2, Census Tract 4916, Baltimore County, Maryland
+#   Block Group 2, Census Tract 2602.01, Baltimore city, Maryland
+#    Block Group 1, Census Tract 4909, Baltimore County, Maryland
+#      Block Group 3, Census Tract 2706, Baltimore city, Maryland
+#    Block Group 3, Census Tract 4909, Baltimore County, Maryland
+#   Block Group 1, Census Tract 2703.01, Baltimore city, Maryland
+#   Block Group 5, Census Tract 1202.02, Baltimore city, Maryland
+#    Block Group 1, Census Tract 4925, Baltimore County, Maryland
+#      Block Group 3, Census Tract 1206, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1302, Baltimore city, Maryland
+#   Block Group 1, Census Tract 2801.02, Baltimore city, Maryland
+#   Block Group 3, Census Tract 2703.01, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2601.02, Baltimore city, Maryland
+#    Block Group 1, Census Tract 4302, Baltimore County, Maryland
+#   Block Group 2, Census Tract 2804.01, Baltimore city, Maryland
+#    Block Group 1, Census Tract 4006, Baltimore County, Maryland
+#      Block Group 2, Census Tract 2001, Baltimore city, Maryland
+#   Block Group 1, Census Tract 2603.01, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2803.01, Baltimore city, Maryland
+#      Block Group 2, Census Tract 1701, Baltimore city, Maryland
+#      Block Group 3, Census Tract 1508, Baltimore city, Maryland
+#   Block Group 3, Census Tract 2602.01, Baltimore city, Maryland
+#      Block Group 1, Census Tract 2008, Baltimore city, Maryland
+#   Block Group 1, Census Tract 1202.02, Baltimore city, Maryland
+#   Block Group 1, Census Tract 2708.02, Baltimore city, Maryland
+#   Block Group 4, Census Tract 2708.05, Baltimore city, Maryland
+#   Block Group 3, Census Tract 2601.02, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2718.01, Baltimore city, Maryland
+#   Block Group 3, Census Tract 2701.02, Baltimore city, Maryland
+#      Block Group 4, Census Tract 1203, Baltimore city, Maryland
+#   Block Group 3, Census Tract 1202.02, Baltimore city, Maryland
+#      Block Group 2, Census Tract 1001, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2601.01, Baltimore city, Maryland
+#    Block Group 2, Census Tract 4925, Baltimore County, Maryland
+#      Block Group 2, Census Tract 1702, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1601, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2707.03, Baltimore city, Maryland
+#      Block Group 1, Census Tract 2506, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2504.01, Baltimore city, Maryland
+#      Block Group 4, Census Tract 1606, Baltimore city, Maryland
+#       Block Group 1, Census Tract 808, Baltimore city, Maryland
+#       Block Group 1, Census Tract 907, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2804.03, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2503.03, Baltimore city, Maryland
+#      Block Group 6, Census Tract 1102, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1605, Baltimore city, Maryland
+#   Block Group 2, Census Tract 2708.04, Baltimore city, Maryland
+#    Block Group 1, Census Tract 9802, Baltimore County, Maryland
+#      Block Group 2, Census Tract 1509, Baltimore city, Maryland
+#      Block Group 5, Census Tract 2505, Baltimore city, Maryland
+#      Block Group 2, Census Tract 2002, Baltimore city, Maryland
+#      Block Group 3, Census Tract 1401, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1102, Baltimore city, Maryland
+#      Block Group 4, Census Tract 1510, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1504, Baltimore city, Maryland
+#   Block Group 5, Census Tract 2007.01, Baltimore city, Maryland
+#      Block Group 1, Census Tract 1509, Baltimore city, Maryland
+#       Block Group 2, Census Tract 907, Baltimore city, Maryland
+#   Block Group 4, Census Tract 2603.01, Baltimore city, Maryland
+#      Block Group 2, Census Tract 2805, Baltimore city, Maryland
+# Block Group 3, Census Tract 4042.01, Baltimore County, Maryland
+#      Block Group 1, Census Tract 1003, Baltimore city, Maryland
+#    Block Group 1, Census Tract 4303, Baltimore County, Maryland
+################################################################################  
 ```
 
 
