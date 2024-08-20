@@ -26,7 +26,7 @@ The document was prepared by Dexter H. Locke and Eduardo Marin. The research doc
 - Location & Time (2/2)
 - Provider (1/1)
 - Species (1/1)
-- Watershed (0/1)
+- Watershed (1/1)
 - Demographics [JEDI & Tapestry] (0/1)
   - Income, Education, Race
   - Tapestry
@@ -111,7 +111,7 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
              , 'ed_plus_professional_degree' = 'B15003_024'
              , 'ed_plus_doctorate_degree' = 'B15003_025'
             )
-#TODO: Education is not divided by total population but by the education 
+#TODO: Education is not divided by total population but by the education (confused with this and percentage)
 
 (maryland <-
   tidycensus::get_acs(
@@ -154,8 +154,8 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
 cbg <-
   tidycensus::get_acs(
       geography = 'block group'
-    , state = 'Maryland'
-    , county = c('Baltimore City', 'Baltimore County')
+    , state = 'MD'
+    # , county = 'all'
     , variables = my_vars
     , year = 2021
     , geometry = TRUE
@@ -196,6 +196,8 @@ city_layer <-
   rename("Name" = "NAME") |>
   mutate("Name" = "Baltimore city") |>
   mapview(col.regions = "#525252", alpha = 0.25, layer.name = "Baltimore City") 
+
+city_layer <-
 
 #Making the Baltimore neighborhood read
 neighborhood_read <-
@@ -268,12 +270,16 @@ st_join(watershed_data, join = st_intersects) |>
 ```
 
 ```{r}
+block_group_counts <-
+  st_join(blue_water_giveaway_data, cbg[, c("NAME","GEOID")]) |>
+  group_by(NAME.y, GEOID.y, year) |>
+  summarise(count = n()) |>
+  rename(NAME = NAME.y, GEOID = GEOID.y) |>
+  st_drop_geometry()
+  
 census_count_map_layer <-
   cbg |>
-  left_join(
-  read_csv("output_data/census_count_year.csv")
-    , by = "NAME"
-  ) |>
+  left_join(block_group_counts, by = c("NAME", "GEOID")) |>
   mutate(count = case_when(
     is.na(count) ~ 0,
     TRUE ~ count
@@ -958,6 +964,7 @@ In addition to species, information on where these tree giveaways have went rela
 
 To begin, here is a general map of the watersheds in the Baltimore County and Baltimore City region.
 
+Figure 6. Map of Watersheds in BWB Service Area (In Respective to the Counties)
 ```{r}
 county_layer + watershed_layer
 ```
@@ -1172,15 +1179,17 @@ ggsave(
 
 As you can see here, the most common types of the 
 
-## Justice, Equity, Diversity, and Inclusion
+## Distribution
 
-We will first begin looking at income to see if  
+We will first begin looking at income to see if there is any correlation between that and the number of giveaways. In terms of the scale, we will look specifically at the census block scale to determine this. We will first look at a synced map
 
+Figure 6. Synced Map of Household Income and Giveaway Count (Per Census Blocks)
 ```{r}
-## creating the census income map
+## Making the legend breaks
 legend_order_census_income_count <- 
   seq(0, 200000, length.out = 9) 
 
+## Makiing the census-income map
 census_income_map <-
   cbg |>
   rename("Median Household Income" = median_household_income) |>
@@ -1189,7 +1198,114 @@ census_income_map <-
     TRUE ~ `Median Household Income`)) |>
   mapview(zcol = "Median Household Income", layer.name = "Household Income and Census Block", at = legend_order_census_income_count)
 
-## creating a Sync map of Giveaway Count and Census Block
+## The Sync Map of Count and Income
 sync(census_income_map, census_count_map)
+
+#TODO: Double check if you should use a better color to visualize with the synced map
+``` 
+
+However, what may be more useful to see any patterns or trends is to look at a bivariate map. Bivariate maps work uniquely since they are on a color scale of two quantitative values. In the following case, [insert what the map states] 
+
+Figure 7. Bivariate Map of Household Income and Giveaway Count (per Census Block)
+```{r}
+## Combining the
+cbg_census_count <-
+  cbg |>
+  left_join(
+  read_csv("output_data/census_count_year.csv")
+    , by = "NAME"
+  ) 
+
+## setting the bivariate count and income
+bivariate_count_income <-
+  biscale::bi_class(cbg_census_count, x = median_household_income, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_income_map_pre <-
+  bivariate_count_income |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Household Income and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_income_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Median Household Income",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_income_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_income_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_income_map_legend, .25, .2, 0.2, 0.2)
+
+## calling map
+bivariate_count_income_map
+
+ggsave(
+  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_bivariate_income_giveaway.svg"), 
+  plot = bivariate_count_income_map,
+  width = 45,
+  height = 12
+)
+
+```
+
+
+```{r}
+blue_water_giveaway_data |>
+ mutate(household_income = cut(
+    mdn_hs_,
+    breaks = c(seq(0, 150000, by = 20000), Inf),
+    labels = c(paste0("$", scales::comma(seq(0, 130000, by = 20000)), #scales::comma adds this to the number
+                      " - $", scales::comma(seq(20000, 150000, by = 20000))), #scales::comma adds this to the number 
+               "$150,000+"),
+    include.lowest = TRUE,
+    right = FALSE
+  )) |>
+  st_drop_geometry() |>
+  group_by(household_income, year) |>
+  summarise(`Number of Giveaways` = n()) |>
+  view()
+
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+legend_order_census_income_count <- 
+  seq(0, 200000, length.out = 9) 
+
+cbg_census_count |>
+  ggplot(aes(x = year, y = median_household_income, fill = count)) +
+  geom_tile() +
+  scale_fill_gradientn(
+    colours = c("blue", "red"), # Adjust colours as needed
+    breaks = legend_order_census_income_count,
+    labels = scales::comma(legend_order_census_income_count) # This adds commas to the labels for better readability
+  ) +
+  labs(x = "Year", y = "Income Bracket", fill = "Giveaway Counts") +
+  theme_minimal()
 ```
 
