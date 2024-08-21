@@ -76,7 +76,6 @@ options(tigris_use_cache = TRUE)
 ```
 
 
-
 ```{r Loading Tapestry, echo=TRUE, message=FALSE}
 #ORIGINAL from 04_exploring,Rmd
 
@@ -117,8 +116,6 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
     ) |>
    st_transform(crs = st_crs(4326))) 
 
-
-# TODO decide if you want income to come from 2020 census
 cbg <-
   tidycensus::get_acs(
       geography = 'block group'
@@ -140,9 +137,9 @@ cbg <-
     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
     rename(NAME = NAM) |>
     mutate(
-      at_least_hs = rowSums(across(starts_with("ed_"))),
-      at_least_college = rowSums(across(starts_with("ed_plus")))
-    )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
+      at_least_hs = (rowSums(across(starts_with("ed_"))))/total_population_over_25, #This gets percentage
+      at_least_college = (rowSums(across(starts_with("ed_plus"))))/total_population_over_25 #This gets percentage
+    ) |>
     dplyr::select(-starts_with("ed_"))
 
 #############################################################################################################
@@ -280,85 +277,16 @@ blue_water_baltimore_data |>
   dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, at_least_hs, at_least_college, geometry)
 
 blue_water_baltimore_data_new |>
-st_write("output_data/blue_water_cleaned_data.gpkg", append = FALSE)
+  st_write(paste0("output_data/blue_water_baltimore_data_", Sys.Date(), ".gpkg"), append = FALSE)
 
 blue_water_baltimore_data_check <- 
-  st_read("output_data/blue_water_cleaned_data.gpkg")
+  st_read("output_data/blue_water_baltimore_data_2024-08-21.gpkg") #DEXTER: Change whenver your sys.date does it
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
 blue_water_baltimore_data_check |> mapview(zcol = 'median_household_income')
-################################################################################
-# These all have NA median_household_income for some reason??
-#
-#      Block Group 1, Census Tract 1511, Baltimore city, Maryland
-# Block Group 1, Census Tract 4903.03, Baltimore County, Maryland
-# Block Group 1, Census Tract 4083.04, Baltimore County, Maryland
-#    Block Group 2, Census Tract 4916, Baltimore County, Maryland
-#   Block Group 2, Census Tract 2602.01, Baltimore city, Maryland
-#    Block Group 1, Census Tract 4909, Baltimore County, Maryland
-#      Block Group 3, Census Tract 2706, Baltimore city, Maryland
-#    Block Group 3, Census Tract 4909, Baltimore County, Maryland
-#   Block Group 1, Census Tract 2703.01, Baltimore city, Maryland
-#   Block Group 5, Census Tract 1202.02, Baltimore city, Maryland
-#    Block Group 1, Census Tract 4925, Baltimore County, Maryland
-#      Block Group 3, Census Tract 1206, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1302, Baltimore city, Maryland
-#   Block Group 1, Census Tract 2801.02, Baltimore city, Maryland
-#   Block Group 3, Census Tract 2703.01, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2601.02, Baltimore city, Maryland
-#    Block Group 1, Census Tract 4302, Baltimore County, Maryland
-#   Block Group 2, Census Tract 2804.01, Baltimore city, Maryland
-#    Block Group 1, Census Tract 4006, Baltimore County, Maryland
-#      Block Group 2, Census Tract 2001, Baltimore city, Maryland
-#   Block Group 1, Census Tract 2603.01, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2803.01, Baltimore city, Maryland
-#      Block Group 2, Census Tract 1701, Baltimore city, Maryland
-#      Block Group 3, Census Tract 1508, Baltimore city, Maryland
-#   Block Group 3, Census Tract 2602.01, Baltimore city, Maryland
-#      Block Group 1, Census Tract 2008, Baltimore city, Maryland
-#   Block Group 1, Census Tract 1202.02, Baltimore city, Maryland
-#   Block Group 1, Census Tract 2708.02, Baltimore city, Maryland
-#   Block Group 4, Census Tract 2708.05, Baltimore city, Maryland
-#   Block Group 3, Census Tract 2601.02, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2718.01, Baltimore city, Maryland
-#   Block Group 3, Census Tract 2701.02, Baltimore city, Maryland
-#      Block Group 4, Census Tract 1203, Baltimore city, Maryland
-#   Block Group 3, Census Tract 1202.02, Baltimore city, Maryland
-#      Block Group 2, Census Tract 1001, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2601.01, Baltimore city, Maryland
-#    Block Group 2, Census Tract 4925, Baltimore County, Maryland
-#      Block Group 2, Census Tract 1702, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1601, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2707.03, Baltimore city, Maryland
-#      Block Group 1, Census Tract 2506, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2504.01, Baltimore city, Maryland
-#      Block Group 4, Census Tract 1606, Baltimore city, Maryland
-#       Block Group 1, Census Tract 808, Baltimore city, Maryland
-#       Block Group 1, Census Tract 907, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2804.03, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2503.03, Baltimore city, Maryland
-#      Block Group 6, Census Tract 1102, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1605, Baltimore city, Maryland
-#   Block Group 2, Census Tract 2708.04, Baltimore city, Maryland
-#    Block Group 1, Census Tract 9802, Baltimore County, Maryland
-#      Block Group 2, Census Tract 1509, Baltimore city, Maryland
-#      Block Group 5, Census Tract 2505, Baltimore city, Maryland
-#      Block Group 2, Census Tract 2002, Baltimore city, Maryland
-#      Block Group 3, Census Tract 1401, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1102, Baltimore city, Maryland
-#      Block Group 4, Census Tract 1510, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1504, Baltimore city, Maryland
-#   Block Group 5, Census Tract 2007.01, Baltimore city, Maryland
-#      Block Group 1, Census Tract 1509, Baltimore city, Maryland
-#       Block Group 2, Census Tract 907, Baltimore city, Maryland
-#   Block Group 4, Census Tract 2603.01, Baltimore city, Maryland
-#      Block Group 2, Census Tract 2805, Baltimore city, Maryland
-# Block Group 3, Census Tract 4042.01, Baltimore County, Maryland
-#      Block Group 1, Census Tract 1003, Baltimore city, Maryland
-#    Block Group 1, Census Tract 4303, Baltimore County, Maryland
-################################################################################  
+############  
 ```
 
 

@@ -18,19 +18,27 @@ editor_options:
     wrap: 72
 ---
 
-# Blue Water Baltimore & Tree Giveaways
+# Blue Water Baltimore
 
-An entry-level analysis from the past ten+ years (2013 to 2024)
+## Tree Giveaways Over the Past Ten Years
 
-The document was prepared by Dexter H. Locke and Eduardo Marin. The research document will include the following sections with accompanying downloadable visuals for all the graphs.
-- Location & Time (2/2)
-- Provider (1/1)
-- Species (1/1)
-- Watershed (1/1)
-- Demographics [JEDI & Tapestry] (0/1)
-  - Income, Education, Race
-  - Tapestry
-- Origin-Destination (0/1)
+The following presentation is an entry-level analysis of the past **ten
+years**, from 2013 to 2014, of Blue Water Baltimore's tree giveaways
+program.
+
+The document was prepared by **Dexter H. Locke** and **Eduardo Marin**.
+The research was analyzed through six different lens, being the
+following:
+
+-   *Location and time*
+-   *Species*
+-   *Watershed*
+-   *Distribution*
+-   *Host location*
+-   *Origin-destination*
+
+> The data will weave a powerful narrative, showcasing the distinctive
+> and meaningful contributions of Blue Water Baltimore to our community.
 
 ```{r Loading Packages, message=FALSE, include=FALSE}
 # Loading all packages
@@ -269,7 +277,7 @@ st_join(watershed_data, join = st_intersects) |>
   dplyr::select(-geometry)
 ```
 
-```{r}
+```{r include=FALSE}
 block_group_counts <-
   st_join(blue_water_giveaway_data, cbg[, c("NAME","GEOID")]) |>
   group_by(NAME.y, GEOID.y, year) |>
@@ -313,7 +321,8 @@ blue_water_giveaway_data_with_Tapestry_2019 |>
   geom_col()
 ```
 
-#Color Palette
+Color Palette
+
 ```{r Color Palette, eval=FALSE, include=FALSE}
 # List of Color Palette
 ##  (Earth Tones):
@@ -336,21 +345,28 @@ blue_water_giveaway_data_with_Tapestry_2019 |>
    "#519342"
    
 ```
+
 ## Location & Time
 
 In the past eleven years of running Blue Water Baltimore's giveaway
-program, there has been a total of `r nrow(blue_water_giveaway_data)`
-tree giveaways. Although the number is an overestimate since 2017 and
-2018 included TreeBaltimore's values, the impact is undeniable. Blue Water's tree plantings have reached homeowners across the state of Maryland, from Frederick to Caroline County.
+program, there has been a total of
+**`r nrow(blue_water_giveaway_data)`** tree giveaways. Although the
+number is an overestimate since 2017 and 2018 included TreeBaltimore's
+values, the impact is undeniable. Blue Water's tree plantings have
+reached homeowners across the state of Maryland, from Frederick to
+Caroline County.
 
 Figure 1. Giveaway Map of All Jurisdictions
+
 ```{r echo=FALSE}
 giveaway_layer + state_layer #TODO: Fix the map zoom to focus on Maryland; Change the color of the trees to be different from the background (potentially make state darker)
 ```
 
-Of course, most of these tree plantings have went to homeowners within the city of Baltimore and Baltimore County.
+Of course, most of these tree plantings have went to homeowners within
+the city of Baltimore and Baltimore County.
 
 Figure 2. Giveaway Heatmap of All Jurisdiction
+
 ```{r}
 leaflet(blue_water_giveaway_data) |>
   addProviderTiles("CartoDB.Positron") |>
@@ -362,9 +378,12 @@ leaflet(blue_water_giveaway_data) |>
                          #this one fixes with heatmap, just to show intensity
 ```
 
-More specifically, these giveaways went to northern Baltimore County - near Towson - and northern Baltimore. If you solely look at Baltimore City and Baltimore County, you can see the following trend:
+More specifically, these giveaways went to northern Baltimore County -
+near Towson - and northern Baltimore. If you solely look at Baltimore
+City and Baltimore County, you can see the following trend:
 
 Figure 3. Map of Tree Giveaways per Census Block Group
+
 ```{r include=FALSE}
 figure_3_census_count_layer <-
   cbg |>
@@ -391,6 +410,7 @@ mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household"
 ```
 
 Table 1. Table of Tree Plantings per Jurisdiction
+
 ```{r}
 table_1_tree_plantings_per_jurisdiction <-
   blue_water_giveaway_data |>
@@ -405,7 +425,9 @@ table_1_tree_plantings_per_jurisdiction |>
 DT::datatable()
 ```
 
-Graph 1. Graph of Tree Plantings per Jurisdiction per Year (Divided by Season)
+Graph 1. Graph of Tree Plantings per Jurisdiction per Year (Divided by
+Season)
+
 ```{r}
 graph_1_season_colors <- c(
   "Fall" = "#008CCC",
@@ -423,7 +445,7 @@ graph_1_tree_plantings_year_v1 <-
    geom_bar(position = "dodge", stat = "identity") +
     scale_fill_manual(values = graph_1_season_colors) +
     scale_y_continuous(
-      limits = c(0, 2000),         
+      limits = c(0, 2000),  #TODO: Make to 1750 the upper limit     
       breaks = seq(0, 2000, by = 250),  
       labels = scales::comma  
     ) +
@@ -447,7 +469,7 @@ graph_1_tree_plantings_year_v2 <-
    geom_bar(position = "stack", stat = "identity") +
     scale_fill_manual(values = graph_1_season_colors) +
     scale_y_continuous(
-      limits = c(0, 2000),         
+      limits = c(0, 2000),  #TODO: Make to 1750 the upper limit         
       breaks = seq(0, 2000, by = 250),  
       labels = scales::comma  
     ) +
@@ -479,9 +501,17 @@ graph_1_tree_plantings_year_v1
 graph_1_tree_plantings_year_v2
 ```
 
-The amount of tree giveaways that went to either Baltimore City or Baltimore County are nearly split halfway. `r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore City") |> pull(Percent)`of the tree giveaways went to Baltimore City and `r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore County") |> pull(Percent)` went to Baltimore County. However, the spread between city and county trees have shifted over the years. #TODO: Pull can be used completely instead of select
+The amount of tree giveaways that went to either Baltimore City or
+Baltimore County are nearly split halfway.
+`r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore City") |> pull(Percent)`of
+the tree giveaways went to Baltimore City and
+`r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore County") |> pull(Percent)`
+went to Baltimore County. However, the spread between city and county
+trees have shifted over the years. #TODO: Pull can be used completely
+instead of select
 
 Table 2. Table of Tree Plantings per Jurisdiction per Year
+
 ```{r}
 table_2_blue_water_baltimore_join <- 
   blue_water_giveaway_data |>
@@ -502,7 +532,9 @@ table_2_blue_water_baltimore_join <-
  
 ```
 
-Graph 2. Graph of Tree Giveaways per Jurisdiction per Year (Divided by Season)
+Graph 2. Graph of Tree Giveaways per Jurisdiction per Year (Divided by
+Season)
+
 ```{r}
 graph_2_tree_plantings_year <-
   blue_water_giveaway_data |>
@@ -515,7 +547,7 @@ graph_2_tree_plantings_year <-
    geom_bar(position = "stack", stat = "identity") +
     scale_fill_manual(values = graph_1_season_colors) +
     scale_y_continuous(
-      limits = c(0, 2000),         
+      limits = c(0, 2000),  #Rotate year on horoizontal and cut to 15,000        
       breaks = seq(0, 2000, by = 250),  
       labels = scales::comma  
     ) +
@@ -534,14 +566,17 @@ ggsave(
   plot = graph_2_tree_plantings_year, 
   width = 21, 
   height = 7
-)
+) #TODO Fix dimesniosn here
 
 graph_2_tree_plantings_year
 ```
 
-The table below will highlight the amount per year and season but a larger scale, not bounded by any jurisctions, to understand the magnitude of tree giveaways over the year. 
+The table below will highlight the amount per year and season but a
+larger scale, not bounded by any jurisctions, to understand the
+magnitude of tree giveaways over the year.
 
 Table 3. Table of Plantings in Each Neighborhood
+
 ```{r echo=FALSE}
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -554,7 +589,9 @@ Table 3. Table of Plantings in Each Neighborhood
   DT::datatable()
 ```
 
-The following section will take a more in depth look at the distribution of tree plantings in Baltimore, specifically at the neighborhood level. These will show the final destinations of those within the city:
+The following section will take a more in depth look at the distribution
+of tree plantings in Baltimore, specifically at the neighborhood level.
+These will show the final destinations of those within the city:
 
 Figure 4. Map of Tree Plantings in Baltimore Neighborhoods
 
@@ -580,11 +617,12 @@ figure_4_tree_neighborhood_legend <-
 )$brks
 
 figure_4_tree_neighborhoods_layer |>
-  mapview(zcol = "Density", layer.name = "Giveaway Density (Tree per Square Mile)", at = figure_4_tree_neighborhood_legend) 
+  mapview(zcol = "Density", layer.name = "Giveaway Density (Tree per Household)", at = figure_4_tree_neighborhood_legend) 
 ```
 
-Table 4. Table of Plantings in Each Neighborhood
-```{r echo=FALSE, message=FALSE}
+```{r eval=FALSE, message=FALSE, include=FALSE}
+# Table 4. Table of Plantings in Each Neighborhood
+# (TODO: Not do
  figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
   dplyr::select("Name","Density") |>
@@ -592,9 +630,14 @@ Table 4. Table of Plantings in Each Neighborhood
   DT::datatable()
 ```
 
-These may come surprising at first. However, these numbers are taking into consideration the amount of space within each jurisdiction. They are your number of trees in each neighborhood divided by the total square miles of each neighborhood. The following highlights the absolute value of tree plantings in each neighborhood. 
+These may come surprising at first. However, these numbers are taking
+into consideration the amount of space within each jurisdiction. They
+are your number of trees in each neighborhood divided by the total
+square miles of each neighborhood. The following highlights the absolute
+value of tree plantings in each neighborhood.
 
 Table 5. Table of Plantings in Each Neighborhood
+
 ```{r echo=FALSE, message=FALSE}
 figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
@@ -603,9 +646,15 @@ figure_4_tree_neighborhoods_layer |>
   DT::datatable()
 ```
 
-Regardless, another interesting aspect to consider is how have the absolute number of tree plantings have changed over the years. The decision to not observe the density of tree plantings is since neighborhood boundaries can change, alongside the amount of plantable space over time.
+Regardless, another interesting aspect to consider is how have the
+absolute number of tree plantings have changed over the years. The
+decision to not observe the density of tree plantings is since
+neighborhood boundaries can change, alongside the amount of plantable
+space over time.
 
-Graph 3. Graph of Tree Plantings in Each Neighborhood Over the Years (Top 20)
+Graph 3. Graph of Tree Plantings in Each Neighborhood Over the Years
+(Top 20)
+
 ```{r}
 graph_3_filter_neighborhoods <-
   figure_4_tree_neighborhoods_layer |>
@@ -646,13 +695,22 @@ ggsave(
 graph_3_tree_plantings_year_neighborhood
 
 #TODO: Change the faceting to be read from left to right
+
+#TODO: Add a line graph instead with time on hte horizontal line charts.
 ```
 
-As you can see, the top ten neighborhoods, in descending order, are `r paste(paste(graph_3_filter_neighborhoods$Name[1:9], collapse = ", "), ", and ", graph_3_filter_neighborhoods$Name[10], sep = "")`. The most surprising feature is that these neighborhoods vary greatly in terms of when their largest contribution were. Some, like Ednor Gardens-Lakeside, had the most giveaways in 2013, while others had them more recently like Hamilton Hills. 
+As you can see, the top ten neighborhoods, in descending order, are
+`r paste(paste(graph_3_filter_neighborhoods$Name[1:9], collapse = ", "), ", and ", graph_3_filter_neighborhoods$Name[10], sep = "")`.
+The most surprising feature is that these neighborhoods vary greatly in
+terms of when their largest contribution were. Some, like Ednor
+Gardens-Lakeside, had the most giveaways in 2013, while others had them
+more recently like Hamilton Hills.
 
-Nevertheless, as important as it is to understand when and where these plantings have gone, it is also important to understand where they have been received.
+Nevertheless, as important as it is to understand when and where these
+plantings have gone, it is also important to understand where they have
+been received.
 
-## Provider
+## Host Location
 
 ```{r include=FALSE}
 unique_provider <-
@@ -672,9 +730,12 @@ unique_provider_na <- #TODO: Save out as a PNG
   slice(1) 
 ```
 
-In terms of giveaway location, there are approximately `r nrow(unique_provider)` different giveaway locations over the last ten years. Each of them vary, especially in terms of amount.
+In terms of giveaway location, there are approximately
+`r nrow(unique_provider)` different giveaway locations over the last ten
+years. Each of them vary, especially in terms of amount.
 
-Table 6. Table of Giveaway Locations 
+Table 6. Table of Giveaway Locations
+
 ```{r echo=FALSE}
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -689,9 +750,13 @@ Table 6. Table of Giveaway Locations
   DT::datatable()
 ```
 
-In the case of the amount of tree giveaway locations, the most stems from Stillmeadow Community Fellowship. However, please understand that the largest majority are undefined, totaling `r unique(unique_provider_na$n)`.
+In the case of the amount of tree giveaway locations, the most stems
+from Stillmeadow Community Fellowship. However, please understand that
+the largest majority are undefined, totaling
+`r unique(unique_provider_na$n)`.
 
-Graph 4. Graph of Total Giveaway Locations 
+Graph 4. Graph of Total Giveaway Locations
+
 ```{r echo=FALSE}
 graph_4_giveaway_locations <-
   blue_water_giveaway_data |>
@@ -705,7 +770,7 @@ graph_4_giveaway_locations <-
   ggplot(aes(x = reorder(`Giveaway Location`, `Number of Trees`), y = `Number of Trees`)) +
     geom_col(fill = "#519342") +
     coord_flip() +
-    labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees")
+    labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees") #TODO: Put percentages on the tips, flag Dexter
     theme_minimal() +
     NULL
 
@@ -720,7 +785,11 @@ graph_4_giveaway_locations <-
 graph_4_giveaway_locations
 ```
 
-The next section will begin prying into information concerning species from the tree giveaway. The goal will be to highlight new information while still continuing answering previous questions, like where have these species gone to spatially and what was the most sucessful species given per each provider. 
+The next section will begin prying into information concerning species
+from the tree giveaway. The goal will be to highlight new information
+while still continuing answering previous questions, like where have
+these species gone to spatially and what was the most sucessful species
+given per each provider.
 
 ## Species
 
@@ -743,6 +812,7 @@ colors_species <-  #TODO: Change colors to be more earth-tone like
 The following map highlights the top ten species giveaway in the county.
 
 Figure 5. Map of Top 10 Species Giveaway
+
 ```{r echo=FALSE}
 blue_water_giveaway_data |>
   mutate(cmmn_nm = case_when(
@@ -769,20 +839,30 @@ datatable_6_giveaway_top_10 <-
   slice(1:10)
 ```
 
-As you can see, there is a fair distribution of the highest `r paste(datatable_6_giveaway_top_10$'Common Name'[1:9], collapse = ", ")`, and `r datatable_6_giveaway_top_10$'Common Name'[10]`. As this is shown in descending order, the most popular species for tree giveaways is `r datatable_6_giveaway_top_10$'Common Name'[1]`. Investing more time and energy into securing this species may be worthwhile for future tree giveaways.
+As you can see, there is a fair distribution of the highest
+`r paste(datatable_6_giveaway_top_10$'Common Name'[1:9], collapse = ", ")`,
+and `r datatable_6_giveaway_top_10$'Common Name'[10]`. As this is shown
+in descending order, the most popular species for tree giveaways is
+`r datatable_6_giveaway_top_10$'Common Name'[1]`. Investing more time
+and energy into securing this species may be worthwhile for future tree
+giveaways.
 
-The following table will show you more in-depth the breakdown of the different types of species given away.
+The following table will show you more in-depth the breakdown of the
+different types of species given away.
 
-Table 6. Table of the Species for the Giveaways
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
+# Table 6. Table of the Species for the Giveaways
   datatable_6_giveaway |>
   rename(Count = n) |>
   DT::datatable()
 ```
 
-In the case here, this visually displays the same information, highlighting how distinct the most common and least common species are in the amount of species give away.
+In the case here, this visually displays the same information,
+highlighting how distinct the most common and least common species are
+in the amount of species give away.
 
 Graph 5. Graph of the Most Common and Rare Tree Species
+
 ```{r echo=FALSE}
 graph_5_common_rare_species <-
   datatable_6_giveaway |>
@@ -807,9 +887,11 @@ graph_5_common_rare_species <-
 graph_5_common_rare_species
 ```
 
-As mentioned earlier, an interesting aspect of this is to see and understand how these relate to prior topics. 
+As mentioned earlier, an interesting aspect of this is to see and
+understand how these relate to prior topics.
 
 Table 7. Table of Species by Jurisdictions
+
 ```{r}
 table_7_species_jurisdictions <-
 blue_water_giveaway_data |>
@@ -834,17 +916,25 @@ table_7_species_jurisdictions_top_5_county <-
   slice(1:5)
 ```
 
-As you can see, for the most popular species, they tend to go more heavily towards Baltimore City. However, another unique aspect is finding out what the top five (5) of Baltimore City and Baltimore County are. Of course, you can just rearrange the data table. If you do not want to go through that process, however, here is the top five (5) for Baltimore City:
+As you can see, for the most popular species, they tend to go more
+heavily towards Baltimore City. However, another unique aspect is
+finding out what the top five (5) of Baltimore City and Baltimore County
+are. Of course, you can just rearrange the data table. If you do not
+want to go through that process, however, here is the top five (5) for
+Baltimore City:
 
 `r paste(paste(table_7_species_jurisdictions_top_5_city$'Common Name'[1:4], collapse = ", "), ", and ",table_7_species_jurisdictions_top_5_city$'Common Name'[5], sep = "")`.
 
-In the case of the the top five (5) for Baltimore County, they are the following: 
+In the case of the the top five (5) for Baltimore County, they are the
+following:
 `r paste(paste(table_7_species_jurisdictions_top_5_county$'Common Name'[1:4], collapse = ", "), ", and ",table_7_species_jurisdictions_top_5_county$'Common Name'[5], sep = "")`.
 
-Of course, these change respective of time. The next part will underscore a graph of the top ten species within each jurisdiction: Baltimore City, Baltimore County, and neither. 
+Of course, these change respective of time. The next part will
+underscore a graph of the top ten species within each jurisdiction:
+Baltimore City, Baltimore County, and neither.
 
-Graph 6. Graph of the Top Ten Species per each County
-```{r}
+```{r include=FALSE}
+# Graph 6. Graph of the Top Ten Species per each County
 graph_6_county_top_species <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -875,10 +965,11 @@ ggsave(
 graph_6_county_top_species 
 ```
 
-Again, it is also important to understand what were the most popular species given
-during each time of the year. 
+Again, it is also important to understand what were the most popular
+species given during each time of the year.
 
 Graph 7. Graph of the Top Ten Species per year
+
 ```{r}
 graph_7_year_top_species <-
 blue_water_giveaway_data |>
@@ -909,9 +1000,14 @@ blue_water_giveaway_data |>
 graph_7_year_top_species 
 ```
 
-Finally, it is also important to understand if tree species differ based off of giveaway location. If so, what are the most popular tree species giveaway in the top five (5) giveaway location. The following graph, like the others, will attempt to highlight this, specifically the top 10 species in each one. 
+Finally, it is also important to understand if tree species differ based
+off of giveaway location. If so, what are the most popular tree species
+giveaway in the top five (5) giveaway location. The following graph,
+like the others, will attempt to highlight this, specifically the top 10
+species in each one.
 
 Graph 8. Graph of the Top Ten Species per year
+
 ```{r}
 top_five_giveaway_locations <-
   blue_water_giveaway_data |>
@@ -956,17 +1052,23 @@ ggsave(
 top_10_species_in_top_locations
 ```
 
-TODO: Insert a blurb about the findings about but fix the descending order
+TODO: Insert a blurb about the findings about but fix the descending
+order
 
-In addition to species, information on where these tree giveaways have went relative to our watersheds is equally as important. 
+In addition to species, information on where these tree giveaways have
+went relative to our watersheds is equally as important.
 
 ## Watersheds
 
-To begin, here is a general map of the watersheds in the Baltimore County and Baltimore City region.
+To begin, here is a general map of the watersheds in the Baltimore
+County and Baltimore City region.
 
-Figure 6. Map of Watersheds in BWB Service Area (In Respective to the Counties)
+Figure 6. Map of Watersheds in BWB Service Area (In Respective to the
+Counties)
+
 ```{r}
 county_layer + watershed_layer
+#TODO: Add boundary, 
 ```
 
 ```{r}
@@ -984,9 +1086,17 @@ blue_water_giveaway_data |>
   ))
 ```
 
-In terms of the plantings per watershed, these are the ones with the most ones in descending order: `r paste(paste(table_8_watershed_count$'Watershed Name'[1:15], collapse = ", "), ", and ",table_8_watershed_count$'Watershed Name'[16], sep = "")`. A special thing to notice is that there is a total of `r table_8_watershed_count |> filter('Watershed Name' == "Outside BWB Service Area") |> pull(Count)` outside of Blue Water Baltimore Service's area. The following will show how this, relatively speaking, is a far lower margin that what we might previously have imagined. 
+In terms of the plantings per watershed, these are the ones with the
+most ones in descending order:
+`r paste(paste(table_8_watershed_count$'Watershed Name'[1:15], collapse = ", "), ", and ",table_8_watershed_count$'Watershed Name'[16], sep = "")`.
+A special thing to notice is that there is a total of
+`r table_8_watershed_count |> filter('Watershed Name' == "Outside BWB Service Area") |> pull(Count)`
+outside of Blue Water Baltimore Service's area. The following will show
+how this, relatively speaking, is a far lower margin that what we might
+previously have imagined.
 
 Table 8. Table of Watersheds per Giveaway Count
+
 ```{r}
 table_8_watershed_count_datatable <-
   blue_water_giveaway_data |>
@@ -1006,9 +1116,12 @@ table_8_watershed_count_datatable |>
 DT::datatable()
 ```
 
-In terms of watersheds, it is important to see how many plants have gone to these areas over time. The following graph will highlight this and help distinguish if there is any statistical significance.
+In terms of watersheds, it is important to see how many plants have gone
+to these areas over time. The following graph will highlight this and
+help distinguish if there is any statistical significance.
 
 Graph 8. Number of Counts per Watershed per Year (per Season)
+
 ```{r}
 graph_8_watersheds_count <-
   blue_water_giveaway_data |>
@@ -1054,8 +1167,8 @@ ggsave(
 
 Here is a version of this but as a table.
 
-Table 9. Table of Watersheds per Giveaway Count (per Season)
-```{r}
+```{r eval=FALSE, include=FALSE}
+# Table 9. Table of Watersheds per Giveaway Count (per Season)
 table_9_watersheds_count_year <-
   blue_water_giveaway_data |>
   mutate(watershed = case_when(
@@ -1073,9 +1186,13 @@ table_9_watersheds_count_year |>
   DT::datatable()
 ```
 
-Besides understanding the breakdown of each watershed by season, it is also important to understand the breakdown overall. In the following graph, it will highlight the total amount of plantings in each watershed per year.  
+Besides understanding the breakdown of each watershed by season, it is
+also important to understand the breakdown overall. In the following
+graph, it will highlight the total amount of plantings in each watershed
+per year.
 
 Graph 9. Number of Giveaway Counts per Watershed (per Year)
+
 ```{r}
 graph_9_watersheds_count_year <-
   blue_water_giveaway_data |>
@@ -1119,6 +1236,7 @@ ggsave(
 ```
 
 Table 10. Table of Watersheds per Giveaway Count (per Year)
+
 ```{r}
 table_10_watersheds_count_year <-
   blue_water_giveaway_data |>
@@ -1138,6 +1256,7 @@ table_10_watersheds_count_year |>
 ```
 
 Graph 10. Five (5) Popular Species per Watershed
+
 ```{r}
 graph_10_watersheds_species_count <-
   blue_water_giveaway_data |>
@@ -1177,13 +1296,18 @@ ggsave(
 )
 ```
 
-As you can see here, the most common types of the 
+As you can see here, the most common types of the
 
 ## Distribution
 
-We will first begin looking at income to see if there is any correlation between that and the number of giveaways. In terms of the scale, we will look specifically at the census block scale to determine this. We will first look at a synced map
+We will first begin looking at income to see if there is any correlation
+between that and the number of giveaways. In terms of the scale, we will
+look specifically at the census block scale to determine this. We will
+first look at a synced map
 
-Figure 6. Synced Map of Household Income and Giveaway Count (Per Census Blocks)
+Figure 6. Synced Map of Household Income and Giveaway Count (Per Census
+Blocks)
+
 ```{r}
 ## Making the legend breaks
 legend_order_census_income_count <- 
@@ -1202,11 +1326,16 @@ census_income_map <-
 sync(census_income_map, census_count_map)
 
 #TODO: Double check if you should use a better color to visualize with the synced map
-``` 
+```
 
-However, what may be more useful to see any patterns or trends is to look at a bivariate map. Bivariate maps work uniquely since they are on a color scale of two quantitative values. In the following case, [insert what the map states] 
+However, what may be more useful to see any patterns or trends is to
+look at a bivariate map. Bivariate maps work uniquely since they are on
+a color scale of two quantitative values. In the following case, [insert
+what the map states]
 
-Figure 7. Bivariate Map of Household Income and Giveaway Count (per Census Block)
+Figure 7. Bivariate Map of Household Income and Giveaway Count (per
+Census Block)
+
 ```{r}
 ## Combining the
 cbg_census_count <-
@@ -1263,7 +1392,6 @@ ggsave(
 
 ```
 
-
 ```{r}
 blue_water_giveaway_data |>
  mutate(household_income = cut(
@@ -1280,20 +1408,9 @@ blue_water_giveaway_data |>
   summarise(`Number of Giveaways` = n()) |>
   view()
 
-
 ```
 
-
-
-
-
-
-
-
-
-
-```{r}
-
+```{r eval=FALSE, include=FALSE}
 legend_order_census_income_count <- 
   seq(0, 200000, length.out = 9) 
 
@@ -1308,4 +1425,3 @@ cbg_census_count |>
   labs(x = "Year", y = "Income Bracket", fill = "Giveaway Counts") +
   theme_minimal()
 ```
-
