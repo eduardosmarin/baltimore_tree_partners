@@ -1,7 +1,7 @@
 ---
 title: "Deliverable for Blue Water Baltimore"
 author: "Eduardo Marin (with Dexter H Locke)"
-date: "`r format(Sys.time())`"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   html_document:
     theme: readable
@@ -17,6 +17,7 @@ editor_options:
   chunk_output_type: console
   markdown: 
     wrap: 72
+runtime: shiny
 ---
 
 # Blue Water Baltimore
@@ -88,6 +89,7 @@ packs <-c(
           , 'leaflet' #for heatmaps and more unique, customizable maps
           , 'leaflet.extras'
           , 'tidytext'
+          , 'shiny'
           )     
 
 ## IF the packages in 'packs' are not already installed, install them
@@ -193,7 +195,7 @@ cbg <-
     , moe_level = 95
     ) |>
     st_transform(crs = st_crs(4326)) |>
-    mutate(jurisdiction = case_when(
+    mutate(county = case_when(
       str_like(GEOID, '24510%') ~ "Baltimore City",
       str_like(GEOID, '24005%') ~ "Baltimore County",
       TRUE ~ "Neither"
@@ -216,20 +218,20 @@ state_layer <-
  mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", alpha = 0.25, layer.name = "Maryland") 
 
 ## Making the Baltimore County layer
-county_layer <-
+jurisdiction_layer <-
   baltimore_city_counties |>
-  mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", layer.name = "Baltimore City & County") 
+  mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", layer.name = "Baltimore City & jurisdiction") 
 
 ## Making the Baltimore city layer
 city_layer <-
   city |>
   rename("Name" = "NAME") |>
   mutate("Name" = "Baltimore city") |>
-  mapview(col.regions = "#525252", alpha = 0.25, layer.name = "Baltimore City") 
+  mapview(col.regions = "#525252", alpha = 0.25, layer.name = "Baltimore City")
 
 #Making the Baltimore neighborhood read
 neighborhood_read <-
-  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
   dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
   st_zm(drop = TRUE, what = "ZM") |>
   st_transform(4326) |>
@@ -242,7 +244,7 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
-   st_read("output_data/blue_water_baltimore_data_2024-08-21.gpkg") #FINAL GEOPACKAGE!:)
+   st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-21.gpkg") #FINAL GEOPACKAGE!:)
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -251,7 +253,7 @@ giveaway_layer <-
 
 ## Reading in the Watershed Data
 blue_water_watershed_data <-
- st_read("../baltimore_tree_partners_data_to_big/shapefiles/Maryland_Watersheds_-_8_Digit_Watersheds/HYDR_Watersheds8Digit_DNR.shp") |>
+ st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners_data_to_big/shapefiles/Maryland_Watersheds_-_8_Digit_Watersheds/HYDR_Watersheds8Digit_DNR.shp") |>
  st_transform(4326) 
 
 ## Creating filter for the Watershed Data
@@ -267,7 +269,7 @@ watershed_data <-
   blue_water_watershed_data |>
   filter(mde8digt %in% watershed_to_keep) |>
   dplyr::select(mde6digt,mde6name,mde8digt,mde8name,geometry) |>
-  rename(`Watershed ID (6)` = mde6digt, `Watershed Name (6)` = mde6digt, `watershed` = mde8name, `watershed_id` = mde8digt) 
+  rename(`Watershed ID (6)` = mde6digt, `watershed (6)` = mde6digt, `watershed` = mde8name, `watershed_id` = mde8digt) 
 
 watershed_layer <-
   watershed_data |>
@@ -324,21 +326,7 @@ blue_water_giveaway_data_with_Tapestry_2019 |>
 Color Palette
 
 ```{r Color Palette, eval=FALSE, include=FALSE}
-# List of Color Palette
-##  (Earth Tones):
-   "#f3f0e7"
-   "#dbc5a5"
-   "#cc9a86"
-   "#bd806d"
-   "#8c756a"
 
-## Trees (Shades of Green):
-   "#2f3456"
-   "#5d6e75"
-   "#8ba794"
-   "#bac6b8"
-   "#e9e4dc" 
-   
 ## Branding (Shades of Blue)
    "#008CCC"
    "#005273"
@@ -350,17 +338,19 @@ Color Palette
 
 ### Location and time
 
-"Blue Water Baltimore has operated its tree giveaway service for [TODO:
-Insert Years]. In the past decade alone, they have distributed
-approximately `r scales::comma(round(nrow(blue_water_giveaway_data)))`
-trees (`r nrow(blue_water_giveaway_data)` to be exact)." Although the
-figure above is slightly overstated due to the inclusion of
-TreeBaltimore's giveaway values in 2017 and 2018, reflecting their
-partnership, the impact of Blue Water Baltimore on our local waterways
-and the environment is undeniable. Their tree giveaways have extended to
-homeowners across Maryland, from Frederick to Caroline County.
+**Blue Water Baltimore** has operated its tree giveaway service for
+[TODO: Insert Years]. In the past decade alone, they have distributed
+approximately
+**`r scales::comma(round(nrow(blue_water_giveaway_data)))`** trees
+(`r nrow(blue_water_giveaway_data)` to be exact)." Although the figure
+above is slightly overstated due to the inclusion of TreeBaltimore's
+giveaway values in **2017** and **2018**, reflecting their partnership,
+the impact of Blue Water Baltimore on our local waterways and the
+environment is undeniable. Their tree giveaways have extended to
+homeowners across Maryland, from **Frederick** to **Caroline**
+**county**.
 
-Figure 1. Heatmap of Tree Giveaway Plantings in Maryland
+**Figure 1. Heatmap of Tree Giveaway Plantings in Maryland**
 
 ```{r}
 leaflet(blue_water_giveaway_data) |>
@@ -375,14 +365,82 @@ leaflet(blue_water_giveaway_data) |>
               weight = 2,            
               opacity = 1,           
               fillOpacity = 0)       
-
 ```
 
-As you can see through the map, there is a high
+As shown on the map, there has been a high concentration of plantings in
+**Baltimore County** and **Baltimore City** over the past ten years.
+Plantings, although present, have been sparse in nearby counties, such
+as **Howard**, **Anne Arundel**, **Carroll**, and **Harford**. This
+distribution aligns with the general service area of Blue Water
+Baltimore, which primarily covers the **Baltimore metropolitan region**.
 
-More specifically, these giveaways went to northern Baltimore County -
-near Towson - and northern Baltimore. If you solely look at Baltimore
-City and Baltimore County, you can see the following trend:
+Upon closer inspection of the map, there is a high concentration of
+plantings in **Towson** and **Catonsville** within **Baltimore County**.
+In **Baltimore City**, the trend shows plantings primarily in the
+**northeastern** and **central** areas, including neighborhoods like
+**Hamilton**, **Greater Govans**, **Waverly**, and **Hampden**.
+
+To have a more accurate detail about the tree distribution giveaways.
+more about the distribution of giveaways within the cou change of
+giveaways
+
+**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time)**
+
+```{r eval=FALSE, include=FALSE}
+## NEEDS TO GET FIXED
+ui <- fluidPage(
+  titlePanel("Tree Plantings Map"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("year", "Select Year:", 
+                  choices = unique(blue_water_giveaway_data$year), 
+                  selected = unique(blue_water_giveaway_data$year)[1]),
+      selectInput("season", "Select Season:", 
+                  choices = unique(blue_water_giveaway_data$season), 
+                  selected = unique(blue_water_giveaway_data$season)[1])
+    ),
+    mainPanel(
+      mapviewOutput("filtered_map")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  # Reactive expression to filter the data based on inputs
+  filtered_data <- reactive({
+    req(input$year, input$season)  # Ensure inputs are available
+    
+    # Pause execution here to inspect the reactive context
+    browser()
+    
+    # Filter the data
+    blue_water_giveaway_data %>%
+      filter(year == input$year, season == input$season)
+  })
+  
+  # Render the filtered map
+  output$filtered_map <- renderMapview({
+    data <- filtered_data()  # This should only be called inside renderMapview
+    
+    # Pause execution here to inspect before rendering the map
+    browser()
+    
+    if (nrow(data) == 0) {
+      showNotification("No data available for the selected criteria", type = "warning")
+      return(NULL)
+    }
+    
+    mapview(data, zcol = "genus_species")
+  })
+}
+
+
+
+# Run the application
+shinyApp(ui = ui, server = server)
+
+```
 
 Figure 3. Map of Tree Giveaways per Census Block Group
 
@@ -390,7 +448,7 @@ Figure 3. Map of Tree Giveaways per Census Block Group
 figure_3_census_count_layer <-
   cbg |>
   left_join(
-  read_csv("output_data/census_count_year.csv")
+  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
     , by = "NAME"
   ) |>
   mutate(count = case_when(
@@ -398,7 +456,7 @@ figure_3_census_count_layer <-
     TRUE ~ count
   )) |>
   mutate(tree_per_household = count/households) |>
-  filter(!is.na(tree_per_household)) #so the fischer doesn't break and try to divide by 0
+  filter(!is.na(tree_per_household)) 
 
 figure_3_census_count_legend<- 
   classIntervals(
@@ -417,10 +475,10 @@ Table 1. Table of Tree Plantings per Jurisdiction
 table_1_tree_plantings_per_jurisdiction <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(county) |>
+  tabyl(jurisdiction) |>
   as_tibble() |>
-  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
-  rename(County = county, `Number of Giveaways` = n, Percent = percent) |>
+  filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
+  rename(jurisdiction = jurisdiction, `Number of Giveaways` = n, Percent = percent) |>
   mutate(Percent = sprintf("%.2f%%", Percent * 100)) 
 
 table_1_tree_plantings_per_jurisdiction |>
@@ -505,12 +563,12 @@ graph_1_tree_plantings_year_v2
 
 The amount of tree giveaways that went to either Baltimore City or
 Baltimore County are nearly split halfway.
-`r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore City") |> pull(Percent)`of
+`r table_1_tree_plantings_per_jurisdiction |> filter(jurisdiction == "Baltimore City") |> pull(Percent)`of
 the tree giveaways went to Baltimore City and
-`r table_1_tree_plantings_per_jurisdiction |> filter(County == "Baltimore County") |> pull(Percent)`
-went to Baltimore County. However, the spread between city and county
-trees have shifted over the years. #TODO: Pull can be used completely
-instead of select
+`r table_1_tree_plantings_per_jurisdiction |> filter(jurisdiction == "Baltimore County") |> pull(Percent)`
+went to Baltimore County. However, the spread between city and
+jurisdiction trees have shifted over the years. #TODO: Pull can be used
+completely instead of select
 
 Table 2. Table of Tree Plantings per Jurisdiction per Year
 
@@ -518,18 +576,18 @@ Table 2. Table of Tree Plantings per Jurisdiction per Year
 table_2_blue_water_baltimore_join <- 
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(county, year) |>
+  tabyl(jurisdiction, year) |>
   as_tibble() |>
-  filter(county %in% c("Baltimore City", "Baltimore County", "Neither"))
+  filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither"))
 
  table_2_blue_water_baltimore_join |>
  summarize(across(starts_with("20"), sum, na.rm = TRUE)) |>
- mutate(county = "Total") |>
+ mutate(jurisdiction = "Total") |>
  bind_rows(table_2_blue_water_baltimore_join) |>
  dplyr::select(11, 1:10) |>
- arrange(match(county, c(setdiff(unique(county), "Total"), "Total"))) |>
+ arrange(match(jurisdiction, c(setdiff(unique(jurisdiction), "Total"), "Total"))) |>
  as_tibble() |>
- rename(County = county) |>
+ rename(jurisdiction = jurisdiction) |>
  DT::datatable()
  
 ```
@@ -541,9 +599,9 @@ Season)
 graph_2_tree_plantings_year <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  group_by(season, year, county) |>
+  group_by(season, year, jurisdiction) |>
   summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
-  rename(Season = season, Year = year, County = county) |>
+  rename(Season = season, Year = year, jurisdiction = jurisdiction) |>
   mutate(Year = as.double(Year)) |>
   ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
    geom_bar(position = "stack", stat = "identity") +
@@ -561,7 +619,7 @@ graph_2_tree_plantings_year <-
          y = "Total Giveaways",
          fill = "Season") +
     theme_minimal() +
-    facet_wrap(~ County)
+    facet_wrap(~ jurisdiction)
 
 ggsave(
   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
@@ -601,7 +659,7 @@ Figure 4. Map of Tree Plantings in Baltimore Neighborhoods
 figure_4_tree_neighborhoods_layer <-
 neighborhood_read |>
   left_join(
-    read_csv("output_data/neighborhood_count_bwb.csv")
+    read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/neighborhood_count_bwb.csv")
     , by = "Name"
   ) |>
   mutate(count = case_when(
@@ -668,7 +726,7 @@ graph_3_tree_plantings_year_neighborhood <-
 figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
   left_join(
-    read_csv("output_data/neighborhood_count_year_bwb.csv"), 
+    read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
     by = "Name"
   ) |>
   rename(Year = year, Neighborhood = Name) |>
@@ -718,7 +776,7 @@ been received.
 unique_provider <-
  blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(gvwy_lc) |> 
+  tabyl(giveaway_location) |> 
   as_tibble() |> 
   arrange(desc(n)) |>
   slice(-1) 
@@ -726,7 +784,7 @@ unique_provider <-
 unique_provider_na <- #TODO: Save out as a PNG
  blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(gvwy_lc) |> 
+  tabyl(giveaway_location) |> 
   as_tibble() |> 
   arrange(desc(n)) |>
   slice(1) 
@@ -741,8 +799,8 @@ Table 6. Table of Giveaway Locations
 ```{r echo=FALSE}
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(gvwy_lc) |> 
-  rename(`Giveaway Location` = gvwy_lc) |>
+  tabyl(giveaway_location) |> 
+  rename(`Giveaway Location` = giveaway_location) |>
   as_tibble() |> 
   arrange(desc(n)) |>
   slice(-1) |> 
@@ -763,11 +821,11 @@ Graph 4. Graph of Total Giveaway Locations
 graph_4_giveaway_locations <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(gvwy_lc) |>
+  tabyl(giveaway_location) |>
   as_tibble() |> 
   arrange(desc(n)) |>
   slice(-1) |> 
-  rename("Number of Trees" = n, `Giveaway Location` = gvwy_lc) |>
+  rename("Number of Trees" = n, `Giveaway Location` = giveaway_location) |>
   mutate(percent = round(100 * percent, 2)) |>
   ggplot(aes(x = reorder(`Giveaway Location`, `Number of Trees`), y = `Number of Trees`)) +
     geom_col(fill = "#519342") +
@@ -811,19 +869,20 @@ colors_species <-  #TODO: Change colors to be more earth-tone like
 )
 ```
 
-The following map highlights the top ten species giveaway in the county.
+The following map highlights the top ten species giveaway in the
+jurisdiction.
 
 Figure 5. Map of Top 10 Species Giveaway
 
 ```{r echo=FALSE}
 blue_water_giveaway_data |>
-  mutate(cmmn_nm = case_when(
-    cmmn_nm %in% c("Serviceberry","Sweetbay Magnolia","Pawpaw","American Persimmon","Common Fig","American Plum","American Holly","Black Gum","Eastern Redbud", "American Hornbeam") ~    cmmn_nm, 
+  mutate(common_name = case_when(
+    common_name %in% c("Serviceberry","Sweetbay Magnolia","Pawpaw","American Persimmon","Common Fig","American Plum","American Holly","Black Gum","Eastern Redbud", "American Hornbeam") ~    common_name, 
     TRUE ~ NA_character_
   )) |>
-  filter(!is.na(cmmn_nm)) |>
-  dplyr::select(year, season, cmmn_nm, gns_spc) |>
-  mapview(zcol = "cmmn_nm", col.regions = colors_species, layer.name = "Top 10 Tree Species Planted from Blue Water Baltimore") #TODO: Fix how they are being highlighted and the order
+  filter(!is.na(common_name)) |>
+  dplyr::select(year, season, common_name, genus_species) |>
+  mapview(zcol = "common_name", col.regions = colors_species, layer.name = "Top 10 Tree Species Planted from Blue Water Baltimore") #TODO: Fix how they are being highlighted and the order
 ```
 
 ```{r echo=FALSE}
@@ -831,8 +890,8 @@ blue_water_giveaway_data |>
 datatable_6_giveaway <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
-  tabyl(cmmn_nm) |>
-  rename(`Common Name` = cmmn_nm) |>
+  tabyl(common_name) |>
+  rename(`Common Name` = common_name) |>
   arrange(desc(n)) |>
   mutate(percent = round(100 * percent, 2))
   
@@ -898,9 +957,9 @@ Table 7. Table of Species by Jurisdictions
 table_7_species_jurisdictions <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
-  rename(`Common Name` = cmmn_nm) |>
-  group_by(`Common Name`,`county`) |>
-  tabyl(`Common Name`,`county`) |>
+  rename(`Common Name` = common_name) |>
+  group_by(`Common Name`,`jurisdiction`) |>
+  tabyl(`Common Name`,`jurisdiction`) |>
   mutate(`Total` = rowSums(across(c(`Baltimore City`,`Baltimore County`, `Neither`)))) |>
   arrange(desc(Total)) 
   
@@ -912,7 +971,7 @@ table_7_species_jurisdictions_top_5_city <-
   arrange(desc(`Baltimore City`)) |>
   slice(1:5)
 
-table_7_species_jurisdictions_top_5_county <-
+table_7_species_jurisdictions_top_5_jurisdiction <-
   table_7_species_jurisdictions |>
   arrange(desc(`Baltimore County`)) |>
   slice(1:5)
@@ -929,42 +988,42 @@ Baltimore City:
 
 In the case of the the top five (5) for Baltimore County, they are the
 following:
-`r paste(paste(table_7_species_jurisdictions_top_5_county$'Common Name'[1:4], collapse = ", "), ", and ",table_7_species_jurisdictions_top_5_county$'Common Name'[5], sep = "")`.
+`r paste(paste(table_7_species_jurisdictions_top_5_jurisdiction$'Common Name'[1:4], collapse = ", "), ", and ",table_7_species_jurisdictions_top_5_jurisdiction$'Common Name'[5], sep = "")`.
 
 Of course, these change respective of time. The next part will
 underscore a graph of the top ten species within each jurisdiction:
 Baltimore City, Baltimore County, and neither.
 
 ```{r include=FALSE}
-# Graph 6. Graph of the Top Ten Species per each County
-graph_6_county_top_species <-
+# Graph 6. Graph of the Top Ten Species per each jurisdiction
+graph_6_jurisdiction_top_species <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
-  rename(`Common Name` = cmmn_nm) |>
-  group_by(county, `Common Name`) |>
+  rename(`Common Name` = common_name) |>
+  group_by(jurisdiction, `Common Name`) |>
   summarize(Total = n(), .groups = 'drop') |>
-  arrange(county, desc(Total)) |>
-  group_by(county) |>
+  arrange(jurisdiction, desc(Total)) |>
+  group_by(jurisdiction) |>
   slice_head(n = 10) |>
-  group_by(county) |>
+  group_by(jurisdiction) |>
   mutate(`Common Name` = fct_reorder(`Common Name`, Total, .desc = TRUE)) |>
   ggplot(aes(x = `Common Name`, y = Total)) +
   geom_bar(stat = "identity", fill = "#519342") + #TODO: Fix the reordering to have it ascending/descending for both Baltimore County and Neither 
   coord_flip() +
-  facet_wrap(~ county, scales = "free_y") +
-  labs(title = "Top 10 Tree Species in Each County",
+  facet_wrap(~ jurisdiction, scales = "free_y") +
+  labs(title = "Top 10 Tree Species in Each jurisdiction",
        x = "Common Name",
        y = "Total Number of Trees") +
   theme_minimal() 
 
 ggsave(
   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_6_top_ten_species_jurisdiction.png"), #TODO: Fix to make more general file saving path
-  plot = graph_6_county_top_species,
+  plot = graph_6_jurisdiction_top_species,
   width = 33,
   height = 10
 )
 
-graph_6_county_top_species 
+graph_6_jurisdiction_top_species 
 ```
 
 Again, it is also important to understand what were the most popular
@@ -976,7 +1035,7 @@ Graph 7. Graph of the Top Ten Species per year
 graph_7_year_top_species <-
 blue_water_giveaway_data |>
   st_drop_geometry() |>
-  rename(`Common Name` = cmmn_nm) |>
+  rename(`Common Name` = common_name) |>
   group_by(year, `Common Name`) |>
   summarize(Total = n(), .groups = 'drop') |>
   arrange(year, desc(Total)) |>
@@ -1014,23 +1073,23 @@ Graph 8. Graph of the Top Ten Species per year
 top_five_giveaway_locations <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  rename(`Common Name` = cmmn_nm) |>
-  group_by(gvwy_lc) |>
+  rename(`Common Name` = common_name) |>
+  group_by(giveaway_location) |>
   summarize(Total = n(), .groups = 'drop') |>
-  filter(!is.na(gvwy_lc)) |>
+  filter(!is.na(giveaway_location)) |>
   top_n(5, Total) |>
-  pull(gvwy_lc)
+  pull(giveaway_location)
 
 top_10_species_in_top_locations <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
-  rename(`Common Name` = cmmn_nm) |>
-  filter(gvwy_lc %in% top_five_giveaway_locations) |>
-  group_by(gvwy_lc, `Common Name`) |>
+  rename(`Common Name` = common_name) |>
+  filter(giveaway_location %in% top_five_giveaway_locations) |>
+  group_by(giveaway_location, `Common Name`) |>
   summarize(Total = n(), .groups = 'drop') |>
-  group_by(gvwy_lc) |>
+  group_by(giveaway_location) |>
   slice_head(n = 10) |>
-  rename(`Giveaway Location` = gvwy_lc) |>
+  rename(`Giveaway Location` = giveaway_location) |>
   group_by(`Common Name`,`Giveaway Location`) |>
   summarize(Total = sum(Total), .groups = 'drop') |>
   arrange(desc(Total)) |>
@@ -1063,13 +1122,13 @@ went relative to our watersheds is equally as important.
 ## Watersheds
 
 To begin, here is a general map of the watersheds in the Baltimore
-County and Baltimore City region.
+jurisdiction and Baltimore City region.
 
 Figure 6. Map of Watersheds in BWB Service Area (In Respective to the
 Counties)
 
 ```{r}
-county_layer + watershed_layer
+jurisdiction_layer + watershed_layer
 #TODO: Add boundary, 
 ```
 
@@ -1090,9 +1149,9 @@ blue_water_giveaway_data |>
 
 In terms of the plantings per watershed, these are the ones with the
 most ones in descending order:
-`r paste(paste(table_8_watershed_count$'Watershed Name'[1:15], collapse = ", "), ", and ",table_8_watershed_count$'Watershed Name'[16], sep = "")`.
+`r paste(paste(table_8_watershed_count$'watershed'[1:15], collapse = ", "), ", and ",table_8_watershed_count$'watershed'[16], sep = "")`.
 A special thing to notice is that there is a total of
-`r table_8_watershed_count |> filter('Watershed Name' == "Outside BWB Service Area") |> pull(Count)`
+`r table_8_watershed_count |> filter('watershed' == "Outside BWB Service Area") |> pull(Count)`
 outside of Blue Water Baltimore Service's area. The following will show
 how this, relatively speaking, is a far lower margin that what we might
 previously have imagined.
@@ -1267,7 +1326,7 @@ graph_10_watersheds_species_count <-
     TRUE ~ watershed
   )) |>
   st_drop_geometry() |>
-  rename(Watershed = watershed, `Common Name` = cmmn_nm) |>
+  rename(Watershed = watershed, `Common Name` = common_name) |>
   group_by(Watershed, `Common Name`) |>
   summarise(`Number of Giveaways` = n(), .groups = "drop") |>
   arrange(Watershed, desc(`Number of Giveaways`)) |>
@@ -1343,7 +1402,7 @@ Census Block)
 cbg_census_count <-
   cbg |>
   left_join(
-  read_csv("output_data/census_count_year.csv")
+  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
     , by = "NAME"
   ) 
 
@@ -1397,7 +1456,7 @@ ggsave(
 ```{r}
 blue_water_giveaway_data |>
  mutate(household_income = cut(
-    mdn_hs_,
+    median_household_income,
     breaks = c(seq(0, 150000, by = 20000), Inf),
     labels = c(paste0("$", scales::comma(seq(0, 130000, by = 20000)), #scales::comma adds this to the number
                       " - $", scales::comma(seq(20000, 150000, by = 20000))), #scales::comma adds this to the number 
