@@ -280,12 +280,76 @@ blue_water_baltimore_data_new |>
   st_write(paste0("output_data/blue_water_baltimore_data_", Sys.Date(), ".gpkg"), append = FALSE)
 
 blue_water_baltimore_data_check <- 
-  st_read("output_data/blue_water_baltimore_data_2024-08-21.gpkg") #DEXTER: Change whenver your sys.date does it
+  st_read("output_data/blue_water_baltimore_data_2024-08-22.gpkg") #DEXTER: Change whenver your sys.date does it
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
 blue_water_baltimore_data_check |> mapview(zcol = 'median_household_income')
+
+# more scruitiny
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year, season)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(date)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(genus_species)
+
+species_checker <- 
+  blue_water_baltimore_data_check |> 
+  st_drop_geometry() |> 
+  tabyl(genus_species, common_name) |> 
+  tibble() |> 
+  pivot_longer(-genus_species) |> 
+  filter(value > 0)
+
+itree_species_checker <- 
+  blue_water_baltimore_data_check |> 
+  st_drop_geometry() |> 
+  tabyl(genus_species, itree) |> 
+  tibble() |> 
+  pivot_longer(-genus_species) |> 
+  filter(value > 0)
+
+# should be NONE! wohoo
+species_checker |> anti_join(itree_species_checker, by = 'genus_species')
+
+# should be NONE! wohoo
+species_checker |> 
+  left_join(itree_species_checker, by = 'genus_species') |> 
+  filter(value.x != value.y)
+
+# TODO, give "itree" a better name like "itree_sp_code" or similar
+
+
+# TODO, fix missing State values
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, state) # missing state values
+
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, jurisdiction)
+
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(phone) # is this right?
+blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_name) |> count()|> arrange(phone)# is this right? are these multiple trees per person/phone number?
+
+
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location, year)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year, season, giveaway_location) |> bind_rows(.id = 'loc')
+
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(watershed_id, watershed) # change NA to "other" in "watershed" column
+
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(geoid)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(geoid, jurisdiction)
+
+# very good
+blue_water_baltimore_data_check %$% cor.test(total_population, total_population_over_25)
+
+# TODO multiple education by 100 to make percent, and add "pct_" to column name
+blue_water_baltimore_data_check %$% cor.test(at_least_hs, at_least_college)
+
+blue_water_baltimore_data_check %$% cor.test( median_household_income, at_least_college) # good.
+
+blue_water_baltimore_data_check |> 
+  ggplot(aes(median_household_income)) + 
+  geom_density() # good
+
 ############  
 ```
 
