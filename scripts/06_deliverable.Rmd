@@ -4,7 +4,7 @@ author: "Eduardo Marin (with Dexter H Locke)"
 date: "`r format(Sys.time())`"
 output:
   html_document:
-    theme: flatly
+    theme: readable
     code_folding: hide
     fig_width: 8
     fig_height: 7
@@ -12,6 +12,7 @@ output:
     toc: true
     toc_float: true
     self_contained: true
+    number_sections: true
 editor_options: 
   chunk_output_type: console
   markdown: 
@@ -20,14 +21,23 @@ editor_options:
 
 # Blue Water Baltimore
 
-## Tree Giveaways Over the Past Ten Years
+## Introduction
 
-The following presentation is an entry-level analysis of the past **ten
-years**, from 2013 to 2014, of Blue Water Baltimore's tree giveaways
-program.
+**Blue Water Baltimore** is a dedicated organization committed to
+**restoring** and **preserving** the quality of the Baltimore region's
+waterways. By safeguarding these vital resources, they promote a
+**healthier environment**, support the **local economy** through green
+spaces, and contribute to the well-being of the **community**. Their
+work spans a range of essential activities, including pollution
+investigation, trash cleanups, and water monitoring. Additionally, they
+operate a **biyearly tree giveaway program** each Spring and Fall, aimed
+at enhancing our local community.
 
-The document was prepared by **Dexter H. Locke** and **Eduardo Marin**.
-The research was analyzed through six different lens, being the
+![](images/bwb_stillmeadow_giveaway.png)
+
+The following presentation will highlight an entry-level analysis of the
+past **ten years**, from 2013 to 2023, of their tree giveaway program.
+The analysis will be broken down in five different categories, being the
 following:
 
 -   *Location and time*
@@ -37,8 +47,9 @@ following:
 -   *Host location*
 -   *Origin-destination*
 
-> The data will weave a powerful narrative, showcasing the distinctive
-> and meaningful contributions of Blue Water Baltimore to our community.
+> The data will highlight the distinctive and meaningful contributions
+> from Blue Water Baltimore, especially in terms of environmental
+> services, to our community
 
 ```{r Loading Packages, message=FALSE, include=FALSE}
 # Loading all packages
@@ -119,7 +130,6 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
              , 'ed_plus_professional_degree' = 'B15003_024'
              , 'ed_plus_doctorate_degree' = 'B15003_025'
             )
-#TODO: Education is not divided by total population but by the education (confused with this and percentage)
 
 (maryland <-
   tidycensus::get_acs(
@@ -132,6 +142,18 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
     , moe_level = 95
     ) |>
    st_transform(crs = st_crs(4326)))
+
+(maryland_counties <-
+  tidycensus::get_acs(
+      geography = 'county'
+    , state = 'MD'
+    , variables = my_vars
+    , year = 2021
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))) 
 
 (baltimore_city_counties <-
   tidycensus::get_acs(
@@ -180,8 +202,8 @@ cbg <-
     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
     rename(NAME = NAM) |>
     mutate(
-      at_least_hs = rowSums(across(starts_with("ed_"))),
-      at_least_college = rowSums(across(starts_with("ed_plus")))
+      at_least_hs = (rowSums(across(starts_with("ed_"))))/total_population_over_25, #This gets percentage
+      at_least_college = (rowSums(across(starts_with("ed_plus"))))/total_population_over_25 #This gets percentage
     )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
     dplyr::select(-starts_with("ed_"))
 ```
@@ -205,8 +227,6 @@ city_layer <-
   mutate("Name" = "Baltimore city") |>
   mapview(col.regions = "#525252", alpha = 0.25, layer.name = "Baltimore City") 
 
-city_layer <-
-
 #Making the Baltimore neighborhood read
 neighborhood_read <-
   st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
@@ -222,29 +242,12 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
- st_read("../baltimore_tree_partners_data_to_big/shapefiles/bwb_giveaway_final/final_blue_water_baltimore_giveaways.shp")
+   st_read("output_data/blue_water_baltimore_data_2024-08-21.gpkg") #FINAL GEOPACKAGE!:)
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
   blue_water_giveaway_data |>
   mapview(col.regions = "#5d6e75", alpha = 0.25, layer.name = "Total Tree Giveaways") 
-
-## Fixing the Blue Water Giveaway Data  
-neighborhood_intersect <-
-  st_intersects(blue_water_giveaway_data, neighborhood_read, sparse = FALSE) |>
-  apply(1, any) 
-
-county_intersect <-
-  st_intersects(blue_water_giveaway_data, baltimore_city_counties, sparse = FALSE) |>
-  apply(1, any) 
-
-blue_water_giveaway_data <-
-  blue_water_giveaway_data |>
-   mutate(county = case_when(
-    neighborhood_intersect ~ "Baltimore City",
-    county_intersect ~ "Baltimore County",
-    TRUE ~ "Neither"
-  ))
 
 ## Reading in the Watershed Data
 blue_water_watershed_data <-
@@ -269,17 +272,14 @@ watershed_data <-
 watershed_layer <-
   watershed_data |>
   mapview(col.regions = "#005273", alpha = 0.25, layer.name = "Watersheds")
-
-#Adding this information to the BWB Data
-blue_water_giveaway_data <-
-  blue_water_giveaway_data |>
-st_join(watershed_data, join = st_intersects) |>
-  dplyr::select(-geometry)
 ```
 
 ```{r include=FALSE}
 block_group_counts <-
-  st_join(blue_water_giveaway_data, cbg[, c("NAME","GEOID")]) |>
+  blue_water_giveaway_data |>
+  dplyr::select(year, season, common_name, jurisdiction, giveaway_location, block_group_name, geoid) |>
+  rename(NAME = block_group_name, GEOID = geoid) |>
+  st_join(cbg[, c("NAME","GEOID")]) |>
   group_by(NAME.y, GEOID.y, year) |>
   summarise(count = n()) |>
   rename(NAME = NAME.y, GEOID = GEOID.y) |>
@@ -346,26 +346,21 @@ Color Palette
    
 ```
 
-## Location & Time
+## Analysis
 
-In the past eleven years of running Blue Water Baltimore's giveaway
-program, there has been a total of
-**`r nrow(blue_water_giveaway_data)`** tree giveaways. Although the
-number is an overestimate since 2017 and 2018 included TreeBaltimore's
-values, the impact is undeniable. Blue Water's tree plantings have
-reached homeowners across the state of Maryland, from Frederick to
-Caroline County.
+### Location and time
 
-Figure 1. Giveaway Map of All Jurisdictions
+"Blue Water Baltimore has operated its tree giveaway service for [TODO:
+Insert Years]. In the past decade alone, they have distributed
+approximately `r scales::comma(round(nrow(blue_water_giveaway_data)))`
+trees (`r nrow(blue_water_giveaway_data)` to be exact)." Although the
+figure above is slightly overstated due to the inclusion of
+TreeBaltimore's giveaway values in 2017 and 2018, reflecting their
+partnership, the impact of Blue Water Baltimore on our local waterways
+and the environment is undeniable. Their tree giveaways have extended to
+homeowners across Maryland, from Frederick to Caroline County.
 
-```{r echo=FALSE}
-giveaway_layer + state_layer #TODO: Fix the map zoom to focus on Maryland; Change the color of the trees to be different from the background (potentially make state darker)
-```
-
-Of course, most of these tree plantings have went to homeowners within
-the city of Baltimore and Baltimore County.
-
-Figure 2. Giveaway Heatmap of All Jurisdiction
+Figure 1. Heatmap of Tree Giveaway Plantings in Maryland
 
 ```{r}
 leaflet(blue_water_giveaway_data) |>
@@ -374,9 +369,16 @@ leaflet(blue_water_giveaway_data) |>
              lat = ~st_coordinates(blue_water_giveaway_data)[,2], 
              blur = 5, 
              max = 0.10, 
-             radius = 6) #add jurisdictions here (make a similar from watersheds)
-                         #this one fixes with heatmap, just to show intensity
+             radius = 6) |>
+  addPolygons(data = maryland_counties, 
+              color = "black",       
+              weight = 2,            
+              opacity = 1,           
+              fillOpacity = 0)       
+
 ```
+
+As you can see through the map, there is a high
 
 More specifically, these giveaways went to northern Baltimore County -
 near Towson - and northern Baltimore. If you solely look at Baltimore
