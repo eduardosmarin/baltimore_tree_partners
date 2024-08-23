@@ -54,6 +54,8 @@ following:
 ```{r Loading Packages, message=FALSE, include=FALSE}
 # Loading all packages
 
+# TODO load in 2019 acs
+
 ## List all of your packages here
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -245,7 +247,7 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
-   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-23.gpkg") #FINAL GEOPACKAGE!:)
+   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-23.gpkg", as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -1614,6 +1616,28 @@ ggsave(
 ```
 
 ```{r}
+
+# TODO: put in chunk zero
+library(ggridges)
+
+blue_water_giveaway_data |> 
+  st_drop_geometry() |> 
+  mutate(year = factor(year, levels = c(2023:2013))) |> 
+  ggplot(aes(median_household_income, year, year, fill = year)) +
+  # TODO; go nutz, but tell a sstory
+  # https://jtr13.github.io/cc19/ridgeline-plots.html
+  geom_density_ridges(jittered_points = TRUE) + 
+  theme_bw(16) + 
+  scale_x_continuous(labels = scales::dollar_format()) + 
+  theme(legend.position = "none") +
+  labs(title = 'The distirbution of income is getting lower over time') + 
+  NULL
+  
+
+```
+
+
+```{r}
 blue_water_giveaway_data |>
   mutate(household_income = cut(
     median_household_income,
@@ -1767,23 +1791,23 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 
 ```{r}
-lifemode_colors <- c(
-    "Affluent Estates" = "#9e0142", 
-    "Upscale Avenues" = "#d53e4f", 
-    "Senior Styles" = "#f46d43", 
-    "Middle Ground" = "#fdae61", 
-    "Hometown" = "#e6f598", 
-    "GenXurban" = "#abdda4", 
-    "Uptown Individuals" = "#92b1e2", 
-    "Scholars and Patriots" = "#3288bd", 
-    "Midtown Singles" = "#5e4fa2", 
-    "Family Landscapes" = "#E83F6F", 
-    "Next Wave" = "#2274A5", 
-    "Cozy Country Living" = "#FFBF00", 
-    "Ethnic Enclaves" = "#32936F", 
-    "Rustic Outposts" = "#9F9F92",
-    "NA" = "#FFFFFF"
-)
+# lifemode_colors <- c(
+#     "Affluent Estates" = "#9e0142", 
+#     "Upscale Avenues" = "#d53e4f", 
+#     "Senior Styles" = "#f46d43", 
+#     "Middle Ground" = "#fdae61", 
+#     "Hometown" = "#e6f598", 
+#     "GenXurban" = "#abdda4", 
+#     "Uptown Individuals" = "#92b1e2", 
+#     "Scholars and Patriots" = "#3288bd", 
+#     "Midtown Singles" = "#5e4fa2", 
+#     "Family Landscapes" = "#E83F6F", 
+#     "Next Wave" = "#2274A5", 
+#     "Cozy Country Living" = "#FFBF00", 
+#     "Ethnic Enclaves" = "#32936F", 
+#     "Rustic Outposts" = "#9F9F92",
+#     "NA" = "#FFFFFF"
+# )
 
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
@@ -1798,6 +1822,51 @@ bwb_total_giveaway_with_Tapestry_2019 |>
          y = "Lifemode Groups") +
   theme_minimal()
 ```
+
+
+# tapestry box plots
+```{r}
+counts_per_cbg <- 
+  bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  group_by(GEOID_2019) |> 
+  count()
+
+
+library(ggpubr) # TODO add to chunk zero
+
+my_comp <- 
+  list(
+      c('Affluent Estates', ' Upscale Avenues')
+    , c('Affluent Estates', 'Senior Styles')
+    , c('Affluent Estates', 'Middle Ground')
+    , c('Affluent Estates', 'Hometown')
+    , c('Affluent Estates', 'GenXurban')
+    , c('Affluent Estates', 'Uptown Individuals')
+    , c('Affluent Estates', 'Scholars and Patriots')
+    , c('Affluent Estates', 'Midtown Singles'))
+
+
+bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  distinct(lifemode, GEOID_2019) |> 
+  left_join(counts_per_cbg, by = 'GEOID_2019') |> 
+  # drop_na() |> 
+  # filter(lifemode != 'Rustic Outposts') |> 
+  # ggplot(aes(lifemode, n)) +
+  ggpubr::ggboxplot( x= 'lifemode', y ='n'
+                     # , orientation = 'horizontal'
+                     , add = 'jitter'
+                     ) +
+  # https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html
+  ggpubr::stat_compare_means(label.y = 95, label.x = 12) + # overall p value
+  ggpubr::stat_compare_means(comparisons = my_comp) +
+  ylim(0, 110) +
+  NULL
+
+
+```
+
 
 ```{r}
 # Making a graph of the different lifegroups in Baltimore
