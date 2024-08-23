@@ -17,7 +17,6 @@ editor_options:
   chunk_output_type: console
   markdown: 
     wrap: 72
-runtime: shiny
 ---
 
 # Blue Water Baltimore
@@ -204,8 +203,8 @@ cbg <-
     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
     rename(NAME = NAM) |>
     mutate(
-      at_least_hs = (rowSums(across(starts_with("ed_"))))/total_population_over_25, #This gets percentage
-      at_least_college = (rowSums(across(starts_with("ed_plus"))))/total_population_over_25 #This gets percentage
+      pct_at_least_hs = (100)*((rowSums(across(starts_with("ed_"))))/total_population_over_25), #This gets percentage
+      pct_at_least_college = (100)*((rowSums(across(starts_with("ed_plus"))))/total_population_over_25) #This gets percentage
     )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
     dplyr::select(-starts_with("ed_"))
 ```
@@ -231,7 +230,7 @@ city_layer <-
 
 #Making the Baltimore neighborhood read
 neighborhood_read <-
-  st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
+  st_read("../baltimore_tree_partners_data_to_big/shapefiles/Neighborhood/Neighborhood.shp") |>
   dplyr::select(`Name`,`geometry`,`Shape__Are`,`Shape__Len`) |>
   st_zm(drop = TRUE, what = "ZM") |>
   st_transform(4326) |>
@@ -244,7 +243,7 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
-   st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-21.gpkg") #FINAL GEOPACKAGE!:)
+   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-23.gpkg") #FINAL GEOPACKAGE!:)
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -253,7 +252,7 @@ giveaway_layer <-
 
 ## Reading in the Watershed Data
 blue_water_watershed_data <-
- st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners_data_to_big/shapefiles/Maryland_Watersheds_-_8_Digit_Watersheds/HYDR_Watersheds8Digit_DNR.shp") |>
+ st_read("../baltimore_tree_partners_data_to_big/shapefiles/Maryland_Watersheds_-_8_Digit_Watersheds/HYDR_Watersheds8Digit_DNR.shp") |>
  st_transform(4326) 
 
 ## Creating filter for the Watershed Data
@@ -492,16 +491,23 @@ Highlighting the same information as before, the following table allows
 you to search by year to find the largest entry and its exact amount.
 
 Table 1. Table of Tree Giveaways over the Year (per Jurisdiction)
-
 ```{r}
+ table_blue_water_baltimore_join <-
   blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  group_by(jurisdiction, year) |>
+  count() |>
+  pivot_wider(names_from = year, values_from = n)
+  
+
+ blue_water_giveaway_data |>
   st_drop_geometry() |>
   tabyl(jurisdiction, year) |>
   as_tibble() |>
   filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither")) |>
  summarize(across(starts_with("20"), sum, na.rm = TRUE)) |>
  mutate(jurisdiction = "Total") |>
- bind_rows(table_2_blue_water_baltimore_join) |>
+ bind_rows(table_blue_water_baltimore_join) |>
  dplyr::select(11, 1:10) |>
  arrange(match(jurisdiction, c(setdiff(unique(jurisdiction), "Total"), "Total"))) |>
  as_tibble() |>
@@ -536,31 +542,18 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  
-  # Reactive expression to filter the data based on inputs
   filtered_data <- reactive({
-    req(input$year, input$season)  # Ensure inputs are available
-    
-    # Pause execution here to inspect the reactive context
-    browser()
-    
-    # Filter the data
+    req(input$year, input$season)
     blue_water_giveaway_data %>%
       filter(year == input$year, season == input$season)
   })
   
-  # Render the filtered map
   output$filtered_map <- renderMapview({
-    data <- filtered_data()  # This should only be called inside renderMapview
-    
-    # Pause execution here to inspect before rendering the map
-    browser()
-    
+    data <- filtered_data()
     if (nrow(data) == 0) {
       showNotification("No data available for the selected criteria", type = "warning")
       return(NULL)
     }
-    
     mapview(data, zcol = "genus_species")
   })
 }
@@ -595,7 +588,7 @@ graph_plantings_maryland_year_season <-
   d_plantings_maryland_year_season |>
   ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
    geom_bar(position = "dodge", stat = "identity") +
-    scale_fill_manual(values = graph_1_season_colors) +
+    scale_fill_manual(values = season_colors) +
     scale_y_continuous(
       limits = c(0, 2000),  #TODO: Make to 1750 the upper limit     
       breaks = seq(0, 2000, by = 250),  
@@ -611,7 +604,7 @@ graph_plantings_maryland_year_season <-
     theme_minimal() 
 
 # ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "location_graph_1_tree_plantings_general_v1.png"), #TODO: Fix to make more general file saving path
+#   filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_1_tree_plantings_general_v1.png"), #TODO: Fix to make more general file saving path
 #   plot = graph_1_tree_plantings_year_v1,
 #   width = 7,
 #   height = 7
@@ -637,7 +630,7 @@ graph_2_tree_plantings_year <-
   mutate(Year = as.double(Year)) |>
   ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
    geom_bar(position = "stack", stat = "identity") +
-    scale_fill_manual(values = graph_1_season_colors) +
+    scale_fill_manual(values = season_colors) +
     scale_y_continuous(
       limits = c(0, 2000),  #Rotate year on horoizontal and cut to 15,000        
       breaks = seq(0, 2000, by = 250),  
@@ -654,7 +647,7 @@ graph_2_tree_plantings_year <-
     facet_wrap(~ jurisdiction)
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
   plot = graph_2_tree_plantings_year, 
   width = 21, 
   height = 7
@@ -673,7 +666,7 @@ specifically at the **neighborhood level** within the city.
 figure_4_tree_neighborhoods_layer <-
 neighborhood_read |>
   left_join(
-    read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/neighborhood_count_bwb.csv")
+    read_csv("../baltimore_tree_partners/output_data/neighborhood_count_bwb.csv")
     , by = "Name"
   ) |>
   mutate(count = case_when(
@@ -746,7 +739,7 @@ graph_3_tree_plantings_year_neighborhood <-
 figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
   left_join(
-    read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
+    read_csv("../baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
     by = "Name"
   ) |>
   rename(Year = year, Neighborhood = Name) |>
@@ -766,7 +759,7 @@ figure_4_tree_neighborhoods_layer |>
   facet_wrap(~ Neighborhood) 
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "location_graph_3_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_3_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
   plot = graph_3_tree_plantings_year_neighborhood, 
   width = 21, 
   height = 10
@@ -826,7 +819,6 @@ Table 6. Table of Giveaway Locations
   slice(-1) |> 
   rename("Number of Trees" = n, Percent = percent) |>
   mutate(Percent = round(100 * Percent, 2)) |>
-  dplyr::select(-`valid_percent`) |>
   DT::datatable()
 ```
 
@@ -857,7 +849,7 @@ graph_4_giveaway_locations <-
 
 # TODO: Fix the graph (currently offset)
 # ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "provider_graph_4_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
+#   filename = file.path("../baltimore_tree_partners/deliverables", "provider_graph_4_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
 #   plot = graph_4_giveaway_locations,
 #   width = 21,
 #   height = 10
@@ -960,7 +952,7 @@ graph_5_common_rare_species <-
   NULL
 
 # ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_5_common_rare_species.svg"), #TODO: Fix to make more general file saving path
+#   filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_5_common_rare_species.svg"), #TODO: Fix to make more general file saving path
 #   plot = graph_5_common_rare_species,
 #   width = 22,
 #   height = 10
@@ -1038,7 +1030,7 @@ blue_water_giveaway_data |>
   theme_minimal() 
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_6_top_ten_species_jurisdiction.png"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_6_top_ten_species_jurisdiction.png"), #TODO: Fix to make more general file saving path
   plot = graph_6_jurisdiction_top_species,
   width = 33,
   height = 10
@@ -1073,7 +1065,7 @@ blue_water_giveaway_data |>
   theme_minimal() 
 
 # ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_7_top_ten_species_yearn.svg"), #TODO: Fix to make more general file saving path
+#   filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_7_top_ten_species_yearn.svg"), #TODO: Fix to make more general file saving path
 #   plot = graph_7_year_top_species,
 #   width = 20,
 #   height = 15
@@ -1125,7 +1117,7 @@ top_10_species_in_top_locations <-
   theme_minimal() #TODO: Fix to make sure it is arranged in descending order
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "species_graph_top_10_species_in_top_locations.svg"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_top_10_species_in_top_locations.svg"), #TODO: Fix to make more general file saving path
   plot = top_10_species_in_top_locations,
   width = 40,
   height = 15
@@ -1186,7 +1178,6 @@ table_8_watershed_count_datatable <-
   tabyl(watershed) |>
   arrange(desc(n)) |>
   mutate(percent = round(100 * percent, 2)) |>
-  dplyr::select(-valid_percent) |>
   rename(Count = n, Percent = percent) |>
   mutate(watershed = case_when(
     is.na(watershed) ~ "Outside BWB Service Area",
@@ -1233,14 +1224,14 @@ graph_8_watersheds_count <-
 graph_8_watersheds_count 
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.png"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.png"), 
   plot = graph_8_watersheds_count,
   width = 40,
   height = 15
 )
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.svg"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_seasons.svg"), 
   plot = graph_8_watersheds_count,
   width = 40,
   height = 15
@@ -1290,7 +1281,7 @@ graph_9_watersheds_count_year <-
   mutate(Year = as.double(Year)) |>
   ggplot(aes(x = Year, y = `Number of Giveaways`)) +
   geom_col(fill = "#519342") + 
-  scale_color_manual(values = graph_1_season_colors) +
+  scale_color_manual(values = season_colors) +
   facet_wrap(~ `Watershed`, scales = "free_y") +
   scale_x_continuous(
     breaks = seq(2013, 2023, by = 2)
@@ -1303,14 +1294,14 @@ graph_9_watersheds_count_year <-
 graph_9_watersheds_count_year 
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.png"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.png"), 
   plot = graph_9_watersheds_count_year,
   width = 40,
   height = 15
 )
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.svg"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_year.svg"), 
   plot = graph_9_watersheds_count_year,
   width = 40,
   height = 15
@@ -1364,14 +1355,14 @@ graph_10_watersheds_species_count <-
 graph_10_watersheds_species_count 
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.png"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.png"), 
   plot = graph_10_watersheds_species_count,
   width = 40,
   height = 15
 )
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.svg"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_giveaways_watershed_top_five.svg"), 
   plot = graph_10_watersheds_species_count,
   width = 40,
   height = 15
@@ -1426,7 +1417,7 @@ Census Block)
 cbg_census_count <-
   cbg |>
   left_join(
-  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
     , by = "NAME"
   ) 
 
@@ -1471,7 +1462,7 @@ bivariate_count_income_map <-
 bivariate_count_income_map
 
 ggsave(
-  filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "graph_bivariate_income_giveaway.svg"), 
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_bivariate_income_giveaway.svg"), 
   plot = bivariate_count_income_map,
   width = 45,
   height = 12
@@ -1508,7 +1499,6 @@ blue_water_giveaway_data |>
   theme_minimal() +
   theme(legend.position = "bottom")
 
-
 blue_water_giveaway_data |>
   mutate(household_income = cut(
     median_household_income,
@@ -1526,7 +1516,7 @@ blue_water_giveaway_data |>
   st_drop_geometry() |>
 ggplot(aes(x = household_income, y = factor(year), fill = `Number of Giveaways`)) +
   geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +  # Adjust colors as desired
+  scale_fill_gradient(low = "white", high = "red") + 
   labs(
     x = "Median Household Income Group",
     y = "Year",
@@ -1539,28 +1529,32 @@ ggplot(aes(x = household_income, y = factor(year), fill = `Number of Giveaways`)
 ```
 
 ```{r eval=FALSE, include=FALSE}
-legend_order_census_income_count <- 
-  seq(0, 200000, length.out = 9) 
+census_hs_education_layer <-
+  cbg_census_count |>
+  dplyr::select(GEOID, NAME, geometry, at_least_hs, total_population_over_25) |>
+  mutate(`At Least High School Degree or GED` = 100*(at_least_hs/total_population_over_25)) |>
+  mutate(`At Least High School Degree or GED` = case_when(
+    is.na(`At Least High School Degree or GED`) ~ 0,
+    TRUE ~ `At Least High School Degree or GED`)) 
 
-cbg_census_count |>
-  ggplot(aes(x = year, y = median_household_income, fill = count)) +
-  geom_tile() +
-  scale_fill_gradientn(
-    colours = c("blue", "red"), # Adjust colours as needed
-    breaks = legend_order_census_income_count,
-    labels = scales::comma(legend_order_census_income_count) # This adds commas to the labels for better readability
-  ) +
-  labs(x = "Year", y = "Income Bracket", fill = "Giveaway Counts") +
-  theme_minimal()
+## creating the fisher breaks layer
+fisher_breaks_at_least_hs <- 
+  classIntervals(
+     census_hs_education_layer$`At Least High School Degree or GED`
+    , n = 5
+    , style = "fisher"
+    )$brks
+
+## creating the map
+census_hs_education_map <-
+  census_hs_education_layer |>
+  mapview(  zcol = "At Least High School Degree or GED"
+          , layer.name = "Percentage of People 25 and Over with At Least a High School Degree"
+          , at = fisher_breaks_at_least_hs)
+
+## creating a Sync map of Giveaway Count and Census Block
+sync(census_hs_education_map, census_count_map_v2)
 ```
-
-
-
-
-
-
-
-
 
 
 
@@ -1569,7 +1563,7 @@ cbg_census_count |>
 figure_3_census_count_layer <-
   cbg |>
   left_join(
-  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
     , by = "NAME"
   ) |>
   mutate(count = case_when(
