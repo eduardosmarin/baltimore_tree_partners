@@ -111,7 +111,9 @@ options(tigris_use_cache = TRUE)
 
 ```{r Loading Census Data, include=FALSE}
 # Pulling census data
-## Listing needed variables
+## Listing needed variables 
+
+#TODO: Save this out the geopackage for this 
 variables_acs <- 
   tidycensus::load_variables('acs5', year = 2021)
 
@@ -309,7 +311,7 @@ census_count_map <-
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
 ```
 
-```{r Loading Tapestry, echo=FALSE, message=FALSE}
+```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
 # # 2019
 # tap_path <- '/Users/dlocke/TAP/Tap2019/2019 Tapestry Complete.gdb/'
 # st_layers(tap_path)
@@ -444,18 +446,21 @@ census_count_map <-
 #   distinct(urbanization, lifemode, segment)
 #
 # save(tap_lu, file = paste0('output_data/tap_lu_', Sys.Date(), '.RData'))
+# 
+# # makes tap_lu a Look UP for the value
+# load('output_data/tap_lu_2024-06-25.RData')
+# 
+# tap_lu |> map(~levels(.)) # order matters!
+# 
+# bwb_total_giveaway_with_Tapestry_2019 <-
+#   blue_water_giveaway_data |>
+#   leaftap_lu
+# 
+# save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
+```
 
-# makes tap_lu a Look UP for the value
-load('output_data/tap_lu_2024-06-25.RData')
 
-tap_lu |> map(~levels(.)) # order matters!
-
-bwb_total_giveaway_with_Tapestry_2019 <-
-  blue_water_giveaway_data |>
-  (tap_lu)
-
-save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
-
+```{r Loading Tapestry Data, echo=FALSE, message=FALSE}
 # makes 'bwb_total_giveaway_with_Tapestry_2019'
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
 ```
@@ -823,10 +828,6 @@ figure_4_tree_neighborhoods_layer |>
 
 As alluded to earlier, there is a larger percentage of tree plantings
 within the northern and central part of Baltimore. Neighborhoods like
-`r paste0(figure_4_tree_neighborhoods_layer |>
-arrange(desc(Number_of_Trees)) |> slice(1:4) |> pull(Neighborhood),
-collapse = ", ")` and `r paste0(figure_4_tree_neighborhoods_layer |>
-arrange(desc(Number_of_Trees)) |> slice(5) |> pull(Neighborhood))`
 
 ```{r eval=FALSE, message=FALSE, include=FALSE}
 # Table 4. Table of Plantings in Each Neighborhood
@@ -836,6 +837,9 @@ arrange(desc(Number_of_Trees)) |> slice(5) |> pull(Neighborhood))`
   dplyr::select("Name","Density") |>
   arrange(desc(`Density`)) |>
   DT::datatable()
+
+
+# `r paste0(figure_4_tree_neighborhoods_layer) |> arrange(desc('Number of Trees')) |> slice(1:4) |> pull(Neighborhood), collapse (", ")` and `r paste0(figure_4_tree_neighborhoods_layer) |> arrange(desc('Number of Trees')) |> slice(5) |> pull(Neighborhood)`.
 ```
 
 may come surprising at first. However, these numbers are taking into
