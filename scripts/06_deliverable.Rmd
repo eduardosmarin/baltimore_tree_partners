@@ -451,8 +451,8 @@ load('output_data/tap_lu_2024-06-25.RData')
 tap_lu |> map(~levels(.)) # order matters!
 
 bwb_total_giveaway_with_Tapestry_2019 <-
-  bwb_total_giveaway |>
-  st_join(tap)
+  blue_water_giveaway_data |>
+  (tap_lu)
 
 save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
 
@@ -1757,7 +1757,8 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
   
 
- ```
+```
+
 
 ```{r}
 lifemode_colors <- c(
