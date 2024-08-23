@@ -86,7 +86,7 @@ options(tigris_use_cache = TRUE)
 variables_acs <- 
   tidycensus::load_variables('acs5', year = 2021)
 
-my_vars <- c(  'pct_median_household_income' = 'B19013_001'
+my_vars <- c(  'median_household_income' = 'B19013_001'
              , 'total_population' = 'B01003_001'
              , 'households' = 'B11001_001'
              , 'white_alone' = 'B03002_003'
@@ -137,8 +137,8 @@ cbg <-
     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
     rename(NAME = NAM) |>
     mutate(
-      at_least_hs = (rowSums(across(starts_with("ed_"))))/total_population_over_25, #This gets percentage
-      at_least_college = (rowSums(across(starts_with("ed_plus"))))/total_population_over_25 #This gets percentage
+      pct_at_least_hs = (rowSums(across(starts_with("ed_"))))/total_population_over_25, #This gets percentage
+      pct_at_least_college = (rowSums(across(starts_with("ed_plus"))))/total_population_over_25 #This gets percentage
     ) |>
     dplyr::select(-starts_with("ed_"))
 
@@ -274,11 +274,13 @@ blue_water_baltimore_data_new <-
 blue_water_baltimore_data |>
   dplyr::select(-`Watershed Name (6)`,-mde6name, -white_alone) |>
   mutate(zip_code = as.character(zip_code)) |>
-  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, pct_median_household_income, median_age, at_least_hs, at_least_college, geometry) |>
+  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, pct_at_least_hs, pct_at_least_college, geometry) |>
   rename(itree_sp_code = itree) |>
   mutate(state = ifelse(is.na(state), "MD", state),
          watershed = ifelse(is.na(watershed), "Other", watershed),
-         pct_median_household_income = 100*pct_median_household_income)
+         pct_at_least_hs = 100*(pct_at_least_hs),
+         pct_at_least_college = 100*(pct_at_least_college)
+         )
 
 blue_water_baltimore_data_new |>
   st_write(paste0("output_data/blue_water_baltimore_data_", Sys.Date(), ".gpkg"), append = FALSE)
@@ -291,7 +293,7 @@ blue_water_baltimore_data_check <-
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
-blue_water_baltimore_data_check |> mapview(zcol = 'pct_median_household_income')
+blue_water_baltimore_data_check |> mapview(zcol = 'median_household_income')
 
 # more scruitiny
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year)
@@ -352,12 +354,12 @@ blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(geoid, jurisdicti
 blue_water_baltimore_data_check %$% cor.test(total_population, total_population_over_25)
 
 # TODO multiple education by 100 to make percent, and add "pct_" to column name (COMPLETED)
-blue_water_baltimore_data_check %$% cor.test(at_least_hs, at_least_college)
+blue_water_baltimore_data_check %$% cor.test(pct_at_least_hs, pct_at_least_college)
 
-blue_water_baltimore_data_check %$% cor.test(pct_median_household_income, at_least_college) # good.
+blue_water_baltimore_data_check %$% cor.test(median_household_income, pct_at_least_college) # good.
 
 blue_water_baltimore_data_check |> 
-  ggplot(aes(pct_median_household_income)) + 
+  ggplot(aes(median_household_income)) + 
   geom_density() # good
 
 ############  
