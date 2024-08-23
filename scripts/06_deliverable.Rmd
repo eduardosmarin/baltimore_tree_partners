@@ -298,12 +298,15 @@ census_count_map_layer <-
 legend_order_census_count <- 
   classIntervals(
   census_count_map_layer$`count`,
-  n = 6, # number of classes
+  n = 8, # number of classes
   style = "fisher"
 )$brks
 
 census_count_map <-
   census_count_map_layer |>
+  dplyr::select(-county) |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city","Baltimore County")) |>
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
 ```
 
@@ -380,11 +383,138 @@ In **Baltimore City**, the trend shows plantings primarily in the
 **northeastern** and **central** areas, including neighborhoods like
 **Hamilton**, **Greater Govans**, **Waverly**, and **Hampden**.
 
-To have a more accurate detail about the tree distribution giveaways.
-more about the distribution of giveaways within the cou change of
-giveaways
+To understand tree distribution giveaways, particularly at the
+jurisdictional level, it's crucial to recognize how they change
+throughout the year.
 
-**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time)**
+**Graph 1. Line Graph of Tree Giveaways over the Years**
+
+```{r}
+jurisdiction_colors = c(
+   "Baltimore City" = "#008CCC",
+   "Baltimore County" = "#005273",
+   "Neither" = "#519342"
+)
+
+graph_tree_plantings_over_years <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  group_by(year, jurisdiction) |>
+  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
+  rename(Year = year, Jurisdiction = jurisdiction) |>
+  mutate(Year = as.double(Year)) |>
+  ggplot(aes(x = Year, y = `Number of Giveaways`, color = Jurisdiction)) +
+   geom_line() +
+   geom_point() +
+    scale_x_continuous(
+      breaks = seq(2013, 2023)
+    ) +
+     scale_y_continuous(
+      limits = c(0, 1500),
+      breaks = seq(0, 1500, by = 250),  
+      labels = scales::comma  
+    ) +
+    scale_color_manual(values = jurisdiction_colors) +  
+    labs(title = "Total Giveaways by Years for each Jurisdiction", #TODO: Better title needed for this 
+         x = "Year",
+         y = "Total Giveaways",
+         color = "Jurisdiction") +  
+    theme_minimal()
+
+graph_tree_plantings_over_years
+```
+
+As shown, the growth in tree giveaways between Baltimore City and
+Baltimore County has **varied significantly over the years**. It's
+important to note that the data for **2018** and **2019** includes
+contributions from **TreeBaltimore**, which may have influenced the
+numbers. Additionally, when examining the seasons, the figures are
+nearly identical.
+
+If you look at the graph by **season**, however, different trends begin
+to emerge, especially between **2021** and **2023**.
+
+**Graph 2. Line Graph of Tree Giveaways over the Years by Season**
+
+```{r}
+jurisdiction_colors = c(
+   "Baltimore City" = "#008CCC",
+   "Baltimore County" = "#005273",
+   "Neither" = "#519342"
+)
+
+d_tree_plantings_over_years_seasons <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  group_by(season, year, jurisdiction) |>
+  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
+  rename(Season = season, Year = year, Jurisdiction = jurisdiction) |>
+  mutate(Year = as.double(Year))
+
+graph_tree_plantings_over_years_seasons <-
+  d_tree_plantings_over_years_seasons |>
+  ggplot(aes(x = Year, y = `Number of Giveaways`, color = Jurisdiction)) +
+   geom_line() +
+   geom_point() +
+    scale_x_continuous(
+      breaks = seq(2013, 2023, by = 2)
+    ) +
+     scale_y_continuous(
+      limits = c(0, 1000),
+      breaks = seq(0, 1000, by = 250),  
+      labels = scales::comma  
+    ) +
+    scale_color_manual(values = jurisdiction_colors) +  
+    labs(title = "Total Giveaways by Years and Season for each Jurisdiction", #TODO: Better title needed for this 
+         x = "Year",
+         y = "Total Giveaways",
+         color = "Jurisdiction") +  
+    theme_minimal() +
+    facet_wrap(~ Season, scales = "free_y")
+
+graph_tree_plantings_over_years_seasons
+```
+
+During the fall, the season follows the same general pattern as the
+overall years, with a more significant increase in tree plantings in
+Baltimore County compared to Baltimore City, especially in recent years.
+Notably, in 2019, Baltimore County had a total of
+`r d_tree_plantings_over_years_seasons |> filter(Year == 2019 & Season == "Fall" & Jurisdiction == "Baltimore County") |> pull("Number of Giveaways")`.
+
+However, the story changes in the spring. Although Baltimore County has
+generally had a higher number of tree plantings over the years, in 2023,
+Baltimore City edged out Baltimore County with
+`r d_tree_plantings_over_years_seasons |> filter(Year == 2023 & Season == "Spring" & Jurisdiction == "Baltimore City") |> pull("Number of Giveaways")`
+compared to
+`r d_tree_plantings_over_years_seasons |> filter(Year == 2023 & Season == "Spring" & Jurisdiction == "Baltimore County") |> pull("Number of Giveaways")`.
+
+Highlighting the same information as before, the following table allows
+you to search by year to find the largest entry and its exact amount.
+
+Table 1. Table of Tree Giveaways over the Year (per Jurisdiction)
+
+```{r}
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  tabyl(jurisdiction, year) |>
+  as_tibble() |>
+  filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither")) |>
+ summarize(across(starts_with("20"), sum, na.rm = TRUE)) |>
+ mutate(jurisdiction = "Total") |>
+ bind_rows(table_2_blue_water_baltimore_join) |>
+ dplyr::select(11, 1:10) |>
+ arrange(match(jurisdiction, c(setdiff(unique(jurisdiction), "Total"), "Total"))) |>
+ as_tibble() |>
+ rename(Jurisdiction = jurisdiction) |>
+ DT::datatable()
+```
+
+The following map visually presents this information, giving you the
+opportunity to see the differences in tree giveaways between **seasons**
+and **years**.
+
+**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time):
+TODO: GET FIXED**
 
 ```{r eval=FALSE, include=FALSE}
 ## NEEDS TO GET FIXED
@@ -436,100 +566,38 @@ server <- function(input, output, session) {
 }
 
 
-
 # Run the application
 shinyApp(ui = ui, server = server)
 
 ```
 
-Figure 3. Map of Tree Giveaways per Census Block Group
+Taking a step back, next, we will observe the general trends over the
+years across the entire state of Maryland, where these giveaways have
+occurred.
 
-```{r include=FALSE}
-figure_3_census_count_layer <-
-  cbg |>
-  left_join(
-  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
-    , by = "NAME"
-  ) |>
-  mutate(count = case_when(
-    is.na(count) ~ 0,
-    TRUE ~ count
-  )) |>
-  mutate(tree_per_household = count/households) |>
-  filter(!is.na(tree_per_household)) 
-
-figure_3_census_count_legend<- 
-  classIntervals(
-  figure_3_census_count_layer$`tree_per_household`,
-  n = 5, 
-  style = "fisher"
-)$brks
-
-figure_3_census_count_layer |>
-mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household", at = figure_3_census_count_legend)
-```
-
-Table 1. Table of Tree Plantings per Jurisdiction
+**Graph 3. Graph of Tree Plantings in Maryland (per Year and Season)**
 
 ```{r}
-table_1_tree_plantings_per_jurisdiction <-
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  tabyl(jurisdiction) |>
-  as_tibble() |>
-  filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither"))  |>
-  rename(jurisdiction = jurisdiction, `Number of Giveaways` = n, Percent = percent) |>
-  mutate(Percent = sprintf("%.2f%%", Percent * 100)) 
-
-table_1_tree_plantings_per_jurisdiction |>
-DT::datatable()
-```
-
-Graph 1. Graph of Tree Plantings per Jurisdiction per Year (Divided by
-Season)
-
-```{r}
-graph_1_season_colors <- c(
+season_colors <- c(
   "Fall" = "#008CCC",
   "Spring" = "#005273"
 )
 
-graph_1_tree_plantings_year_v1 <-
+d_plantings_maryland_year_season <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
   group_by(season, year) |>
   summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
   rename(Season = season, Year = year) |>
-  mutate(Year = as.double(Year)) |>
+  mutate(Year = as.double(Year))
+
+graph_plantings_maryland_year_season <-
+  d_plantings_maryland_year_season |>
   ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
    geom_bar(position = "dodge", stat = "identity") +
     scale_fill_manual(values = graph_1_season_colors) +
     scale_y_continuous(
       limits = c(0, 2000),  #TODO: Make to 1750 the upper limit     
-      breaks = seq(0, 2000, by = 250),  
-      labels = scales::comma  
-    ) +
-    scale_x_continuous (
-      breaks = seq(2013, 2023) 
-    ) +
-    labs(title = "Total Giveaways by Year and Season",
-         x = "Year",
-         y = "Total Giveaways",
-         fill = "Season") +
-    theme_minimal() 
-
-graph_1_tree_plantings_year_v2 <-
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  group_by(season, year) |>
-  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
-  rename(Season = season, Year = year) |>
-  mutate(Year = as.double(Year)) |>
-  ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
-   geom_bar(position = "stack", stat = "identity") +
-    scale_fill_manual(values = graph_1_season_colors) +
-    scale_y_continuous(
-      limits = c(0, 2000),  #TODO: Make to 1750 the upper limit         
       breaks = seq(0, 2000, by = 250),  
       labels = scales::comma  
     ) +
@@ -549,53 +617,17 @@ graph_1_tree_plantings_year_v2 <-
 #   height = 7
 # ) #TODO: Season unstacked make for the graph, it shows what; Make vertical smaller since dodge (have it both ways)
 
-graph_1_tree_plantings_year_v1
-
-# ggsave(
-#   filename = file.path("/Users/eduardosmarin/Desktop/baltimore_tree_partners/deliverables", "location_graph_1_tree_plantings_general_v2.png"), #TODO: Fix to make more general file saving path
-#   plot = graph_1_tree_plantings_year_v2,
-#   width = 7,
-#   height = 7
-# ) #TODO: Season unstacked make for the graph, it shows what; Make vertical smaller since dodge (have it both ways)
-
-graph_1_tree_plantings_year_v2
+graph_plantings_maryland_year_season
 ```
 
-The amount of tree giveaways that went to either Baltimore City or
-Baltimore County are nearly split halfway.
-`r table_1_tree_plantings_per_jurisdiction |> filter(jurisdiction == "Baltimore City") |> pull(Percent)`of
-the tree giveaways went to Baltimore City and
-`r table_1_tree_plantings_per_jurisdiction |> filter(jurisdiction == "Baltimore County") |> pull(Percent)`
-went to Baltimore County. However, the spread between city and
-jurisdiction trees have shifted over the years. #TODO: Pull can be used
-completely instead of select
+Each year, there was a steady increase in number of giveaways until
+**COVID-19,** after which the numbers have been gradually recovering to
+reach **pre-pandemic levels.**
 
-Table 2. Table of Tree Plantings per Jurisdiction per Year
-
-```{r}
-table_2_blue_water_baltimore_join <- 
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  tabyl(jurisdiction, year) |>
-  as_tibble() |>
-  filter(jurisdiction %in% c("Baltimore City", "Baltimore County", "Neither"))
-
- table_2_blue_water_baltimore_join |>
- summarize(across(starts_with("20"), sum, na.rm = TRUE)) |>
- mutate(jurisdiction = "Total") |>
- bind_rows(table_2_blue_water_baltimore_join) |>
- dplyr::select(11, 1:10) |>
- arrange(match(jurisdiction, c(setdiff(unique(jurisdiction), "Total"), "Total"))) |>
- as_tibble() |>
- rename(jurisdiction = jurisdiction) |>
- DT::datatable()
- 
-```
-
-Graph 2. Graph of Tree Giveaways per Jurisdiction per Year (Divided by
-Season)
-
-```{r}
+```{r eval=FALSE, include=FALSE}
+##########################################################
+# INTERNAL GRAPH 
+##########################################################
 graph_2_tree_plantings_year <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -612,7 +644,7 @@ graph_2_tree_plantings_year <-
       labels = scales::comma  
     ) +
     scale_x_continuous (
-      breaks = seq(2013, 2023) 
+      breaks = seq(2013, 2023, by = 2) 
     ) +
     labs(title = "Total Giveaways by Year and Season",
          x = "Year",
@@ -631,29 +663,11 @@ ggsave(
 graph_2_tree_plantings_year
 ```
 
-The table below will highlight the amount per year and season but a
-larger scale, not bounded by any jurisctions, to understand the
-magnitude of tree giveaways over the year.
+Given that Blue Water Baltimore's tree giveaways are focused within
+Baltimore City, the following analysis will examine tree distributions
+specifically at the **neighborhood level** within the city.
 
-Table 3. Table of Plantings in Each Neighborhood
-
-```{r echo=FALSE}
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  tabyl(year, season) |>
-  as_tibble() |>
-  add_row(year = "2020", Fall = 0, Spring = 0) |>
-  mutate(Total = Fall + Spring) |>
-  arrange(desc(Total)) |>
-  rename(Year = year) |>
-  DT::datatable()
-```
-
-The following section will take a more in depth look at the distribution
-of tree plantings in Baltimore, specifically at the neighborhood level.
-These will show the final destinations of those within the city:
-
-Figure 4. Map of Tree Plantings in Baltimore Neighborhoods
+**Figure 3.** Map of Tree Plantings in Baltimore Neighborhoods
 
 ```{r echo=FALSE}
 figure_4_tree_neighborhoods_layer <-
@@ -666,19 +680,25 @@ neighborhood_read |>
     is.na(count) ~ 0,
     TRUE ~ count
   )) |>
-  rename(`Number of Trees` = count) |> #TODO(DEX): Unsure if we want to change this one as well to be based off of household instead.
-  mutate(Density = `Number of Trees` / `Area (Square Miles)`) 
+  rename(`Number of Trees` = count) 
 
 figure_4_tree_neighborhood_legend <- 
   classIntervals(
-  figure_4_tree_neighborhoods_layer$`Density`,
+  figure_4_tree_neighborhoods_layer$`Number of Trees`,
   n = 10, 
   style = "fisher"
 )$brks
 
 figure_4_tree_neighborhoods_layer |>
-  mapview(zcol = "Density", layer.name = "Giveaway Density (Tree per Household)", at = figure_4_tree_neighborhood_legend) 
+  mapview(zcol = "Number of Trees", layer.name = "Number of Tree Giveaways", at = figure_4_tree_neighborhood_legend) 
 ```
+
+As alluded to earlier, there is a larger percentage of tree plantings
+within the northern and central part of Baltimore. Neighborhoods like
+`r paste0(figure_4_tree_neighborhoods_layer |>
+arrange(desc(Number_of_Trees)) |> slice(1:4) |> pull(Neighborhood),
+collapse = ", ")` and `r paste0(figure_4_tree_neighborhoods_layer |>
+arrange(desc(Number_of_Trees)) |> slice(5) |> pull(Neighborhood))`
 
 ```{r eval=FALSE, message=FALSE, include=FALSE}
 # Table 4. Table of Plantings in Each Neighborhood
@@ -690,11 +710,11 @@ figure_4_tree_neighborhoods_layer |>
   DT::datatable()
 ```
 
-These may come surprising at first. However, these numbers are taking
-into consideration the amount of space within each jurisdiction. They
-are your number of trees in each neighborhood divided by the total
-square miles of each neighborhood. The following highlights the absolute
-value of tree plantings in each neighborhood.
+may come surprising at first. However, these numbers are taking into
+consideration the amount of space within each jurisdiction. They are
+your number of trees in each neighborhood divided by the total square
+miles of each neighborhood. The following highlights the absolute value
+of tree plantings in each neighborhood.
 
 Table 5. Table of Plantings in Each Neighborhood
 
@@ -811,6 +831,7 @@ Table 6. Table of Giveaway Locations
 ```
 
 In the case of the amount of tree giveaway locations, the most stems
+
 from Stillmeadow Community Fellowship. However, please understand that
 the largest majority are undefined, totaling
 `r unique(unique_provider_na$n)`.
@@ -1377,6 +1398,9 @@ legend_order_census_income_count <-
 ## Makiing the census-income map
 census_income_map <-
   cbg |>
+  dplyr::select(-county) |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city","Baltimore County")) |>
   rename("Median Household Income" = median_household_income) |>
   mutate(`Median Household Income` = case_when(
     is.na(`Median Household Income`) ~ 0,
@@ -1413,6 +1437,8 @@ bivariate_count_income <-
 ## create the bivariate map
 bivariate_count_income_map_pre <-
   bivariate_count_income |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city")) |>
   ggplot() +
   geom_sf(mapping = aes(fill = bi_class), color = "white", 
           size = 0.1, show.legend = FALSE) +
@@ -1451,23 +1477,64 @@ ggsave(
   height = 12
 )
 
+#TODO: Fix the styling of this 
 ```
 
 ```{r}
 blue_water_giveaway_data |>
- mutate(household_income = cut(
+  mutate(household_income = cut(
     median_household_income,
-    breaks = c(seq(0, 150000, by = 20000), Inf),
-    labels = c(paste0("$", scales::comma(seq(0, 130000, by = 20000)), #scales::comma adds this to the number
-                      " - $", scales::comma(seq(20000, 150000, by = 20000))), #scales::comma adds this to the number 
-               "$150,000+"),
+    breaks = c(seq(0, 200000, by = 25000), Inf),
+    labels = c(paste0("$", scales::comma(seq(0, 180000, by = 25000)), 
+                      " - $", scales::comma(seq(25000, 200000, by = 25000))),
+               "$200,000+"),
     include.lowest = TRUE,
     right = FALSE
   )) |>
   st_drop_geometry() |>
   group_by(household_income, year) |>
   summarise(`Number of Giveaways` = n()) |>
-  view()
+  filter(!is.na(household_income)) |>
+  st_drop_geometry() |>
+  ggplot(aes(x = household_income, y = `Number of Giveaways`, color = factor(year))) +
+  geom_point() +
+  facet_grid(. ~ year) +
+  labs(
+    x = "Median Household Income",
+    y = "Giveaway Count",
+    color = "Year",
+    title = "Scatterplot of Giveaway Count vs Median Household Income by Year"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+blue_water_giveaway_data |>
+  mutate(household_income = cut(
+    median_household_income,
+    breaks = c(seq(0, 200000, by = 25000), Inf),
+    labels = c(paste0("$", scales::comma(seq(0, 180000, by = 25000)), 
+                      " - $", scales::comma(seq(25000, 200000, by = 25000))),
+               "$200,000+"),
+    include.lowest = TRUE,
+    right = FALSE
+  )) |>
+  st_drop_geometry() |>
+  group_by(household_income, year) |>
+  summarise(`Number of Giveaways` = n()) |>
+  filter(!is.na(household_income)) |>
+  st_drop_geometry() |>
+ggplot(aes(x = household_income, y = factor(year), fill = `Number of Giveaways`)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +  # Adjust colors as desired
+  labs(
+    x = "Median Household Income Group",
+    y = "Year",
+    fill = "Total Giveaways",
+    title = "Heatmap of Giveaway Count vs Median Household Income by Year"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -1485,4 +1552,40 @@ cbg_census_count |>
   ) +
   labs(x = "Year", y = "Income Bracket", fill = "Giveaway Counts") +
   theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r include=FALSE}
+figure_3_census_count_layer <-
+  cbg |>
+  left_join(
+  read_csv("/Users/eduardosmarin/Desktop/baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  ) |>
+  mutate(count = case_when(
+    is.na(count) ~ 0,
+    TRUE ~ count
+  )) |>
+  mutate(tree_per_household = count/households) |>
+  filter(!is.na(tree_per_household)) 
+
+figure_3_census_count_legend<- 
+  classIntervals(
+  figure_3_census_count_layer$`tree_per_household`,
+  n = 5, 
+  style = "fisher"
+)$brks
+
+figure_3_census_count_layer |>
+mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household", at = figure_3_census_count_legend)
 ```
