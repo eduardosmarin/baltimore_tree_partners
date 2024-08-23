@@ -1533,9 +1533,9 @@ census_income_map <-
   separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
   filter(County %in% c("Baltimore city","Baltimore County")) |>
   rename("Median Household Income" = median_household_income) |>
-  mutate(`Median Household Income` = case_when(
-    is.na(`Median Household Income`) ~ 0,
-    TRUE ~ `Median Household Income`)) |>
+  # mutate(`Median Household Income` = case_when(
+  #   is.na(`Median Household Income`) ~ 0, 
+  #   TRUE ~ `Median Household Income`)) |>
   mapview(zcol = "Median Household Income", layer.name = "Household Income and Census Block", at = legend_order_census_income_count)
 
 ## The Sync Map of Count and Income
@@ -1554,6 +1554,8 @@ Census Block)
 
 ```{r}
 ## Combining the
+
+##TODO: ggridgleine
 cbg_census_count <-
   cbg |>
   left_join(
