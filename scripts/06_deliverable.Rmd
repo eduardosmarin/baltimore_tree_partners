@@ -1721,6 +1721,44 @@ mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household"
 ```
 
 ### Tapestry
+
+```{r}
+lifemode_colors <- c(
+    "Affluent Estates" = "#9e0142", 
+    "Upscale Avenues" = "#d53e4f", 
+    "Senior Styles" = "#f46d43", 
+    "Middle Ground" = "#fdae61", 
+    "Hometown" = "#e6f598", 
+    "GenXurban" = "#abdda4", 
+    "Uptown Individuals" = "#92b1e2", 
+    "Scholars and Patriots" = "#3288bd", 
+    "Midtown Singles" = "#5e4fa2", 
+    "Family Landscapes" = "#E83F6F", 
+    "Next Wave" = "#2274A5", 
+    "Cozy Country Living" = "#FFBF00", 
+    "Ethnic Enclaves" = "#32936F", 
+    "Rustic Outposts" = "#9F9F92",
+    "NA" = "#FFFFFF"
+)
+
+bwb_total_giveaway_with_Tapestry_2019 |>
+  mutate(jurisdiction = ifelse(is.na(jurisdiction), "Neither", jurisdiction)) |>
+  group_by(jurisdiction, lifemode) |>
+  count() |>
+  rename(`Number of Giveaways` = n) |>
+  filter(!is.na(lifemode)) |>
+  ggplot(aes(x = jurisdiction, y = `Number of Giveaways`, fill = lifemode)) +
+  geom_bar(position = "dodge", stat = "identity") + 
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal()
+
+  
+
+ ```
+
 ```{r}
 lifemode_colors <- c(
     "Affluent Estates" = "#9e0142", 
