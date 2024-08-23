@@ -86,7 +86,7 @@ options(tigris_use_cache = TRUE)
 variables_acs <- 
   tidycensus::load_variables('acs5', year = 2021)
 
-my_vars <- c(  'median_household_income' = 'B19013_001'
+my_vars <- c(  'pct_median_household_income' = 'B19013_001'
              , 'total_population' = 'B01003_001'
              , 'households' = 'B11001_001'
              , 'white_alone' = 'B03002_003'
@@ -268,24 +268,30 @@ st_join(watershed_data, join = st_intersects) |>
   rename(geoid = GEOID, block_group_name = NAME)
 ```
 
-```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
+```{r Loading Tapestry, echo=TRUE, message=FALSE}
 #DEXTER: This is just removing the first `Watershed Name" and "ID" which isn't needed and the white_alone population. Besides that, it is making zip_code a character and reordering the columns to how you described in the email.
 blue_water_baltimore_data_new <-
 blue_water_baltimore_data |>
   dplyr::select(-`Watershed Name (6)`,-mde6name, -white_alone) |>
   mutate(zip_code = as.character(zip_code)) |>
-  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, at_least_hs, at_least_college, geometry)
+  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, pct_median_household_income, median_age, at_least_hs, at_least_college, geometry) |>
+  rename(itree_sp_code = itree) |>
+  mutate(state = ifelse(is.na(state), "MD", state),
+         watershed = ifelse(is.na(watershed), "Other", watershed),
+         pct_median_household_income = 100*pct_median_household_income)
 
 blue_water_baltimore_data_new |>
   st_write(paste0("output_data/blue_water_baltimore_data_", Sys.Date(), ".gpkg"), append = FALSE)
+```
 
+```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
 blue_water_baltimore_data_check <- 
   st_read("output_data/blue_water_baltimore_data_2024-08-22.gpkg") #DEXTER: Change whenver your sys.date does it
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
 blue_water_baltimore_data_check |> map(~levels(.))
-blue_water_baltimore_data_check |> mapview(zcol = 'median_household_income')
+blue_water_baltimore_data_check |> mapview(zcol = 'pct_median_household_income')
 
 # more scruitiny
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year)
@@ -304,7 +310,7 @@ species_checker <-
 itree_species_checker <- 
   blue_water_baltimore_data_check |> 
   st_drop_geometry() |> 
-  tabyl(genus_species, itree) |> 
+  tabyl(genus_species, itree_sp_code) |> 
   tibble() |> 
   pivot_longer(-genus_species) |> 
   filter(value > 0)
@@ -317,17 +323,21 @@ species_checker |>
   left_join(itree_species_checker, by = 'genus_species') |> 
   filter(value.x != value.y)
 
-# TODO, give "itree" a better name like "itree_sp_code" or similar
+# TODO, give "itree" a better name like "itree_sp_code" or similar (COMPLETED)
 
 
-# TODO, fix missing State values
-blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, state) # missing state values
+# TODO, fix missing State values (COMPLETED)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, state) # missing state values (COMPLETED)
 
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, jurisdiction)
 
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(phone) # is this right?
 blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_name) |> count()|> arrange(phone)# is this right? are these multiple trees per person/phone number?
 
+#DEXTER: assuming this could be because many people have the same first name, trying to see if you group by both first and last if it differs
+blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_name, last_name, year) |> count()|> arrange(desc(n)) |> view()
+
+#DEXTER: Did the first five checks of the original spreadsheets and seem to line up. It is weird though that there are some with like ~20 to ~30 trees for one person in one year. This could be a question for Darin
 
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location)
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location, year)
@@ -341,13 +351,13 @@ blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(geoid, jurisdicti
 # very good
 blue_water_baltimore_data_check %$% cor.test(total_population, total_population_over_25)
 
-# TODO multiple education by 100 to make percent, and add "pct_" to column name
+# TODO multiple education by 100 to make percent, and add "pct_" to column name (COMPLETED)
 blue_water_baltimore_data_check %$% cor.test(at_least_hs, at_least_college)
 
-blue_water_baltimore_data_check %$% cor.test( median_household_income, at_least_college) # good.
+blue_water_baltimore_data_check %$% cor.test(pct_median_household_income, at_least_college) # good.
 
 blue_water_baltimore_data_check |> 
-  ggplot(aes(median_household_income)) + 
+  ggplot(aes(pct_median_household_income)) + 
   geom_density() # good
 
 ############  
