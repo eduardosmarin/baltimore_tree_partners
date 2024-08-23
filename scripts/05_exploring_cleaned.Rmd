@@ -288,7 +288,7 @@ blue_water_baltimore_data_new |>
 
 ```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
 blue_water_baltimore_data_check <- 
-  st_read("output_data/blue_water_baltimore_data_2024-08-22.gpkg") #DEXTER: Change whenver your sys.date does it
+  st_read("output_data/blue_water_baltimore_data_2024-08-23.gpkg") #DEXTER: Change whenver your sys.date does it
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
@@ -325,11 +325,8 @@ species_checker |>
   left_join(itree_species_checker, by = 'genus_species') |> 
   filter(value.x != value.y)
 
-# TODO, give "itree" a better name like "itree_sp_code" or similar (COMPLETED)
 
-
-# TODO, fix missing State values (COMPLETED)
-blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, state) # missing state values (COMPLETED)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, state)
 
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(city, jurisdiction)
 
@@ -340,8 +337,9 @@ blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_n
 blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_name, last_name, year) |> count()|> arrange(desc(n)) |> view()
 
 #DEXTER: Did the first five checks of the original spreadsheets and seem to line up. It is weird though that there are some with like ~20 to ~30 trees for one person in one year. This could be a question for Darin
+# TODO Eduardo, check the original spreadsheets?
 
-blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location)
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location) # TODO missing locations ok?
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location, year)
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year, season, giveaway_location) |> bind_rows(.id = 'loc')
 
