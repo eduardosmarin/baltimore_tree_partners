@@ -337,9 +337,12 @@ blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_n
 blue_water_baltimore_data_check |> st_drop_geometry() |> group_by(phone, first_name, last_name, year) |> count()|> arrange(desc(n)) |> view()
 
 #DEXTER: Did the first five checks of the original spreadsheets and seem to line up. It is weird though that there are some with like ~20 to ~30 trees for one person in one year. This could be a question for Darin
-# TODO Eduardo, check the original spreadsheets?
+# TODO Eduardo, check the original spreadsheets? 
+#DEXTER: I checked those for the first five there present and they lined up. It is very weird though and would suggest asking darin
 
-blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location) # TODO missing locations ok?
+blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location) # TODO missing locations ok? 
+#DEXTER: 
+
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(giveaway_location, year)
 blue_water_baltimore_data_check |> st_drop_geometry() |> tabyl(year, season, giveaway_location) |> bind_rows(.id = 'loc')
 

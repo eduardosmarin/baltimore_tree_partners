@@ -309,20 +309,155 @@ census_count_map <-
   mapview(zcol = "count", layer.name = "Giveaway Count per Census Block", at = legend_order_census_count)
 ```
 
-```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
-## Making Tapestry
+```{r Loading Tapestry, echo=FALSE, message=FALSE}
+# # 2019
+# tap_path <- '/Users/dlocke/TAP/Tap2019/2019 Tapestry Complete.gdb/'
+# st_layers(tap_path)
+#
+# # a few test queries
+# # tap_query <- 'SELECT * from TAP19_HH_bg limit 10'
+# # tap_query <- 'SELECT * from TAP19_ADULT_bg limit 10' # NO
+# # tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TLIFENAME, TSEGNAME from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
+#
+# tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TURBZCODE, TLIFENAME, TLIFECODE, TSEGNAME, TSEGNUM from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
+#
+#
+# tap <-
+#   st_read(
+#       tap_path
+#     , query = tap_query
+#     , as_tibble = TRUE
+#   ) |>
+#   rename(GEOID_2019 = ID) |>
+#   st_transform(st_crs(bwb_total_giveaway)) |>
+#   st_make_valid() |>
+#   mutate(
+#     urbanization =
+#       factor(TURBZNAME
+#              , levels = c(
+#                  'Principal Urban Center'
+#                , 'Urban Periphery'
+#                , 'Metro Cities'
+#                , 'Suburban Periphery'
+#                , 'Semirural'
+#                , 'Rural'
+#                ))
+#     , lifemode =
+#       factor(TLIFENAME
+#              , levels = c(
+#                  'Affluent Estates'
+#                , 'Upscale Avenues'
+#                , 'Uptown Individuals'
+#                , 'Family Landscapes'
+#                , 'GenXurban'
+#                , 'Cozy Country Living'
+#                , 'Ethnic Enclaves'
+#                , 'Middle Ground'
+#                , 'Senior Styles'
+#                , 'Rustic Outposts'
+#                , 'Midtown Singles'
+#                , 'Hometown'
+#                , 'Next Wave'
+#                , 'Scholars and Patriots')
+#              )
+#     , segment =
+#       factor(TSEGNAME
+#              , levels = c(
+#                  'Top Tier'
+#                , 'Professional Pride'
+#                , 'Boomburbs'
+#                , 'Savvy Suburbanites'
+#                , 'Exurbanites'
+#                , 'Urban Chic'
+#                , 'Pleasantville'
+#                , 'Pacific Heights'
+#                , 'Enterprising Professionals'
+#                , 'Laptops and Lattes'
+#                , 'Metro Renters'
+#                , 'Trendsetters'
+#                , 'Soccer Moms'
+#                , 'Home Improvement'
+#                , 'Middleburg'
+#                , 'Comfortable Empty Nesters'
+#                , 'In Style'
+#                , 'Parks and Rec'
+#                , 'Rustbelt Traditions'
+#                , 'Midlife Constants'
+#                , 'Green Acres'
+#                , 'Salt of the Earth'
+#                , 'The Great Outdoors'
+#                , 'Prairie Living'
+#                , 'Rural Resort Dwellers'
+#                , 'Heartland Communities'
+#                , 'Up and Coming Families'
+#                , 'Urban Villages'
+#                , 'American Dreamers'
+#                , 'Barrios Urbanos'
+#                , 'Valley Growers'
+#                , 'Southwestern Families'
+#                , 'City Lights'
+#                , 'Emerald City'
+#                , 'Bright Young Professionals'
+#                , 'Downtown Melting Pot'
+#                , 'Front Porches'
+#                , 'Old and Newcomers'
+#                , 'Hardscrabble Road'
+#                , 'Silver & Gold'
+#                , 'Golden Years'
+#                , 'The Elders'
+#                , 'Senior Escapes'
+#                , 'Retirement Communities'
+#                , 'Social Security Set'
+#                , 'Southern Satellites'
+#                , 'Rooted Rural'
+#                , 'Diners & Miners'
+#                , 'Down the Road'
+#                , 'Rural Bypasses'
+#                , 'City Strivers'
+#                , 'Young and Restless'
+#                , 'Metro Fusion'
+#                , 'Set to Impress'
+#                , 'City Commons'
+#                , 'Family Foundations'
+#                , 'Traditional Living'
+#                , 'Small Town Simplicity'
+#                , 'Modest Income Homes'
+#                , 'International Marketplace'
+#                , 'Las Casas'
+#                , 'NeWest Residents'
+#                , 'Fresh Ambitions'
+#                , 'High Rise Renters'
+#                , 'Military Proximity'
+#                , 'College Towns'
+#                , 'Dorms to Diplomas'
+#                , 'Unclassified'
+#              ))
+#   )
+#
+# tap |>
+#   st_drop_geometry() |>
+#   write_csv(file = paste0('output_data/MD_Tapestry_2019_', Sys.Date(), '.csv'))
+#
+# tap_lu <-
+#   tap |>
+#   st_drop_geometry() |>
+#   distinct(urbanization, lifemode, segment)
+#
+# save(tap_lu, file = paste0('output_data/tap_lu_', Sys.Date(), '.RData'))
+
+# makes tap_lu a Look UP for the value
 load('output_data/tap_lu_2024-06-25.RData')
 
-tap_lu |> map(~levels(.)) 
+tap_lu |> map(~levels(.)) # order matters!
 
+bwb_total_giveaway_with_Tapestry_2019 <-
+  bwb_total_giveaway |>
+  st_join(tap)
+
+save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
+
+# makes 'bwb_total_giveaway_with_Tapestry_2019'
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
-
-blue_water_giveaway_data_with_Tapestry_2019 |> 
-  st_drop_geometry() |> 
-  group_by(segment) |> 
-  count() |> 
-  ggplot(aes(n, segment)) +
-  geom_col()
 ```
 
 Color Palette
@@ -1372,6 +1507,7 @@ ggsave(
 As you can see here, the most common types of the
 
 ## Distribution
+### JEDI
 
 We will first begin looking at income to see if there is any correlation
 between that and the number of giveaways. In terms of the scale, we will
@@ -1583,3 +1719,144 @@ figure_3_census_count_legend<-
 figure_3_census_count_layer |>
 mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household", at = figure_3_census_count_legend)
 ```
+
+### Tapestry
+```{r}
+lifemode_colors <- c(
+    "Affluent Estates" = "#9e0142", 
+    "Upscale Avenues" = "#d53e4f", 
+    "Senior Styles" = "#f46d43", 
+    "Middle Ground" = "#fdae61", 
+    "Hometown" = "#e6f598", 
+    "GenXurban" = "#abdda4", 
+    "Uptown Individuals" = "#92b1e2", 
+    "Scholars and Patriots" = "#3288bd", 
+    "Midtown Singles" = "#5e4fa2", 
+    "Family Landscapes" = "#E83F6F", 
+    "Next Wave" = "#2274A5", 
+    "Cozy Country Living" = "#FFBF00", 
+    "Ethnic Enclaves" = "#32936F", 
+    "Rustic Outposts" = "#9F9F92",
+    "NA" = "#FFFFFF"
+)
+
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  group_by(lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal()
+```
+
+```{r}
+# Making a graph of the different lifegroups in Baltimore
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  add_row(year = "2020") |>
+  group_by(year, lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number Bar Graph",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal() +
+  facet_wrap(~ year)
+  
+```
+
+```{r}
+# Making a graph of the different lifemode groups in the top ten location
+#finding the top the top 10
+giveaway_location_top_10 <-
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  filter(!is.na(giveaway_location)) |>
+  group_by(giveaway_location) |>
+  summarise(Total = n()) |>
+  arrange(desc(Total)) |>
+  slice(1:10) |>
+  pull(giveaway_location) #gives you a vector instead the pull command
+
+#filtering out and doing the rest
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  filter(giveaway_location %in% giveaway_location_top_10) |>
+  group_by(giveaway_location, lifemode) |>
+  count() |>
+  rename(Count = n) |>
+  slice(1:10) |>
+  ggplot(aes(Count, lifemode, fill = lifemode)) +
+  geom_col() +
+  scale_fill_manual(values = lifemode_colors) +
+  labs(title = "Lifemode Groups and Total Giveaway Number Bar Graph",
+         x = "Count of Tree Giveaways",
+         y = "Lifemode Groups") +
+  theme_minimal() +
+  facet_wrap(~ giveaway_location)
+```
+
+
+```{r}
+## Two different ways to do the slice above and blow
+# Making a species and groups map/idea
+#finding top 5 within each group
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_drop_geometry() |>
+  group_by(lifemode, common_name) |>
+  count() |>
+  rename(Count = n) |>
+  arrange(lifemode, desc(Count)) |>
+  group_by(lifemode) |>
+  slice_max(order_by = Count, n = 5, with_ties = FALSE) |> #slice max is good within each group
+  ungroup() |>
+  ggplot(aes(x = Count, y = common_name, fill = common_name)) +
+  geom_col() +
+  labs(title = "Top 5 Species in Each Lifemode Group",
+       x = "Count of Tree Giveaways",
+       y = "Species") +
+  theme_minimal() +
+  facet_wrap(~ lifemode, scales = "free_y") #scale varies across panels for the facet wrap
+
+# does not seem much different for each group in terms of what they like and not like
+```
+
+```{r}
+#Mapping the tapestry information
+#Baltimore 2019 Census Tracts
+city_cbg_2019 <-
+  tidycensus::get_acs(
+      geography = 'block group'
+    , state = 'MD'
+    , county = c('Baltimore City', 'Baltimore County')
+    , variables = my_vars
+    , year = 2019
+    , geometry = TRUE
+    , output = 'wide'
+    , moe_level = 95
+    ) |>
+   st_transform(crs = st_crs(4326))
+
+baltimore_2019_layer <-
+  city_cbg_2019 |>
+  mapview(layer.name = "Baltimore City & County (2019)") 
+
+baltimore_giveaway_layer <-
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mapview(zcol = "lifemode", layer.name = "Baltimore's Giveaways and Tapestry Group")
+
+baltimore_giveaway_layer + baltimore_2019_layer
+```
+
+```
+
