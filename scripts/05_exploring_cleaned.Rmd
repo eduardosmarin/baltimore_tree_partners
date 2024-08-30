@@ -272,9 +272,9 @@ st_join(watershed_data, join = st_intersects) |>
 #DEXTER: This is just removing the first `Watershed Name" and "ID" which isn't needed and the white_alone population. Besides that, it is making zip_code a character and reordering the columns to how you described in the email.
 blue_water_baltimore_data_new <-
 blue_water_baltimore_data |>
-  dplyr::select(-`Watershed Name (6)`,-mde6name, -white_alone) |>
+  dplyr::select(-`Watershed Name (6)`,-mde6name) |>
   mutate(zip_code = as.character(zip_code)) |>
-  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, median_household_income, median_age, pct_at_least_hs, pct_at_least_college, geometry) |>
+  dplyr::select(year, season, date, genus_species, common_name, itree, address, city, state, jurisdiction, first_name, last_name, phone, email, giveaway_location, watershed_id, watershed, geoid, block_group_name, total_population, total_population_over_25, white_alone, median_household_income, median_age, pct_at_least_hs, pct_at_least_college, geometry) |>
   rename(itree_sp_code = itree) |>
   mutate(state = ifelse(is.na(state), "MD", state),
          watershed = ifelse(is.na(watershed), "Other", watershed),

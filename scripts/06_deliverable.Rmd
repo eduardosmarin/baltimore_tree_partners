@@ -91,7 +91,9 @@ packs <-c(
           , 'leaflet.extras'
           , 'tidytext'
           , 'shiny'
-          , 'here'
+          , 'ggridges'
+          , 'viridis'
+          , 'ggpubr'
           )     
 
 ## IF the packages in 'packs' are not already installed, install them
@@ -118,25 +120,25 @@ options(tigris_use_cache = TRUE)
 #TODO: Save this out the geopackage for this (1/1)
 #FINISH: Save this out in the output_data folder, would have to return on chunks and you download it for it work
 
-# variables_acs <- 
-#   tidycensus::load_variables('acs5', year = 2021)
-# 
-# my_vars <- c(  'median_household_income' = 'B19013_001'
-#              , 'total_population' = 'B01003_001'
-#              , 'households' = 'B11001_001'
-#              , 'white_alone' = 'B03002_003'
-#              , 'median_age' = 'B01002_001'
-#              , 'total_population_over_25' = 'B15003_001'
-#              , 'ed_hs_degree' = 'B15003_017'
-#              , 'ed_ged_degree' = 'B15003_018'
-#              , 'ed_college_less_1_year' = 'B15003_019'
-#              , 'ed_college_more_1_year' = 'B15003_020'
-#              , 'ed_associate_degree' = 'B15003_021'
-#              , 'ed_plus_bachelor_degree' = 'B15003_022'
-#              , 'ed_plus_master_degree' = 'B15003_023'
-#              , 'ed_plus_professional_degree' = 'B15003_024'
-#              , 'ed_plus_doctorate_degree' = 'B15003_025'
-#             )
+variables_acs <-
+  tidycensus::load_variables('acs5', year = 2021)
+
+my_vars <- c(  'median_household_income' = 'B19013_001'
+             , 'total_population' = 'B01003_001'
+             , 'households' = 'B11001_001'
+             , 'white_alone' = 'B03002_003'
+             , 'median_age' = 'B01002_001'
+             , 'total_population_over_25' = 'B15003_001'
+             , 'ed_hs_degree' = 'B15003_017'
+             , 'ed_ged_degree' = 'B15003_018'
+             , 'ed_college_less_1_year' = 'B15003_019'
+             , 'ed_college_more_1_year' = 'B15003_020'
+             , 'ed_associate_degree' = 'B15003_021'
+             , 'ed_plus_bachelor_degree' = 'B15003_022'
+             , 'ed_plus_master_degree' = 'B15003_023'
+             , 'ed_plus_professional_degree' = 'B15003_024'
+             , 'ed_plus_doctorate_degree' = 'B15003_025'
+            )
 
 # tidycensus::get_acs(
 #       geography = 'state'
@@ -265,7 +267,7 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
-   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-23.gpkg", as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
+   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-30.gpkg", as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -484,7 +486,7 @@ census_count_map <-
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
 ```
 
-Color Palette
+# Color Palette
 
 ```{r Color Palette, eval=FALSE, include=FALSE}
 
@@ -757,9 +759,11 @@ server <- function(input, output, session) {
 shinyApp(ui = year_ui, server = server)
 
 #TO BE FAIR, DO NOT UNDERSTAND WAS DONE THRU CHATGPT & STACK (NEED TO LOOK INTO HOW IT WORKS BUT VERY COOL)
+
+# `r blue_water_giveaway_data |> filter(Jurisdiction == "Baltimore City") |> summarise('Number of Giveaways') |> pull('Number of Giveaways)'` #TODO FIX
 ```
 
-Given that Blue Water Baltimore's tree giveaways are primarily concentrated within Baltimore City for most years, totaling `r d_tree_plantings_over_years_seasons %>% filter(Jurisdiction == "Baltimore City") |> summarise('Number of Giveaways' = sum('Number of Giveaways')) |> pull('Number of Giveaways)'` giveaways over the past ten years. We will examine Baltimore City more closely at the neighborhood level to better examine the distribution of tree giveaways. Through this process, we will uncover if there are any spatial patterns throughout the years and if distributions have been changing significantly.
+Given that Blue Water Baltimore's tree giveaways are primarily concentrated within Baltimore City for most years, totaling [insert number] giveaways over the past ten years. We will examine Baltimore City more closely at the neighborhood level to better examine the distribution of tree giveaways. Through this process, we will uncover if there are any spatial patterns throughout the years and if distributions have been changing significantly.
 
 **Figure 3.** Map of Tree Plantings in Baltimore Neighborhoods
 
@@ -786,9 +790,11 @@ figure_4_tree_neighborhood_legend <-
 
 figure_4_tree_neighborhoods_layer |>
   mapview(zcol = "Number of Trees", layer.name = "Number of Tree Giveaways", at = figure_4_tree_neighborhood_legend) 
+
+# `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(1:9) |> pull(Name) |> paste(collapse = ", ")`, followed by `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(10) |> pull(Name)`, #TODO: FIX THIS
 ```
 
-As previously noted, a significant proportion of total tree plantings has been concentrated in Northeast, Central, and Southeast Baltimore. Specifically, the top ten neighborhoods with the highest number of tree plantings are `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(1:9) |> pull(Name) |> paste(collapse = ", ")`, followed by `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(10) |> pull(Name)`, listed in descending order.
+As previously noted, a significant proportion of total tree plantings has been concentrated in Northeast, Central, and Southeast Baltimore. Specifically, the top ten neighborhoods with the highest number of tree plantings are listed in descending order.
 
 Just as importantly, it 
 
@@ -1565,7 +1571,8 @@ between that and the number of giveaways. In terms of the scale, we will
 look specifically at the census block scale to determine this. We will
 first look at a synced map
 
-Figure 6. Synced Map of Household Income and Giveaway Count (Per Census
+#### Income 
+Figure 1. Synced Map of Household Income and Giveaway Count (Per Census
 Blocks)
 
 ```{r}
@@ -1589,24 +1596,112 @@ census_income_map <-
 sync(census_income_map, census_count_map)
 ```
 
-However, what may be more useful to see any patterns or trends is to
-look at a bivariate map. Bivariate maps work uniquely since they are on
-a color scale of two quantitative values. In the following case, [insert
-what the map states]
-
-Figure 6. GGRidgeline
+Graph 1. Regression Income Graph of Income and Count
 ```{r}
+regression_income_count_graph <-
+  cbg |>
+  left_join(
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  )   |>
+  ggplot(aes(x = median_household_income, y = count)) +
+  geom_point(color =  "#008CCC") +
+  geom_smooth(method = "lm", se = FALSE, color = "#519342") + #DEXTER: Should this be a different form of regression. Heard about poison
+  labs(
+    title = "Scatter Plot of Giveaway Counts Compared with Median Household Income",
+    x = "Median Household Income",
+    y = "Giveaway Count"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 200000, by = 25000),
+    labels = scales::dollar_format()
+  ) +
+  theme_minimal() +
+  NULL
+
+   "#008CCC"
+   "#005273"
+   "#519342"
+
+# Display the graph
+regression_income_count_graph
 
 ```
 
-
-Figure 7. Bivariate Map of Household Income and Giveaway Count (per
-Census Block)
-
+Graph 2. Ridgeline Graph of Income over Year
 ```{r}
-## Combining the
+gg_ridgeline_income_year_graph <-
+blue_water_giveaway_data |> 
+  st_drop_geometry() |> 
+  mutate(year = factor(year, levels = c(2023:2013))) |> 
+  ggplot(aes(x = median_household_income, y = year, fill = factor(..quantile..))) +
+  stat_density_ridges(
+    quantiles = c(0.2, 0.4, 0.6, 0.8),
+    quantile_lines = TRUE,
+    geom = "density_ridges_gradient",
+    alpha = 0.6,
+    scale = 2.3
+  ) + 
+  scale_fill_viridis(
+    discrete = TRUE,
+    name = "Quantile",
+    alpha = 0.3,
+    option = "mako"
+  ) +
+  theme_bw(base_size = 16) + 
+  scale_x_continuous(
+    labels = scales::dollar_format(),
+    breaks = seq(0, 275000, by = 50000)
+  ) + 
+  theme(legend.position = "none") +
+  labs(
+    title = 'Density Graph of Giveaway Distribution and Median Household Income Over the Years',
+    x = "Median Household Income",
+    y = "Year"
+  ) 
 
-##TODO: ggridgleine
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "gg_ridgeline_income_year_graph.png"), 
+  plot = gg_ridgeline_income_year_graph,
+  width = 40,
+  height = 15
+)
+
+gg_ridgeline_income_year_graph
+```
+
+Graph 3. Boxplot of the Income over Year
+```{r echo=TRUE}
+boxplot_income_years <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  dplyr::select(median_household_income, year) |>
+  ggpubr::ggboxplot(
+    x = 'year', 
+    y = 'median_household_income', 
+    fill = 'year'
+  ) +
+  scale_fill_viridis_d(option = "mako", name = "Year") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none") +
+  scale_y_continuous(
+       limits = c(0, 275000),
+      breaks = seq(0, 275000, by = 25000),  
+      labels = scales::comma ) +
+  labs(
+    title = "Distribution of Household Income Across Different Years",
+    x = "Year",
+    y = "Median Household Income"
+  ) + 
+  NULL
+
+boxplot_income_years
+```
+
+Figure 2. Bivariate Map of Household Income and Giveaway Count (per
+Census Block)
+```{r}
+## CBG Bivariate
 cbg_census_count <-
   cbg |>
   left_join(
@@ -1649,7 +1744,7 @@ bivariate_count_income_map_legend <-
 bivariate_count_income_map <- 
   ggdraw() +
   draw_plot(bivariate_count_income_map_pre, 0, 0, 1, 1) +
-  draw_plot(bivariate_count_income_map_legend, .25, .2, 0.2, 0.2)
+  draw_plot(bivariate_count_income_map_legend, .1, .1, 0.2, 0.2)
 
 ## calling map
 bivariate_count_income_map
@@ -1661,143 +1756,489 @@ ggsave(
   height = 12
 )
 
-#TODO: Fix the styling of this 
 ```
 
+TODO: Insert this type of map. Would avtually be very helpful maybe in a bivariate or singular setting to see change over time. https://medium.com/@lucas_bromerchenkel/choropleth-maps-with-time-sliders-using-plotly-df6e19e5f90c
+
+#### Education
+
+Figure 1. Synced Map of Highschool Education and Giveaway Count (Per Census
+Blocks)
+
 ```{r}
+## Making the legend breaks
+legend_order_census_education_count <- 
+  seq(0, 100, length.out = 9) 
 
-# TODO: put in chunk zero
-library(ggridges)
+## Makiing the census-education map
+census_education_map <-
+  cbg |>
+  dplyr::select(-county) |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city","Baltimore County")) |>
+  rename("Percentage At Least College" = pct_at_least_college) |>
+  mapview(zcol = "Percentage At Least College", layer.name = "Percentage of At Least College Education and Census Block", at = legend_order_census_education_count)
 
+## The Sync Map of Count and Income
+sync(census_education_map , census_count_map)
+```
+
+Graph 1. Regression Education Graph and Count
+```{r}
+regression_education_count_graph <-
+  cbg |>
+  left_join(
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  )   |>
+  ggplot(aes(x = pct_at_least_college, y = count)) +
+  geom_point(color =  "#008CCC") +
+  geom_smooth(method = "lm", se = FALSE, color = "#519342") + #DEXTER: Should this be a different form of regression. Heard about poison
+  labs(
+    title = "Scatter Plot of Giveaway Counts Compared with Individuals who have At Least College",
+    x = "At Least College (Percentage)",
+    y = "Giveaway Count"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 100, by = 10),
+    labels = scales::comma 
+  ) +
+  theme_minimal() +
+  NULL
+
+
+# Display the graph
+regression_education_count_graph
+
+```
+
+Graph 2. Ridgeline Graph of Education over Year
+```{r}
+gg_ridgeline_education_year_graph <-
 blue_water_giveaway_data |> 
   st_drop_geometry() |> 
   mutate(year = factor(year, levels = c(2023:2013))) |> 
-  ggplot(aes(median_household_income, year, year, fill = year)) +
-  # TODO; go nutz, but tell a sstory
-  # https://jtr13.github.io/cc19/ridgeline-plots.html
-  geom_density_ridges(jittered_points = TRUE) + 
-  theme_bw(16) + 
-  scale_x_continuous(labels = scales::dollar_format()) + 
+  ggplot(aes(x = pct_at_least_college, y = year, fill = factor(..quantile..))) +
+  stat_density_ridges(
+    quantiles = c(0.2, 0.4, 0.6, 0.8),
+    quantile_lines = TRUE,
+    geom = "density_ridges_gradient",
+    alpha = 0.6,
+    scale = 2.3
+  ) + 
+  scale_fill_viridis(
+    discrete = TRUE,
+    name = "Quantile",
+    alpha = 0.3,
+    option = "mako"
+  ) +
+  theme_bw(base_size = 16) + 
+  scale_x_continuous(
+    labels = scales::comma,
+    breaks = seq(0, 100, by = 10)
+  ) + 
   theme(legend.position = "none") +
-  labs(title = 'The distirbution of income is getting lower over time') + 
-  NULL
-  
+  labs(
+    title = 'Density Graph of Giveaway Distribution and Education (At Least College)',
+    x = "At Least College Degree (Percentage)",
+    y = "Year"
+  ) 
 
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "gg_ridgeline_education_year_graph.png"), 
+  plot = gg_ridgeline_education_year_graph ,
+  width = 40,
+  height = 15
+)
+
+gg_ridgeline_education_year_graph 
 ```
 
+Graph 3. Boxplot of the Education over Year
+```{r echo=TRUE}
+boxplot_education_years <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  dplyr::select(pct_at_least_college, year) |>
+  ggpubr::ggboxplot(
+    x = 'year', 
+    y = 'pct_at_least_college', 
+    fill = 'year'  
+  ) +
+  scale_fill_viridis_d(option = "mako", name = "Year") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none") +
+  scale_y_continuous(
+       limits = c(0, 100),
+      breaks = seq(0, 100, by = 10),  
+      labels = scales::comma ) +
+  labs(
+    title = "Distribution of Education and Giveaway Counts aross Different Years",
+    x = "Year",
+    y = "At Least College Education (Percentage)"
+  ) + 
+  NULL
+
+boxplot_education_years
+```
+
+Figure 2. Bivariate Map of Education and Giveaway Count (per
+Census Block) ~ Baltimore City
+```{r}
+## CBG Bivariate
+cbg_census_count <-
+  cbg |>
+  left_join(
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  ) 
+
+## setting the bivariate count and income
+bivariate_count_education <-
+  biscale::bi_class(cbg_census_count, x = pct_at_least_college, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_education_map_pre <-
+  bivariate_count_education |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city")) |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Education and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_education_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Percentage of Adults with College Education",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_education_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_education_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_education_map_legend, .1, .1, 0.2, 0.2)
+
+## calling map
+bivariate_count_education_map
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_bivariate_income_giveaway.svg"), 
+  plot = bivariate_count_education_map,
+  width = 45,
+  height = 12
+)
+```
+
+Figure 2. Bivariate Map of Education and Giveaway Count (per
+Census Block) ~ Baltimore County
+```{r}
+## CBG Bivariate
+cbg_census_count <-
+  cbg |>
+  left_join(
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  ) 
+
+## setting the bivariate count and income
+bivariate_count_education <-
+  biscale::bi_class(cbg_census_count, x = pct_at_least_college, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_education_map_pre <-
+  bivariate_count_education |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore County")) |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Education and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_education_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Percentage of Adults with College Education",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_education_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_education_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_education_map_legend, .1, .1, 0.2, 0.2)
+
+## calling map
+bivariate_count_education_map
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_bivariate_education_giveaway.svg"), 
+  plot = bivariate_count_education_map,
+  width = 45,
+  height = 12
+)
+```
+
+#### Race
+
+Figure 1. Synced Map of Race and Giveaway Count (Per Census
+Blocks)
 
 ```{r}
-blue_water_giveaway_data |>
-  mutate(household_income = cut(
-    median_household_income,
-    breaks = c(seq(0, 200000, by = 25000), Inf),
-    labels = c(paste0("$", scales::comma(seq(0, 180000, by = 25000)), 
-                      " - $", scales::comma(seq(25000, 200000, by = 25000))),
-               "$200,000+"),
-    include.lowest = TRUE,
-    right = FALSE
-  )) |>
-  st_drop_geometry() |>
-  group_by(household_income, year) |>
-  summarise(`Number of Giveaways` = n()) |>
-  filter(!is.na(household_income)) |>
-  st_drop_geometry() |>
-  ggplot(aes(x = household_income, y = `Number of Giveaways`, color = factor(year))) +
-  geom_point() +
-  facet_grid(. ~ year) +
-  labs(
-    x = "Median Household Income",
-    y = "Giveaway Count",
-    color = "Year",
-    title = "Scatterplot of Giveaway Count vs Median Household Income by Year"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+## Making the legend breaks
+legend_order_census_race_count <- 
+  seq(0, 100, length.out = 9) 
 
-blue_water_giveaway_data |>
-  mutate(household_income = cut(
-    median_household_income,
-    breaks = c(seq(0, 200000, by = 25000), Inf),
-    labels = c(paste0("$", scales::comma(seq(0, 180000, by = 25000)), 
-                      " - $", scales::comma(seq(25000, 200000, by = 25000))),
-               "$200,000+"),
-    include.lowest = TRUE,
-    right = FALSE
-  )) |>
-  st_drop_geometry() |>
-  group_by(household_income, year) |>
-  summarise(`Number of Giveaways` = n()) |>
-  filter(!is.na(household_income)) |>
-  st_drop_geometry() |>
-ggplot(aes(x = household_income, y = factor(year), fill = `Number of Giveaways`)) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") + 
-  labs(
-    x = "Median Household Income Group",
-    y = "Year",
-    fill = "Total Giveaways",
-    title = "Heatmap of Giveaway Count vs Median Household Income by Year"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+## Making the census-race map
+census_race_map <-
+  cbg |>
+  mutate(pct_white_alone = 100*(white_alone/total_population)) |>
+  dplyr::select(-county) |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city","Baltimore County")) |>
+  rename("White (Percentage)" = pct_white_alone) |>
+  mapview(zcol = "White (Percentage)", layer.name = "Percentage of White (Percentage) and Census Block", at = legend_order_census_race_count) #DEXTER: Will it be powerful to compare to black population instead Synced? unsure but seems interesting.
 
+## The Sync Map of Count and Race
+sync(census_race_map , census_count_map)
 ```
 
-```{r eval=FALSE, include=FALSE}
-census_hs_education_layer <-
-  cbg_census_count |>
-  dplyr::select(GEOID, NAME, geometry, at_least_hs, total_population_over_25) |>
-  mutate(`At Least High School Degree or GED` = 100*(at_least_hs/total_population_over_25)) |>
-  mutate(`At Least High School Degree or GED` = case_when(
-    is.na(`At Least High School Degree or GED`) ~ 0,
-    TRUE ~ `At Least High School Degree or GED`)) 
+Graph 1. Regression Race Graph and Count
+```{r}
+regression_race_count_graph <-
+  cbg |>
+  left_join(
+  read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
+    , by = "NAME"
+  )   |>
+  mutate(pct_white_alone = 100*(white_alone/total_population)) |>
+  ggplot(aes(x = pct_white_alone, y = count)) +
+  geom_point(color =  "#008CCC") +
+  geom_smooth(method = "lm", se = FALSE, color = "#519342") + #DEXTER: Should this be a different form of regression. Heard about poison
+  labs(
+    title = "Scatter Plot of Giveaway Counts Compared with White (Percentage)",
+    x = "White (Percentage)",
+    y = "Giveaway Count"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 100, by = 10),
+    labels = scales::comma 
+  ) +
+  theme_minimal() +
+  NULL
 
-## creating the fisher breaks layer
-fisher_breaks_at_least_hs <- 
-  classIntervals(
-     census_hs_education_layer$`At Least High School Degree or GED`
-    , n = 5
-    , style = "fisher"
-    )$brks
 
-## creating the map
-census_hs_education_map <-
-  census_hs_education_layer |>
-  mapview(  zcol = "At Least High School Degree or GED"
-          , layer.name = "Percentage of People 25 and Over with At Least a High School Degree"
-          , at = fisher_breaks_at_least_hs)
-
-## creating a Sync map of Giveaway Count and Census Block
-sync(census_hs_education_map, census_count_map_v2)
+# Display the graph
+regression_race_count_graph
 ```
 
+Graph 2. Ridgeline Graph of Race over Year
+```{r}
+gg_ridgeline_race_year_graph <-
+blue_water_giveaway_data |> 
+  mutate(pct_white_alone = 100*(white_alone/total_population)) |>
+  st_drop_geometry() |> 
+  mutate(year = factor(year, levels = c(2023:2013))) |> 
+  ggplot(aes(x = pct_white_alone, y = year, fill = factor(..quantile..))) +
+  stat_density_ridges(
+    quantiles = c(0.2, 0.4, 0.6, 0.8),
+    quantile_lines = TRUE,
+    geom = "density_ridges_gradient",
+    alpha = 0.6,
+    scale = 2.3
+  ) + 
+  scale_fill_viridis(
+    discrete = TRUE,
+    name = "Quantile",
+    alpha = 0.3,
+    option = "mako"
+  ) +
+  theme_bw(base_size = 16) + 
+  scale_x_continuous(
+    labels = scales::comma,
+    breaks = seq(0, 100, by = 10)
+  ) + 
+  theme(legend.position = "none") +
+  labs(
+    title = 'Density Graph of Giveaway Distribution and White (Percentage)',
+    x = "White (Percentage)",
+    y = "Year"
+  ) 
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "gg_ridgeline_race_year_graph.png"), 
+  plot = gg_ridgeline_race_year_graph ,
+  width = 40,
+  height = 15
+)
+
+gg_ridgeline_race_year_graph 
+```
+
+Graph 3. Boxplot of the Race over Year
 ```{r include=FALSE}
-figure_3_census_count_layer <-
+boxplot_race_years <-
+  blue_water_giveaway_data |>
+  mutate(pct_white_alone = 100*(white_alone/total_population)) |>
+  st_drop_geometry() |>
+  dplyr::select(pct_white_alone, year) |>
+  ggpubr::ggboxplot(
+    x = 'year', 
+    y = 'pct_white_alone', 
+    fill = 'year'  
+  ) +
+  scale_fill_viridis_d(option = "mako", name = "Year") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none") +
+  scale_y_continuous(
+       limits = c(0, 100),
+      breaks = seq(0, 100, by = 10),  
+      labels = scales::comma ) +
+  labs(
+    title = "Distribution of Race and Giveaway Counts aross Different Years",
+    x = "Year",
+    y = "White (Percentage)"
+  ) + 
+  NULL 
+
+boxplot_race_years #DEXTER: 2018 and 2019 are very different. Did they do anything those years besides parterning with TreeBaltimore? Is there something to do with trust or along those lines?
+```
+
+Figure 2. Bivariate Map of Race and Giveaway Count (per
+Census Block) ~ Baltimore City
+```{r}
+## CBG Bivariate
+cbg_census_count <-
   cbg |>
   left_join(
   read_csv("../baltimore_tree_partners/output_data/census_count_year.csv")
     , by = "NAME"
   ) |>
-  mutate(count = case_when(
-    is.na(count) ~ 0,
-    TRUE ~ count
-  )) |>
-  mutate(tree_per_household = count/households) |>
-  filter(!is.na(tree_per_household)) 
+  mutate(pct_white_alone = 100*(white_alone/total_population))
 
-figure_3_census_count_legend<- 
-  classIntervals(
-  figure_3_census_count_layer$`tree_per_household`,
-  n = 5, 
-  style = "fisher"
-)$brks
+## setting the bivariate count and race
+bivariate_count_race <-
+  biscale::bi_class(cbg_census_count, x = pct_white_alone, y = count, style = "fisher", dim = 3)
 
-figure_3_census_count_layer |>
-mapview(zcol = "tree_per_household", layer.name = "Giveaway Count per Household", at = figure_3_census_count_legend)
+## create the bivariate map
+bivariate_count_race_map_pre <-
+  bivariate_count_race |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore city")) |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Race and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_race_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Percentage of White",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_race_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_race_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_race_map_legend, .1, .1, 0.2, 0.2)
+
+## calling map
+bivariate_count_race_map
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_bivariate_race_giveaway.svg"), 
+  plot = bivariate_count_race_map,
+  width = 45,
+  height = 12
+)
+```
+
+
+Figure 3. Bivariate Map of Race and Giveaway Count (per
+Census Block) ~ Baltimore County
+```{r}
+## setting the bivariate count and race
+bivariate_count_race <-
+  biscale::bi_class(cbg_census_count, x = pct_white_alone, y = count, style = "fisher", dim = 3)
+
+## create the bivariate map
+bivariate_count_race_map_pre <-
+  bivariate_count_race |>
+  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
+  filter(County %in% c("Baltimore County")) |>
+  ggplot() +
+  geom_sf(mapping = aes(fill = bi_class), color = "white", 
+          size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = "PurpleOr", dim = 3) +
+  labs(
+    title = "Race and Giveaway Count",
+    subtitle = "ACS & BWB Data"
+  ) +
+  theme(
+    plot.title = element_text(size = 10),     
+    plot.subtitle = element_text(size = 5)    
+  ) +
+  bi_theme()
+
+## create the bivariate map's legend
+bivariate_count_race_map_legend <- 
+  bi_legend(pal = "PurpleOr",
+            dim = 3,
+            xlab = "Higher Percentage of White",
+            ylab = "Higher Giveaway Count",
+            size = 3)
+
+## making combined map
+bivariate_count_race_map <- 
+  ggdraw() +
+  draw_plot(bivariate_count_race_map_pre, 0, 0, 1, 1) +
+  draw_plot(bivariate_count_race_map_legend, .1, .1, 0.2, 0.2)
+
+## calling map
+bivariate_count_race_map
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "graph_bivariate_race_giveaway.svg"), 
+  plot = bivariate_count_race_map,
+  width = 45,
+  height = 12
+)
 ```
 
 ### Tapestry
-
+Graph 1. Lifemode Group and Jurisdiction
 ```{r}
 lifemode_colors <- c(
     "Affluent Estates" = "#9e0142", 
@@ -1835,24 +2276,25 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
+Group 2. Lifemode Group and Total Giveaway Number
 ```{r}
-# lifemode_colors <- c(
-#     "Affluent Estates" = "#9e0142", 
-#     "Upscale Avenues" = "#d53e4f", 
-#     "Senior Styles" = "#f46d43", 
-#     "Middle Ground" = "#fdae61", 
-#     "Hometown" = "#e6f598", 
-#     "GenXurban" = "#abdda4", 
-#     "Uptown Individuals" = "#92b1e2", 
-#     "Scholars and Patriots" = "#3288bd", 
-#     "Midtown Singles" = "#5e4fa2", 
-#     "Family Landscapes" = "#E83F6F", 
-#     "Next Wave" = "#2274A5", 
-#     "Cozy Country Living" = "#FFBF00", 
-#     "Ethnic Enclaves" = "#32936F", 
-#     "Rustic Outposts" = "#9F9F92",
-#     "NA" = "#FFFFFF"
-# )
+lifemode_colors <- c(
+    "Affluent Estates" = "#9e0142",
+    "Upscale Avenues" = "#d53e4f",
+    "Senior Styles" = "#f46d43",
+    "Middle Ground" = "#fdae61",
+    "Hometown" = "#e6f598",
+    "GenXurban" = "#abdda4",
+    "Uptown Individuals" = "#92b1e2",
+    "Scholars and Patriots" = "#3288bd",
+    "Midtown Singles" = "#5e4fa2",
+    "Family Landscapes" = "#E83F6F",
+    "Next Wave" = "#2274A5",
+    "Cozy Country Living" = "#FFBF00",
+    "Ethnic Enclaves" = "#32936F",
+    "Rustic Outposts" = "#9F9F92",
+    "NA" = "#FFFFFF"
+)
 
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
@@ -1868,53 +2310,10 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   theme_minimal()
 ```
 
-
-# tapestry box plots
-```{r}
-counts_per_cbg <- 
-  bwb_total_giveaway_with_Tapestry_2019 |> 
-  st_drop_geometry() |> 
-  group_by(GEOID_2019) |> 
-  count()
-
-
-library(ggpubr) # TODO add to chunk zero
-
-my_comp <- 
-  list(
-      c('Affluent Estates', ' Upscale Avenues')
-    , c('Affluent Estates', 'Senior Styles')
-    , c('Affluent Estates', 'Middle Ground')
-    , c('Affluent Estates', 'Hometown')
-    , c('Affluent Estates', 'GenXurban')
-    , c('Affluent Estates', 'Uptown Individuals')
-    , c('Affluent Estates', 'Scholars and Patriots')
-    , c('Affluent Estates', 'Midtown Singles'))
-
-
-bwb_total_giveaway_with_Tapestry_2019 |> 
-  st_drop_geometry() |> 
-  distinct(lifemode, GEOID_2019) |> 
-  left_join(counts_per_cbg, by = 'GEOID_2019') |> 
-  # drop_na() |> 
-  # filter(lifemode != 'Rustic Outposts') |> 
-  # ggplot(aes(lifemode, n)) +
-  ggpubr::ggboxplot( x= 'lifemode', y ='n'
-                     # , orientation = 'horizontal'
-                     , add = 'jitter'
-                     ) +
-  # https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html
-  ggpubr::stat_compare_means(label.y = 95, label.x = 12) + # overall p value
-  ggpubr::stat_compare_means(comparisons = my_comp) +
-  ylim(0, 110) +
-  NULL
-
-
-```
-
-
+Graph 2. Lifemode Group and Every Year (Has there been changes to the types of people?)
 ```{r}
 # Making a graph of the different lifegroups in Baltimore
+lifeogroup_baltimore_years_facet <-
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
   add_row(year = "2020") |>
@@ -1929,9 +2328,11 @@ bwb_total_giveaway_with_Tapestry_2019 |>
          y = "Lifemode Groups") +
   theme_minimal() +
   facet_wrap(~ year)
-  
+
+lifeogroup_baltimore_years_facet #DEXTER: Better form to show this? Tried a density map but failed since lifegroups are categorical in nature
 ```
 
+Graph 3. Lifemode Groups in Top 10 Giveaway Locations
 ```{r}
 # Making a graph of the different lifemode groups in the top ten location
 #finding the top the top 10
@@ -1963,10 +2364,8 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   facet_wrap(~ giveaway_location)
 ```
 
+Graph 4. Top 5 Species for Each Lifemode Group
 ```{r}
-## Two different ways to do the slice above and blow
-# Making a species and groups map/idea
-#finding top 5 within each group
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
   group_by(lifemode, common_name) |>
@@ -1974,7 +2373,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   rename(Count = n) |>
   arrange(lifemode, desc(Count)) |>
   group_by(lifemode) |>
-  slice_max(order_by = Count, n = 5, with_ties = FALSE) |> #slice max is good within each group
+  slice_max(order_by = Count, n = 5, with_ties = FALSE) |>
   ungroup() |>
   ggplot(aes(x = Count, y = common_name, fill = common_name)) +
   geom_col() +
@@ -1982,10 +2381,58 @@ bwb_total_giveaway_with_Tapestry_2019 |>
        x = "Count of Tree Giveaways",
        y = "Species") +
   theme_minimal() +
-  facet_wrap(~ lifemode, scales = "free_y") #scale varies across panels for the facet wrap
+  facet_wrap(~ lifemode, scales = "free_y")  #Wanted to include a graph like this since I wanted to see if certain groups of individuals like certain plants. Turns out, not really. 
 
-# does not seem much different for each group in terms of what they like and not like
 ```
+
+
+Graph 5. Tapestry Box Plot (Compared to Affluent Estates)
+```{r}
+counts_per_cbg <- 
+  bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  group_by(GEOID_2019) |> 
+  count()
+
+my_comp <- 
+  list(
+      c('Affluent Estates', ' Upscale Avenues')
+    , c('Affluent Estates', 'Senior Styles')
+    , c('Affluent Estates', 'Middle Ground')
+    , c('Affluent Estates', 'Hometown')
+    , c('Affluent Estates', 'GenXurban')
+    , c('Affluent Estates', 'Uptown Individuals')
+    , c('Affluent Estates', 'Scholars and Patriots')
+    , c('Affluent Estates', 'Midtown Singles'))
+
+
+bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  distinct(lifemode, GEOID_2019) |> 
+  left_join(counts_per_cbg, by = 'GEOID_2019') |> 
+  filter(!is.na(lifemode)) |>
+  ggpubr::ggboxplot(
+    x = 'lifemode', 
+    y = 'n', 
+    fill = 'lifemode'
+    # add = 'jitter'
+  ) +
+  ggpubr::stat_compare_means(label.y = 95, label.x = 12) + # Overall p-value
+  ggpubr::stat_compare_means(comparisons = my_comp) + # Pairwise comparisons
+  ylim(0, 200) +
+  scale_fill_viridis_d(option = "mako", name = "Lifemode") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none") +
+  labs(
+    title = "Distribution of Counts Across Lifemodes",
+    x = "Lifemode",
+    y = "Giveaway Counts"
+  ) + 
+  NULL
+
+  222# https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html
+```
+
 
 ```{r}
 #Mapping the tapestry information
@@ -2013,7 +2460,10 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   st_transform(4326) |>
   mapview(zcol = "lifemode", layer.name = "Baltimore's Giveaways and Tapestry Group")
 
-baltimore_giveaway_layer + baltimore_2019_layer
+#TODO (8/30): PERFORM SPATIAL JOIN
 ```
 
-\`\`\`
+Figure 1. Map of Tapestry Groups in Baltimore
+```{r}
+baltimore_2019_layer
+```
