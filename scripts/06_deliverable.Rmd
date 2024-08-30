@@ -89,6 +89,7 @@ packs <-c(
           , 'leaflet.extras'
           , 'tidytext'
           , 'shiny'
+          , 'here'
           )     
 
 ## IF the packages in 'packs' are not already installed, install them
@@ -101,7 +102,6 @@ install.packages(setdiff(packs, rownames(installed.packages())))
 ## this actually loads them with library(package_name)
 vapply(packs, library, character.only = TRUE, logical(1), logical.return = TRUE, quietly = TRUE)
 
-
 ## For tidycensus
 ## Setting for get_acs
 census_api_key('58fc555c77c229747ade7d9fe50e7c71297cf91a', install = TRUE, overwrite = TRUE)
@@ -113,102 +113,120 @@ options(tigris_use_cache = TRUE)
 # Pulling census data
 ## Listing needed variables 
 
-#TODO: Save this out the geopackage for this 
-variables_acs <- 
-  tidycensus::load_variables('acs5', year = 2021)
+#TODO: Save this out the geopackage for this (1/1)
+#FINISH: Save this out in the output_data folder, would have to return on chunks and you download it for it work
 
-my_vars <- c(  'median_household_income' = 'B19013_001'
-             , 'total_population' = 'B01003_001'
-             , 'households' = 'B11001_001'
-             , 'white_alone' = 'B03002_003'
-             , 'median_age' = 'B01002_001'
-             , 'total_population_over_25' = 'B15003_001'
-             , 'ed_hs_degree' = 'B15003_017'
-             , 'ed_ged_degree' = 'B15003_018'
-             , 'ed_college_less_1_year' = 'B15003_019'
-             , 'ed_college_more_1_year' = 'B15003_020'
-             , 'ed_associate_degree' = 'B15003_021'
-             , 'ed_plus_bachelor_degree' = 'B15003_022'
-             , 'ed_plus_master_degree' = 'B15003_023'
-             , 'ed_plus_professional_degree' = 'B15003_024'
-             , 'ed_plus_doctorate_degree' = 'B15003_025'
-            )
+# variables_acs <- 
+#   tidycensus::load_variables('acs5', year = 2021)
+# 
+# my_vars <- c(  'median_household_income' = 'B19013_001'
+#              , 'total_population' = 'B01003_001'
+#              , 'households' = 'B11001_001'
+#              , 'white_alone' = 'B03002_003'
+#              , 'median_age' = 'B01002_001'
+#              , 'total_population_over_25' = 'B15003_001'
+#              , 'ed_hs_degree' = 'B15003_017'
+#              , 'ed_ged_degree' = 'B15003_018'
+#              , 'ed_college_less_1_year' = 'B15003_019'
+#              , 'ed_college_more_1_year' = 'B15003_020'
+#              , 'ed_associate_degree' = 'B15003_021'
+#              , 'ed_plus_bachelor_degree' = 'B15003_022'
+#              , 'ed_plus_master_degree' = 'B15003_023'
+#              , 'ed_plus_professional_degree' = 'B15003_024'
+#              , 'ed_plus_doctorate_degree' = 'B15003_025'
+#             )
 
-(maryland <-
-  tidycensus::get_acs(
-      geography = 'state'
-    , state = 'MD'
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(4326)))
+# tidycensus::get_acs(
+#       geography = 'state'
+#     , state = 'MD'
+#     , variables = my_vars
+#     , year = 2021
+#     , geometry = TRUE
+#     , output = 'wide'
+#     , moe_level = 95
+#     ) |>
+#   st_transform(crs = st_crs(4326)) |>
+#   st_write("output_data/maryland.gpkg")
+ 
+maryland <- 
+  st_read("output_data/maryland.gpkg")
 
-(maryland_counties <-
-  tidycensus::get_acs(
-      geography = 'county'
-    , state = 'MD'
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(4326))) 
+# tidycensus::get_acs(
+#     geography = 'county'
+#   , state = 'MD'
+#   , variables = my_vars
+#   , year = 2021
+#   , geometry = TRUE
+#   , output = 'wide'
+#   , moe_level = 95
+#   ) |>
+#  st_transform(crs = st_crs(4326)) |>
+#  st_write("output_data/maryland_counties.gpkg")
 
-(baltimore_city_counties <-
-  tidycensus::get_acs(
-      geography = 'county'
-    , state = 'MD'
-    , county = c('Baltimore City', 'Baltimore County')
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(4326))) 
+maryland_counties <-
+  st_read("output_data/maryland_counties.gpkg")
 
-(city <-
-  tidycensus::get_acs(
-      geography = 'county'
-    , state = 'MD'
-    , county = 'Baltimore City'
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(4326))) 
+# tidycensus::get_acs(
+#     geography = 'county'
+#   , state = 'MD'
+#   , county = c('Baltimore City', 'Baltimore County')
+#   , variables = my_vars
+#   , year = 2021
+#   , geometry = TRUE
+#   , output = 'wide'
+#   , moe_level = 95
+#   ) |>
+#  st_transform(crs = st_crs(4326)) |>
+#  st_write("output_data/baltimore_city_counties.gpkg")
 
+baltimore_city_counties <-
+  st_read("output_data/baltimore_city_counties.gpkg")
+
+ # tidycensus::get_acs(
+ #      geography = 'county'
+ #    , state = 'MD'
+ #    , county = 'Baltimore City'
+ #    , variables = my_vars
+ #    , year = 2021
+ #    , geometry = TRUE
+ #    , output = 'wide'
+ #    , moe_level = 95
+ #    ) |>
+ #   st_transform(crs = st_crs(4326)) |>
+ #   st_write("output_data/city.gpkg")
+
+city <-
+  st_read("output_data/city.gpkg")
+
+# tidycensus::get_acs(
+#       geography = 'block group'
+#     , state = 'MD'
+#     # , county = 'all'
+#     , variables = my_vars
+#     , year = 2021
+#     , geometry = TRUE
+#     , output = 'wide'
+#     , moe_level = 95
+#     ) |>
+#     st_transform(crs = st_crs(4326)) |>
+#     mutate(county = case_when(
+#       str_like(GEOID, '24510%') ~ "Baltimore City",
+#       str_like(GEOID, '24005%') ~ "Baltimore County",
+#       TRUE ~ "Neither"
+#     )) |>
+#     dplyr::select(-ends_with("M")) |> 
+#     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
+#     rename(NAME = NAM) |>
+#     mutate(
+#       pct_at_least_hs = (100)*((rowSums(across(starts_with("ed_"))))/total_population_over_25), #This gets percentage
+#       pct_at_least_college = (100)*((rowSums(across(starts_with("ed_plus"))))/total_population_over_25) #This gets percentage
+#     )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
+#     dplyr::select(-starts_with("ed_")) |>
+#     st_write("output_data/cbg.gpkg")
+  
 cbg <-
-  tidycensus::get_acs(
-      geography = 'block group'
-    , state = 'MD'
-    # , county = 'all'
-    , variables = my_vars
-    , year = 2021
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-    st_transform(crs = st_crs(4326)) |>
-    mutate(county = case_when(
-      str_like(GEOID, '24510%') ~ "Baltimore City",
-      str_like(GEOID, '24005%') ~ "Baltimore County",
-      TRUE ~ "Neither"
-    )) |>
-    dplyr::select(-ends_with("M")) |> 
-    rename_with(~ gsub("E$", "", .x), ends_with("E")) |>  
-    rename(NAME = NAM) |>
-    mutate(
-      pct_at_least_hs = (100)*((rowSums(across(starts_with("ed_"))))/total_population_over_25), #This gets percentage
-      pct_at_least_college = (100)*((rowSums(across(starts_with("ed_plus"))))/total_population_over_25) #This gets percentage
-    )|> #TODO: divided by total, multipled by 100 (from the base 25+ population) to get a percentage (rename these here)
-    dplyr::select(-starts_with("ed_"))
+  st_read("output_data/cbg.gpkg")
+
 ```
 
 ```{r Loading Geographies, message=FALSE, include=FALSE}
@@ -459,7 +477,6 @@ census_count_map <-
 # save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
 ```
 
-
 ```{r Loading Tapestry Data, echo=FALSE, message=FALSE}
 # makes 'bwb_total_giveaway_with_Tapestry_2019'
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
@@ -631,6 +648,7 @@ Highlighting the same information as before, the following table allows
 you to search by year to find the largest entry and its exact amount.
 
 Table 1. Table of Tree Giveaways over the Year (per Jurisdiction)
+
 ```{r}
  table_blue_water_baltimore_join <-
   blue_water_giveaway_data |>
@@ -639,7 +657,6 @@ Table 1. Table of Tree Giveaways over the Year (per Jurisdiction)
   count() |>
   pivot_wider(names_from = year, values_from = n)
   
-
  blue_water_giveaway_data |>
   st_drop_geometry() |>
   tabyl(jurisdiction, year) |>
@@ -659,146 +676,88 @@ The following map visually presents this information, giving you the
 opportunity to see the differences in tree giveaways between **seasons**
 and **years**.
 
-**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time):
-TODO: GET FIXED**
+**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time):**
 
 ```{r eval=FALSE, include=FALSE}
-## NEEDS TO GET FIXED
-ui <- fluidPage(
-  titlePanel("Tree Plantings Map"),
+# Define the UI for the application
+year_ui <- fluidPage(
+  titlePanel("BWB Tree Giveaway Interactive Map with Year and Season Filter"),
+  
   sidebarLayout(
     sidebarPanel(
       selectInput("year", "Select Year:", 
-                  choices = unique(blue_water_giveaway_data$year), 
-                  selected = unique(blue_water_giveaway_data$year)[1]),
+                  choices = sort(unique(blue_water_giveaway_data$year)), 
+                  selected = sort(unique(blue_water_giveaway_data$year))[1]),  # Set default to the first year
+      
       selectInput("season", "Select Season:", 
-                  choices = unique(blue_water_giveaway_data$season), 
-                  selected = unique(blue_water_giveaway_data$season)[1])
+                  choices = sort(unique(blue_water_giveaway_data$season)), 
+                  selected = sort(unique(blue_water_giveaway_data$season))[1])  # Set default to the first season
     ),
+    
     mainPanel(
-      mapviewOutput("filtered_map")
+      leafletOutput("interactive_map"),
+      verbatimTextOutput("debug_info")  # Text output for debugging info
     )
   )
 )
 
+# Server logic
 server <- function(input, output, session) {
-  filtered_data <- reactive({
-    req(input$year, input$season)
-    blue_water_giveaway_data %>%
+  
+  # Reactive values to store input and filtered data for use in RMarkdown
+  rv <- reactiveValues(selected_year = NULL, selected_season = NULL, filtered_data = NULL)
+  
+  # Reactive expression to filter data based on selected year and season
+  observe({
+    req(input$year, input$season)  # Ensure inputs are available
+    rv$selected_year <- input$year
+    rv$selected_season <- input$season
+    
+    rv$filtered_data <- blue_water_giveaway_data %>% 
       filter(year == input$year, season == input$season)
   })
   
-  output$filtered_map <- renderMapview({
-    data <- filtered_data()
-    if (nrow(data) == 0) {
-      showNotification("No data available for the selected criteria", type = "warning")
-      return(NULL)
-    }
-    mapview(data, zcol = "genus_species")
+  # Render the Leaflet map
+  output$interactive_map <- renderLeaflet({
+    req(rv$filtered_data)  # Ensure data is available before rendering
+    validate(need(nrow(rv$filtered_data) > 0, "No data available for selected filters."))
+    
+    leaflet(data = rv$filtered_data) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addCircleMarkers(
+        radius = 2,
+        fillOpacity = 0.1,
+        color = "#2E6F40",
+        popup = ~paste(
+          "<b>Year:</b>", year, "<br>",
+          "<b>Season:</b>", season, "<br>",
+          "<b>Date:</b>", date, "<br>",
+          "<b>Common Name:</b>", common_name, "<br>",
+          "<b>Scientific Name:</b>", genus_species, "<br>",
+          "<b>Address:</b>", address, "<br>",
+          "<b>City:</b>", city, "<br>",
+          "<b>State:</b>", state
+        )
+      )
+  })
+  
+  # Render text output for debugging information
+  output$debug_info <- renderText({
+    paste(
+      "Selected Year: ", rv$selected_year, "\n",
+      "Selected Season: ", rv$selected_season, "\n",
+      "Number of filtered rows: ", nrow(rv$filtered_data)
+    )
   })
 }
 
-
 # Run the application
-shinyApp(ui = ui, server = server)
+shinyApp(ui = year_ui, server = server)
 
+#TO BE FAIR, DO NOT UNDERSTAND WAS DONE THRU CHATGPT & STACK (NEED TO LOOK INTO HOW IT WORKS BUT VERY COOL)
 ```
 
-Taking a step back, next, we will observe the general trends over the
-years across the entire state of Maryland, where these giveaways have
-occurred.
-
-**Graph 3. Graph of Tree Plantings in Maryland (per Year and Season)**
-
-```{r}
-season_colors <- c(
-  "Fall" = "#008CCC",
-  "Spring" = "#005273"
-)
-
-d_plantings_maryland_year_season <-
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  group_by(season, year) |>
-  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
-  rename(Season = season, Year = year) |>
-  mutate(Year = as.double(Year))
-
-graph_plantings_maryland_year_season <-
-  d_plantings_maryland_year_season |>
-  ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
-   geom_bar(position = "dodge", stat = "identity") +
-    scale_fill_manual(values = season_colors) +
-    scale_y_continuous(
-      limits = c(0, 2000),  #TODO: Make to 1750 the upper limit     
-      breaks = seq(0, 2000, by = 250),  
-      labels = scales::comma  
-    ) +
-    scale_x_continuous (
-      breaks = seq(2013, 2023) 
-    ) +
-    labs(title = "Total Giveaways by Year and Season",
-         x = "Year",
-         y = "Total Giveaways",
-         fill = "Season") +
-    theme_minimal() 
-
-# ggsave(
-#   filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_1_tree_plantings_general_v1.png"), #TODO: Fix to make more general file saving path
-#   plot = graph_1_tree_plantings_year_v1,
-#   width = 7,
-#   height = 7
-# ) #TODO: Season unstacked make for the graph, it shows what; Make vertical smaller since dodge (have it both ways)
-
-graph_plantings_maryland_year_season
-```
-
-Each year, there was a steady increase in number of giveaways until
-**COVID-19,** after which the numbers have been gradually recovering to
-reach **pre-pandemic levels.**
-
-```{r eval=FALSE, include=FALSE}
-##########################################################
-# INTERNAL GRAPH 
-##########################################################
-graph_2_tree_plantings_year <-
-  blue_water_giveaway_data |>
-  st_drop_geometry() |>
-  group_by(season, year, jurisdiction) |>
-  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
-  rename(Season = season, Year = year, jurisdiction = jurisdiction) |>
-  mutate(Year = as.double(Year)) |>
-  ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
-   geom_bar(position = "stack", stat = "identity") +
-    scale_fill_manual(values = season_colors) +
-    scale_y_continuous(
-      limits = c(0, 2000),  #Rotate year on horoizontal and cut to 15,000        
-      breaks = seq(0, 2000, by = 250),  
-      labels = scales::comma  
-    ) +
-    scale_x_continuous (
-      breaks = seq(2013, 2023, by = 2) 
-    ) +
-    labs(title = "Total Giveaways by Year and Season",
-         x = "Year",
-         y = "Total Giveaways",
-         fill = "Season") +
-    theme_minimal() +
-    facet_wrap(~ jurisdiction)
-
-ggsave(
-  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
-  plot = graph_2_tree_plantings_year, 
-  width = 21, 
-  height = 7
-) #TODO Fix dimesniosn here
-
-graph_2_tree_plantings_year
-```
-
-Given that Blue Water Baltimore's tree giveaways are focused within
-Baltimore City, the following analysis will examine tree distributions
-specifically at the **neighborhood level** within the city.
+Given that Blue Water Baltimore's tree giveaways are primarily concentrated within Baltimore City for most years, totaling `r d_tree_plantings_over_years_seasons %>% filter(Jurisdiction == "Baltimore City") |> summarise('Number of Giveaways' = sum('Number of Giveaways')) |> pull('Number of Giveaways)'` giveaways over the past ten years. We will examine Baltimore City more closely at the neighborhood level to better examine the distribution of tree giveaways. Through this process, we will uncover if there are any spatial patterns throughout the years and if distributions have been changing significantly.
 
 **Figure 3.** Map of Tree Plantings in Baltimore Neighborhoods
 
@@ -811,8 +770,9 @@ neighborhood_read |>
   ) |>
   mutate(count = case_when(
     is.na(count) ~ 0,
-    TRUE ~ count
-  )) |>
+    TRUE ~ count),
+    Density = (count/`Area (Square Miles)`)
+  ) |>
   rename(`Number of Trees` = count) 
 
 figure_4_tree_neighborhood_legend <- 
@@ -826,21 +786,14 @@ figure_4_tree_neighborhoods_layer |>
   mapview(zcol = "Number of Trees", layer.name = "Number of Tree Giveaways", at = figure_4_tree_neighborhood_legend) 
 ```
 
-As alluded to earlier, there is a larger percentage of tree plantings
-within the northern and central part of Baltimore. Neighborhoods like
+As previously noted, a significant proportion of total tree plantings has been concentrated in Northeast, Central, and Southeast Baltimore. Specifically, the top ten neighborhoods with the highest number of tree plantings are `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(1:9) |> pull(Name) |> paste(collapse = ", ")`, followed by `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(10) |> pull(Name)`, listed in descending order.
 
-```{r eval=FALSE, message=FALSE, include=FALSE}
-# Table 4. Table of Plantings in Each Neighborhood
-# (TODO: Not do
- figure_4_tree_neighborhoods_layer |>
-  st_drop_geometry() |>
-  dplyr::select("Name","Density") |>
-  arrange(desc(`Density`)) |>
-  DT::datatable()
+Just as importantly, it 
 
 
-# `r paste0(figure_4_tree_neighborhoods_layer) |> arrange(desc('Number of Trees')) |> slice(1:4) |> pull(Neighborhood), collapse (", ")` and `r paste0(figure_4_tree_neighborhoods_layer) |> arrange(desc('Number of Trees')) |> slice(5) |> pull(Neighborhood)`.
-```
+
+However, evaluating neighborhoods solely based on the giveaway count may not provide a comprehensive view, as area sizes can vary significantly among them.
+
 
 may come surprising at first. However, these numbers are taking into
 consideration the amount of space within each jurisdiction. They are
@@ -921,6 +874,97 @@ more recently like Hamilton Hills.
 Nevertheless, as important as it is to understand when and where these
 plantings have gone, it is also important to understand where they have
 been received.
+occurred.
+
+**Graph 4. Graph of Tree Plantings in Maryland (per Year and Season)**
+
+```{r}
+season_colors <- c(
+  "Fall" = "#008CCC",
+  "Spring" = "#005273"
+)
+
+d_plantings_maryland_year_season <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  group_by(season, year) |>
+  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
+  rename(Season = season, Year = year) |>
+  mutate(Year = as.double(Year))
+
+graph_plantings_maryland_year_season <-
+  d_plantings_maryland_year_season |>
+  ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
+   geom_bar(position = "dodge", stat = "identity") +
+    scale_fill_manual(values = season_colors) +
+    scale_y_continuous(
+      limits = c(0, 1500),  #TODO: Make to 1750 the upper limit (Finished)   
+      breaks = seq(0, 1500, by = 250),  
+      labels = scales::comma  
+    ) +
+    scale_x_continuous (
+      breaks = seq(2013, 2023) 
+    ) +
+    labs(title = "Total Giveaways by Year and Season",
+         x = "Year",
+         y = "Total Giveaways",
+         fill = "Season") +
+    theme_minimal() 
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_1_tree_plantings_general_v1.png"), #TODO: Fix to make more general file saving path
+  plot = graph_plantings_maryland_year_season,
+  width = 7,
+  height = 7
+) 
+
+#TODO: Season unstacked make for the graph, it shows what; Make vertical smaller since dodge (have it both ways)
+
+graph_plantings_maryland_year_season
+```
+
+Each year, there was a steady increase in number of giveaways until
+**COVID-19,** after which the numbers have been gradually recovering to
+reach **pre-pandemic levels.** Since the number of tree plantings within the city reached 
+
+```{r eval=FALSE, include=FALSE}
+##########################################################
+# INTERNAL GRAPH 
+##########################################################
+graph_2_tree_plantings_year <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  group_by(season, year, jurisdiction) |>
+  summarise(`Number of Giveaways` = n(), .groups = 'drop') |>
+  rename(Season = season, Year = year, jurisdiction = jurisdiction) |>
+  mutate(Year = as.double(Year)) |>
+  ggplot(aes(x = Year, y = `Number of Giveaways`, fill = Season)) +
+   geom_bar(position = "stack", stat = "identity") +
+    scale_fill_manual(values = season_colors) +
+    scale_y_continuous(
+      limits = c(0, 2000),  #Rotate year on horoizontal and cut to 15,000        
+      breaks = seq(0, 2000, by = 250),  
+      labels = scales::comma  
+    ) +
+    scale_x_continuous (
+      breaks = seq(2013, 2023, by = 2) 
+    ) +
+    labs(title = "Total Giveaways by Year and Season",
+         x = "Year",
+         y = "Total Giveaways",
+         fill = "Season") +
+    theme_minimal() +
+    facet_wrap(~ jurisdiction)
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
+  plot = graph_2_tree_plantings_year, 
+  width = 21, 
+  height = 7
+) #TODO Fix dimesniosn here
+
+graph_2_tree_plantings_year
+```
 
 ## Host Location
 
@@ -1511,6 +1555,7 @@ ggsave(
 As you can see here, the most common types of the
 
 ## Distribution
+
 ### JEDI
 
 We will first begin looking at income to see if there is any correlation
@@ -1540,14 +1585,18 @@ census_income_map <-
 
 ## The Sync Map of Count and Income
 sync(census_income_map, census_count_map)
-
-#TODO: Double check if you should use a better color to visualize with the synced map
 ```
 
 However, what may be more useful to see any patterns or trends is to
 look at a bivariate map. Bivariate maps work uniquely since they are on
 a color scale of two quantitative values. In the following case, [insert
 what the map states]
+
+Figure 6. GGRidgeline
+```{r}
+
+```
+
 
 Figure 7. Bivariate Map of Household Income and Giveaway Count (per
 Census Block)
@@ -1698,9 +1747,6 @@ census_hs_education_map <-
 sync(census_hs_education_map, census_count_map_v2)
 ```
 
-
-
-
 ```{r include=FALSE}
 figure_3_census_count_layer <-
   cbg |>
@@ -1764,7 +1810,6 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   
 
 ```
-
 
 ```{r}
 lifemode_colors <- c(
@@ -1849,7 +1894,6 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   facet_wrap(~ giveaway_location)
 ```
 
-
 ```{r}
 ## Two different ways to do the slice above and blow
 # Making a species and groups map/idea
@@ -1903,5 +1947,4 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 baltimore_giveaway_layer + baltimore_2019_layer
 ```
 
-```
-
+\`\`\`
