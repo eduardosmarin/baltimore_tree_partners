@@ -486,7 +486,7 @@ census_count_map <-
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
 ```
 
-# Color Palette
+<!-- # Color Palette -->
 
 ```{r Color Palette, eval=FALSE, include=FALSE}
 
@@ -513,9 +513,9 @@ environment is undeniable. Their tree giveaways have extended to
 homeowners across Maryland, from **Frederick** to **Caroline**
 **county**.
 
-**Figure 1. Heatmap of Tree Giveaway Plantings in Maryland**
+#### Heatmap of Tree Giveaway Plantings in Maryland
 
-```{r}
+```{r echo=FALSE}
 leaflet(blue_water_giveaway_data) |>
   addProviderTiles("CartoDB.Positron") |>
   addHeatmap(lng = ~st_coordinates(blue_water_giveaway_data)[,1], 
@@ -547,9 +547,9 @@ To understand tree distribution giveaways, particularly at the
 jurisdictional level, it's crucial to recognize how they change
 throughout the year.
 
-**Graph 1. Line Graph of Tree Giveaways over the Years**
+#### Line Graph of Tree Giveaways over the Years
 
-```{r}
+```{r echo=FALSE}
 jurisdiction_colors = c(
    "Baltimore City" = "#008CCC",
    "Baltimore County" = "#005273",
@@ -594,9 +594,9 @@ nearly identical.
 If you look at the graph by **season**, however, different trends begin
 to emerge, especially between **2021** and **2023**.
 
-**Graph 2. Line Graph of Tree Giveaways over the Years by Season**
+#### Line Graph of Tree Giveaways over the Years by Season
 
-```{r}
+```{r echo=FALSE}
 jurisdiction_colors = c(
    "Baltimore City" = "#008CCC",
    "Baltimore County" = "#005273",
@@ -645,15 +645,14 @@ However, the story changes in the spring. Although Baltimore County has
 generally had a higher number of tree plantings over the years, in 2023,
 Baltimore City edged out Baltimore County with
 `r d_tree_plantings_over_years_seasons |> filter(Year == 2023 & Season == "Spring" & Jurisdiction == "Baltimore City") |> pull("Number of Giveaways")`
-compared to
-`r d_tree_plantings_over_years_seasons |> filter(Year == 2023 & Season == "Spring" & Jurisdiction == "Baltimore County") |> pull("Number of Giveaways")`.
+compared to `r d_tree_plantings_over_years_seasons |> filter(Year == 2023 & Season == "Spring" & Jurisdiction == "Baltimore County") |> pull("Number of Giveaways")`.
 
 Highlighting the same information as before, the following table allows
 you to search by year to find the largest entry and its exact amount.
 
-Table 1. Table of Tree Giveaways over the Year (per Jurisdiction)
+#### Table of Tree Giveaways over the Year (per Jurisdiction)
 
-```{r}
+```{r echo=FALSE}
  table_blue_water_baltimore_join <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -680,7 +679,7 @@ The following map visually presents this information, giving you the
 opportunity to see the differences in tree giveaways between **seasons**
 and **years**.
 
-**Figure 2. Map of Tree Giveaway Plantings in Maryland (Over Time):**
+#### Map of Tree Giveaway Plantings in Maryland (Over Time):
 
 ```{r eval=FALSE, include=FALSE}
 # Define the UI for the application
@@ -765,7 +764,7 @@ shinyApp(ui = year_ui, server = server)
 
 Given that Blue Water Baltimore's tree giveaways are primarily concentrated within Baltimore City for most years, totaling [insert number] giveaways over the past ten years. We will examine Baltimore City more closely at the neighborhood level to better examine the distribution of tree giveaways. Through this process, we will uncover if there are any spatial patterns throughout the years and if distributions have been changing significantly.
 
-**Figure 3.** Map of Tree Plantings in Baltimore Neighborhoods
+#### Map of Tree Plantings in Baltimore Neighborhoods
 
 ```{r echo=FALSE}
 figure_4_tree_neighborhoods_layer <-
@@ -791,13 +790,23 @@ figure_4_tree_neighborhood_legend <-
 figure_4_tree_neighborhoods_layer |>
   mapview(zcol = "Number of Trees", layer.name = "Number of Tree Giveaways", at = figure_4_tree_neighborhood_legend) 
 
-# `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(1:9) |> pull(Name) |> paste(collapse = ", ")`, followed by `r figure_4_tree_neighborhoods_layer |> arrange(desc(Number of Trees)) |> slice(10) |> pull(Name)`, #TODO: FIX THIS
 ```
 
-As previously noted, a significant proportion of total tree plantings has been concentrated in Northeast, Central, and Southeast Baltimore. Specifically, the top ten neighborhoods with the highest number of tree plantings are listed in descending order.
+As previously noted, a significant proportion of total tree plantings has been concentrated in Northeast, Central, and Southeast Baltimore. Specifically, the top ten neighborhoods with the highest number of tree plantings are listed in descending order: `r figure_4_tree_neighborhoods_layer |> arrange(desc('Number of Trees')) |> slice(1:9) |> pull(Name) |> paste(collapse = ", ")`, followed by
+`r figure_4_tree_neighborhoods_layer |> arrange(desc('Number of Trees')) |> slice(10) |> pull(Name)`. 
 
+#### Table of Plantings in Each Neighborhood
+
+```{r echo=FALSE, message=FALSE}
+figure_4_tree_neighborhoods_layer |>
+  st_drop_geometry() |>
+  dplyr::select("Name","Number of Trees") |>
+  arrange(desc(`Number of Trees`)) |>
+  DT::datatable()
+
+#TODO: Dexter, unsure, how to get the count of households since the units are neighborhoods and not census blocks
+```
 Just as importantly, it 
-
 
 
 However, evaluating neighborhoods solely based on the giveaway count may not provide a comprehensive view, as area sizes can vary significantly among them.
@@ -809,15 +818,6 @@ your number of trees in each neighborhood divided by the total square
 miles of each neighborhood. The following highlights the absolute value
 of tree plantings in each neighborhood.
 
-Table 5. Table of Plantings in Each Neighborhood
-
-```{r echo=FALSE, message=FALSE}
-figure_4_tree_neighborhoods_layer |>
-  st_drop_geometry() |>
-  dplyr::select("Name","Number of Trees") |>
-  arrange(desc(`Number of Trees`)) |>
-  DT::datatable()
-```
 
 Regardless, another interesting aspect to consider is how have the
 absolute number of tree plantings have changed over the years. The
@@ -825,18 +825,17 @@ decision to not observe the density of tree plantings is since
 neighborhood boundaries can change, alongside the amount of plantable
 space over time.
 
-Graph 3. Graph of Tree Plantings in Each Neighborhood Over the Years
-(Top 20)
+#### Line Graph of Tree Plantings in Each Neighborhood (Top 5) Over the Years
 
-```{r}
+```{r echo=FALSE}
 graph_3_filter_neighborhoods <-
   figure_4_tree_neighborhoods_layer |>
   dplyr::select(Name, `Number of Trees`) |>
   arrange(desc(`Number of Trees`)) |>
-  slice(1:10)
+  slice(1:5)
 
 graph_3_tree_plantings_year_neighborhood <-
-figure_4_tree_neighborhoods_layer |>
+  figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
   left_join(
     read_csv("../baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
@@ -847,29 +846,29 @@ figure_4_tree_neighborhoods_layer |>
   dplyr::filter(Neighborhood %in% graph_3_filter_neighborhoods$Name) |>
   pivot_wider(names_from = Neighborhood, values_from = `Number of Trees`) |>
   add_row(Year = 2020) |>
-  arrange((Year)) |>
-  pivot_longer(cols = c("Ednor Gardens-Lakeside", "Hamilton", "Hampden", "Hamilton Hills", "Homeland", "Lauraville","Mount Washington","Roland Park","Westfield","Charles Village"), names_to = "Neighborhood", values_to = "Number of Trees") |>
+  arrange(Year) |>
+  pivot_longer(cols = c("Mount Washington","Hamilton","Lauraville","Westfield","Hampden"), 
+               names_to = "Neighborhood", 
+               values_to = "Number of Trees") |>
+  replace_na(list(`Number of Trees` = 0)) |>
   mutate(Neighborhood = factor(Neighborhood, levels = graph_3_filter_neighborhoods$Name)) |>
-  ggplot(aes(x = Year, y = `Number of Trees`)) +
-  geom_bar(position = "dodge", stat = "identity", fill = "#519342") +
+  ggplot(aes(x = Year, y = `Number of Trees`, color = Neighborhood, group = Neighborhood)) +
+  geom_line() +
   scale_x_continuous(breaks = seq(2013, 2023)) +
-  coord_flip() +
-  labs(title = "Top 10 Neighborhoods and Number of Trees", x = "Year", y = "Number of Trees") +
-  theme_minimal() +
-  facet_wrap(~ Neighborhood) 
+  labs(title = "Top 5 Neighborhoods and Number of Trees", x = "Year", y = "Number of Trees") +
+  theme_minimal()
 
 ggsave(
-  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_3_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
-  plot = graph_3_tree_plantings_year_neighborhood, 
-  width = 21, 
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_tree_plantings_neighborhoods_top_5year.png"), #TODO: Fix to make more general file saving path
+  plot = graph_3_tree_plantings_year_neighborhood,
+  width = 21,
   height = 10
 )
 
 graph_3_tree_plantings_year_neighborhood
 
-#TODO: Change the faceting to be read from left to right
+#TODO: Dexter, unsure, how to get the count of households since the units are neighborhoods and not census blocks (don't know how to standardize). Also, is there a better visual here for this?
 
-#TODO: Add a line graph instead with time on hte horizontal line charts.
 ```
 
 As you can see, the top ten neighborhoods, in descending order, are
@@ -884,9 +883,9 @@ plantings have gone, it is also important to understand where they have
 been received.
 occurred.
 
-**Graph 4. Graph of Tree Plantings in Maryland (per Year and Season)**
+#### Graph of Tree Plantings in Maryland (per Year and Season)
 
-```{r}
+```{r echo=FALSE}
 season_colors <- c(
   "Fall" = "#008CCC",
   "Spring" = "#005273"
@@ -926,7 +925,6 @@ ggsave(
   height = 7
 ) 
 
-#TODO: Season unstacked make for the graph, it shows what; Make vertical smaller since dodge (have it both ways)
 
 graph_plantings_maryland_year_season
 ```
@@ -950,8 +948,8 @@ graph_2_tree_plantings_year <-
    geom_bar(position = "stack", stat = "identity") +
     scale_fill_manual(values = season_colors) +
     scale_y_continuous(
-      limits = c(0, 2000),  #Rotate year on horoizontal and cut to 15,000        
-      breaks = seq(0, 2000, by = 250),  
+      limits = c(0, 1500),          
+      breaks = seq(0, 1500, by = 250),  
       labels = scales::comma  
     ) +
     scale_x_continuous (
@@ -965,11 +963,11 @@ graph_2_tree_plantings_year <-
     facet_wrap(~ jurisdiction)
 
 ggsave(
-  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_2_tree_plantings_jurisdiction.png"),
   plot = graph_2_tree_plantings_year, 
   width = 21, 
   height = 7
-) #TODO Fix dimesniosn here
+)
 
 graph_2_tree_plantings_year
 ```
@@ -985,21 +983,22 @@ unique_provider <-
   arrange(desc(n)) |>
   slice(-1) 
 
-unique_provider_na <- #TODO: Save out as a PNG
+unique_provider_na <- 
  blue_water_giveaway_data |>
   st_drop_geometry() |>
   tabyl(giveaway_location) |> 
   as_tibble() |> 
   arrange(desc(n)) |>
-  slice(1) 
+  slice(1)  |>
+  mutate(percent = 100*percent)
+
 ```
 
 In terms of giveaway location, there are approximately
 `r nrow(unique_provider)` different giveaway locations over the last ten
 years. Each of them vary, especially in terms of amount.
 
-Table 6. Table of Giveaway Locations
-
+#### Table of Giveaway Locations
 ```{r echo=FALSE}
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -1010,16 +1009,16 @@ Table 6. Table of Giveaway Locations
   slice(-1) |> 
   rename("Number of Trees" = n, Percent = percent) |>
   mutate(Percent = round(100 * Percent, 2)) |>
+  dplyr::select(-valid_percent) |>
   DT::datatable()
 ```
 
 In the case of the amount of tree giveaway locations, the most stems
-
 from Stillmeadow Community Fellowship. However, please understand that
-the largest majority are undefined, totaling
-`r unique(unique_provider_na$n)`.
+the a large percentage are undefined, totaling
+`r unique(unique_provider_na$n)`. This approximately accounts for`r unique(unique_provider_na$percent)`% of the dataset. 
 
-Graph 4. Graph of Total Giveaway Locations
+#### Graph of Total Giveaway Locations
 
 ```{r echo=FALSE}
 graph_4_giveaway_locations <-
@@ -1038,13 +1037,14 @@ graph_4_giveaway_locations <-
     theme_minimal() +
     NULL
 
-# TODO: Fix the graph (currently offset)
-# ggsave(
-#   filename = file.path("../baltimore_tree_partners/deliverables", "provider_graph_4_tree_plantings_neighborhoods_year.png"), #TODO: Fix to make more general file saving path
-#   plot = graph_4_giveaway_locations,
-#   width = 21,
-#   height = 10
-# )
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "provider_graph_4_tree_plantings_neighborhoods_year.png"),
+  plot = graph_4_giveaway_locations,
+  width = 21,
+  height = 10
+)
+
+#TODO: Dexter, confused and was trying to make it so that there was no odd space between this and the 0. Could not figure out how, though. 
     
 graph_4_giveaway_locations
 ```
@@ -1058,35 +1058,53 @@ given per each provider.
 ## Species
 
 ```{r include=FALSE}
-colors_species <-  #TODO: Change colors to be more earth-tone like
-  c(
-  "Serviceberry" = "#9e0142",
-  "Sweetbay Magnolia" = "#d53e4f", 
-  "Pawpaw" = "#f46d43",
-  "American Persimmon" = "#fdae61", 
-  "Common Fig" = "#fee08b",
-  "American Plum" = "#e6f598", 
-  "American Holly" = "#abdda4",
-  "Black Gum" = "#92b1e2",
-  "Eastern Redbud" = "#3288bd", 
-  "American Hornbeam" = "#5e4fa2"
+colors_species <- c(
+  "Serviceberry" = "#A52A2A",  
+  "Sweetbay Magnolia" = "#8B4513",
+  "Pawpaw" = "#D2691E",           
+  "American Persimmon" = "#CD853F",
+  "Common Fig" = "#DAA520",       
+  "American Plum" = "#808000",    
+  "American Holly" = "#6B8E23",   
+  "Black Gum" = "#556B2F",        
+  "Eastern Redbud" = "#4682B4",   
+  "American Hornbeam" = "#8A2BE2" 
 )
+
+#TODO: Eduardo, choose beter colors
 ```
 
 The following map highlights the top ten species giveaway in the
 jurisdiction.
 
-Figure 5. Map of Top 10 Species Giveaway
+#### Map of Top 10 Species Giveaway
 
 ```{r echo=FALSE}
+# Pulling top 10 species
+species_order <- 
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  count(common_name) |>
+  arrange(desc(n)) |>
+  slice(1:10) |>
+  pull(common_name)
+
+
+# Filtering, factoring, and mapping the data
 blue_water_giveaway_data |>
-  mutate(common_name = case_when(
-    common_name %in% c("Serviceberry","Sweetbay Magnolia","Pawpaw","American Persimmon","Common Fig","American Plum","American Holly","Black Gum","Eastern Redbud", "American Hornbeam") ~    common_name, 
-    TRUE ~ NA_character_
-  )) |>
-  filter(!is.na(common_name)) |>
-  dplyr::select(year, season, common_name, genus_species) |>
-  mapview(zcol = "common_name", col.regions = colors_species, layer.name = "Top 10 Tree Species Planted from Blue Water Baltimore") #TODO: Fix how they are being highlighted and the order
+mutate(common_name = case_when(
+  common_name %in% species_order ~ common_name,
+  TRUE ~ NA_character_
+)) |>
+filter(!is.na(common_name)) |>
+mutate(common_name = factor(common_name, levels = species_order)) |>
+dplyr::select(year, season, common_name, genus_species) |>
+mapview(
+zcol = "common_name",
+col.regions = colors_species,
+layer.name = "Top 10 Tree Species Planted from Blue Water Baltimore"
+)
+
 ```
 
 ```{r echo=FALSE}
@@ -1126,8 +1144,7 @@ In the case here, this visually displays the same information,
 highlighting how distinct the most common and least common species are
 in the amount of species give away.
 
-Graph 5. Graph of the Most Common and Rare Tree Species
-
+#### Graph of the Most Common and Rare Tree Species
 ```{r echo=FALSE}
 graph_5_common_rare_species <-
   datatable_6_giveaway |>
@@ -1155,7 +1172,7 @@ graph_5_common_rare_species
 As mentioned earlier, an interesting aspect of this is to see and
 understand how these relate to prior topics.
 
-Table 7. Table of Species by Jurisdictions
+#### Table of Species by Jurisdictions
 
 ```{r}
 table_7_species_jurisdictions <-
@@ -1574,7 +1591,8 @@ first look at a synced map
 #### Income 
 Figure 1. Synced Map of Household Income and Giveaway Count (Per Census
 Blocks)
-
+TODO: Check how you are defining the giveaway counts if by household or by area (should be household)
+TODO: Figure out how many trees are not in block groups with NA
 ```{r}
 ## Making the legend breaks
 legend_order_census_income_count <- 
@@ -1610,7 +1628,7 @@ regression_income_count_graph <-
   labs(
     title = "Scatter Plot of Giveaway Counts Compared with Median Household Income",
     x = "Median Household Income",
-    y = "Giveaway Count"
+    y = "Giveaway Count" #TODO: First, figure out if the number is true about 3k points not being captured since they are NA. Put in caption that these are not included and the amount 
   ) +
   scale_x_continuous(
     breaks = seq(0, 200000, by = 25000),
@@ -1693,13 +1711,15 @@ boxplot_income_years <-
     x = "Year",
     y = "Median Household Income"
   ) + 
-  NULL
+  NULL #TODO: Dexter, means find statistical significance
 
 boxplot_income_years
 ```
 
 Figure 2. Bivariate Map of Household Income and Giveaway Count (per
 Census Block)
+
+TODO: Lawrence Brown, Black Butterfly, White L
 ```{r}
 ## CBG Bivariate
 cbg_census_count <-
@@ -2094,6 +2114,12 @@ ggsave(
 )
 
 gg_ridgeline_race_year_graph 
+
+#TODO: Look at what low-income, high_
+# Group by location, and location year, get the mean of the median household
+# Get the mean of the education as well.
+# Get a tree level file, every row is a tree, you have a column of where the giveaway happened, and the year, and you have a column for the median household income to where the tree went to alongside the education of where the tree went home to
+# Take that file group_by (location, by_year) |> summarize() |> mean = mean(education) DEXTER: list(mean_cl_normal) ~ makes a nested datafraem |> unnnest()
 ```
 
 Graph 3. Boxplot of the Race over Year
@@ -2330,8 +2356,10 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   facet_wrap(~ year)
 
 lifeogroup_baltimore_years_facet #DEXTER: Better form to show this? Tried a density map but failed since lifegroups are categorical in nature
+
 ```
 
+#TODO: Search for snakey diagram
 Graph 3. Lifemode Groups in Top 10 Giveaway Locations
 ```{r}
 # Making a graph of the different lifemode groups in the top ten location
@@ -2385,7 +2413,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
-
+#TODO: Look at odds ratio at the old report for the affluent estates
 Graph 5. Tapestry Box Plot (Compared to Affluent Estates)
 ```{r}
 counts_per_cbg <- 
