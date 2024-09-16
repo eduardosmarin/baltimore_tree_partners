@@ -265,6 +265,19 @@ neighborhood_layer <-
   neighborhood_read |>
   mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", zcol = "Name", layer.name = "Baltimore's Neighborhood")
 
+## Weighted Neighborhood data
+weighted_neighborhood <- 
+  interpolate_pw (
+    from = cbg                 
+  , to = neighborhood_read    
+  , to_id = "Name"         
+  , weights = cbg             
+  , weight_column = "total_population"
+  , weight_placement = "surface" 
+  , crs = 4326                 
+  , extensive = FALSE
+  )
+
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
    st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-30.gpkg", as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
@@ -798,14 +811,25 @@ As previously noted, a significant proportion of total tree plantings has been c
 #### Table of Plantings in Each Neighborhood
 
 ```{r echo=FALSE, message=FALSE}
-figure_4_tree_neighborhoods_layer |>
+figure_4_tree_neighborhoods_layer <- 
+  weighted_neighborhood |>
   st_drop_geometry() |>
-  dplyr::select("Name","Number of Trees") |>
-  arrange(desc(`Number of Trees`)) |>
+  left_join(figure_4_tree_neighborhoods_layer, by = "Name") 
+
+
+  mutate(`Trees per Household` = `Number of Trees`/households) |>
+  mutate(`Trees per Household` = case_when(
+    is.na(`Trees per Household`) ~ 0, #TODO: Dexter, can I do this and is this a fair assumption
+    TRUE ~ `Trees per Household`
+  )) |>
+  arrange(desc(`Trees per Household`)) |>
+  dplyr::select(Name, `Trees per Household`) |>
   DT::datatable()
 
-#TODO: Dexter, unsure, how to get the count of households since the units are neighborhoods and not census blocks
+#TODO: Dexter, confused why 	Johns Hopkins Homewood is showing although it technically has nothing listed for its Trees per Household
 ```
+
+
 Just as importantly, it 
 
 
@@ -859,13 +883,16 @@ graph_3_tree_plantings_year_neighborhood <-
   theme_minimal()
 
 ggsave(
-  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_tree_plantings_neighborhoods_top_5year.png"), #TODO: Fix to make more general file saving path
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_tree_plantings_neighborhoods_top_5year.png"), 
   plot = graph_3_tree_plantings_year_neighborhood,
   width = 21,
   height = 10
 )
 
 graph_3_tree_plantings_year_neighborhood
+
+#Maybe make a graph from Post-2020 COVID and see if and have different of the overall change. Percent of total distribution for that. 
+#TODO: Eduardo, do that above to standardize and see more vividily the changes
 
 #TODO: Dexter, unsure, how to get the count of households since the units are neighborhoods and not census blocks (don't know how to standardize). Also, is there a better visual here for this?
 
@@ -1033,8 +1060,9 @@ graph_4_giveaway_locations <-
   ggplot(aes(x = reorder(`Giveaway Location`, `Number of Trees`), y = `Number of Trees`)) +
     geom_col(fill = "#519342") +
     coord_flip() +
-    labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees") #TODO: Put percentages on the tips, flag Dexter
+    labs(title = "Giveaway Location and Number of Trees", x = "Giveaway Location", y = "Number of Trees") + #TODO: Put percentages on the tips, flag Dexter
     theme_minimal() +
+    scale_y_continuous(expand = c(0, 0)) + #(TODO: Eduardo, USE THIS FOR THE WATERSHED GRAPH)
     NULL
 
 ggsave(
@@ -2264,6 +2292,130 @@ ggsave(
 ```
 
 ### Tapestry
+```{r}
+#Mapping the tapestry information
+#Baltimore 2019 Census Tracts
+
+# city_cbg_2019 <-
+#   tidycensus::get_acs(
+#       geography = 'block group'
+#     , state = 'MD'
+#     , county = c('Baltimore City', 'Baltimore County')
+#     , variables = my_vars
+#     , year = 2019
+#     , geometry = TRUE
+#     , output = 'wide'
+#     , moe_level = 95
+#     ) |>
+#    st_transform(crs = st_crs(4326)) |>
+#    mutate(county = case_when(
+#       str_like(GEOID, '24510%') ~ "Baltimore City",
+#       str_like(GEOID, '24005%') ~ "Baltimore County",
+#       TRUE ~ "Neither"
+#     )) |>
+#     dplyr::select(-ends_with("M")) |>
+#     rename_with(~ gsub("E$", "", .x), ends_with("E")) |>
+#     rename(NAME = NAM) |>
+#     mutate(
+#       pct_at_least_hs = (100)*((rowSums(across(starts_with("ed_"))))/total_population_over_25), 
+#       pct_at_least_college = (100)*((rowSums(across(starts_with("ed_plus"))))/total_population_over_25) 
+#     )|> 
+#     dplyr::select(-starts_with("ed_")) |>
+#     st_write("output_data/cbg_2019.gpkg")
+
+city_cbg_2019 <-
+st_read("output_data/cbg_2019.gpkg") 
+
+baltimore_2019_layer <-
+  city_cbg_2019 |>
+  mapview(layer.name = "Baltimore City & County (2019)") 
+
+baltimore_giveaway_layer <-
+bwb_total_giveaway_with_Tapestry_2019 |>
+  st_zm(drop = TRUE, what = "ZM") |>
+  st_transform(4326) |>
+  mapview(zcol = "lifemode", layer.name = "Baltimore's Giveaways and Tapestry Group")
+
+```
+
+```{r}
+#Getting the number of giveaway in each
+tree_giveaway_2019_city <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  filter(year == 2019 & jurisdiction == "Baltimore City") |>
+  distinct(address) |>
+  count() |> #making sure that we only get the unique addresses given
+  pull(n) #now a vector
+
+tree_giveaway_2019_county <-
+  blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  filter(year == 2019 & jurisdiction == "Baltimore City") |>
+  distinct(address) |>
+  count() |> #making sure that we only get the unique addresses given
+  pull(n) #now a vector
+  
+#Total households in each
+households_2019_city <-
+  city_cbg_2019 |>
+  st_drop_geometry() |>
+  filter(county == "Baltimore City") |>
+  summarize(total_households = sum(households, na.rm = TRUE)) |>
+  pull(total_households)
+
+households_2019_county <-
+  city_cbg_2019 |>
+  st_drop_geometry() |>
+  filter(county == "Baltimore County") |>
+  summarize(total_households = sum(households, na.rm = TRUE)) |>
+  pull(total_households)
+  
+#Caluclating rates (for odd ratios)
+tree_giveaway_2019_city <- 
+  tree_giveaway_2019_city/households_2019_city
+
+tree_giveaway_2019_county <- 
+  tree_giveaway_2019_county/households_2019_county
+
+tree_giveaway_2019 <-
+  (tree_giveaway_2019_city + tree_giveaway_2019_county) / (households_2019_city + households_2019_county)
+```
+
+
+```{r}
+#Trees by lifemode group
+tree_giveaways_by_lifemode <- 
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  filter(year == 2019) |>
+  group_by(lifemode) |>
+  summarise(trees_given = n()) 
+
+#Finding the total population of each group
+population_by_lifemode <- 
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  group_by(lifemode, jurisdiction) |>
+  summarise(total_population = sum(total_population, na.rm = TRUE)) |>
+  filter(!is.na(jurisdiction))
+
+#^ This doesn't work since it is double counting. I need the original shapefile of the data to get the counts per each group 
+
+#Eduardo, Normalizing the populations and the odds ratio. Have a boxplot (instead of total number). Out of all the trees given away, and divide by the populations. Let's only look at 2019 giveaways. And then see. A ratio of ratios. An odds ratio. We want to know if 10% of trees went to affluent estate, and 10% of the population is affluent estates. The odd ratio is 1. Let us say that 20% of trees but only went to the affluent estate, the odd ratio is 2. This makes more sense #We want an estimate that takes into account trees per lifemode group (number of people per life group) ~~ Just 2019. Maybe use all of the years later.
+
+#I cannot determine currently what the amount of group is in each sector of Baltimore City and County, once I have that shapefile, I believe I should be able to do that
+
+# This is what is needed: 
+# An overall adoption rate was created by dividing the counts for each program by the
+# total number of households for each city. An expected adoption rate was calculated for
+# each market segment by multiplying the overall adoption rate, or initial fraction, and
+# the number of households per LifeMode group in each city for each market segment
+# (Eq. 1).
+
+#TODO: Dexter (What is the pois.exact() function)
+
+#Read through the paper and the Phake city example made sense
+```
+
 Graph 1. Lifemode Group and Jurisdiction
 ```{r}
 lifemode_colors <- c(
@@ -2298,30 +2450,10 @@ bwb_total_giveaway_with_Tapestry_2019 |>
          y = "Lifemode Groups") +
   theme_minimal()
 
-  
-
 ```
 
 Group 2. Lifemode Group and Total Giveaway Number
 ```{r}
-lifemode_colors <- c(
-    "Affluent Estates" = "#9e0142",
-    "Upscale Avenues" = "#d53e4f",
-    "Senior Styles" = "#f46d43",
-    "Middle Ground" = "#fdae61",
-    "Hometown" = "#e6f598",
-    "GenXurban" = "#abdda4",
-    "Uptown Individuals" = "#92b1e2",
-    "Scholars and Patriots" = "#3288bd",
-    "Midtown Singles" = "#5e4fa2",
-    "Family Landscapes" = "#E83F6F",
-    "Next Wave" = "#2274A5",
-    "Cozy Country Living" = "#FFBF00",
-    "Ethnic Enclaves" = "#32936F",
-    "Rustic Outposts" = "#9F9F92",
-    "NA" = "#FFFFFF"
-)
-
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
   group_by(lifemode) |>
@@ -2355,8 +2487,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   theme_minimal() +
   facet_wrap(~ year)
 
-lifeogroup_baltimore_years_facet #DEXTER: Better form to show this? Tried a density map but failed since lifegroups are categorical in nature
-
+lifeogroup_baltimore_years_facet
 ```
 
 #TODO: Search for snakey diagram
@@ -2392,6 +2523,22 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   facet_wrap(~ giveaway_location)
 ```
 
+#More information
+```{r}
+#Go ahead to look at the example of phake City. What is the overall rate out of the population. Out of the entrie population, how many trees were given out. Total number of trees/Total number of household (We need that since that is the benchmark. We need to know the overall rate). We want to compare the rate:
+
+#TODO: Eduardo, how different is what we observed with the overall rate. 
+
+#TODO: Eduardo, fit a generalized linear model and your outcome would be a giveaway. You need to get the background rate (overall) in there. ~ look into Epidemeology (instead of trees, you want cases) ~ Look at the Epidimeology Textbook of R
+
+#TODO: Eduardo, look at Hard Word, Easy Place paper
+
+#Would page 13 be worth it?
+
+# https://www.fs.usda.gov/research/treesearch/49227
+
+```
+
 Graph 4. Top 5 Species for Each Lifemode Group
 ```{r}
 bwb_total_giveaway_with_Tapestry_2019 |>
@@ -2413,8 +2560,8 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
-#TODO: Look at odds ratio at the old report for the affluent estates
 Graph 5. Tapestry Box Plot (Compared to Affluent Estates)
+
 ```{r}
 counts_per_cbg <- 
   bwb_total_giveaway_with_Tapestry_2019 |> 
@@ -2461,35 +2608,6 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   222# https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html
 ```
 
-
-```{r}
-#Mapping the tapestry information
-#Baltimore 2019 Census Tracts
-city_cbg_2019 <-
-  tidycensus::get_acs(
-      geography = 'block group'
-    , state = 'MD'
-    , county = c('Baltimore City', 'Baltimore County')
-    , variables = my_vars
-    , year = 2019
-    , geometry = TRUE
-    , output = 'wide'
-    , moe_level = 95
-    ) |>
-   st_transform(crs = st_crs(4326))
-
-baltimore_2019_layer <-
-  city_cbg_2019 |>
-  mapview(layer.name = "Baltimore City & County (2019)") 
-
-baltimore_giveaway_layer <-
-bwb_total_giveaway_with_Tapestry_2019 |>
-  st_zm(drop = TRUE, what = "ZM") |>
-  st_transform(4326) |>
-  mapview(zcol = "lifemode", layer.name = "Baltimore's Giveaways and Tapestry Group")
-
-#TODO (8/30): PERFORM SPATIAL JOIN
-```
 
 Figure 1. Map of Tapestry Groups in Baltimore
 ```{r}
