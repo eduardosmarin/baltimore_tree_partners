@@ -816,7 +816,7 @@ figure_4_tree_neighborhoods_layer <-
   st_drop_geometry() |>
   left_join(figure_4_tree_neighborhoods_layer, by = "Name") 
 
-
+figure_4_tree_neighborhoods_layer |>
   mutate(`Trees per Household` = `Number of Trees`/households) |>
   mutate(`Trees per Household` = case_when(
     is.na(`Trees per Household`) ~ 0, #TODO: Dexter, can I do this and is this a fair assumption
@@ -890,7 +890,66 @@ ggsave(
 )
 
 graph_3_tree_plantings_year_neighborhood
+```
 
+#### Line Graph of Tree Plantings in Each Neighborhood (Top 5), Post COVID-19 
+```{r echo=FALSE}
+filter_post_covid <- 
+  figure_4_tree_neighborhoods_layer |>
+  st_drop_geometry() |>
+  left_join(
+    read_csv("../baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
+    by = "Name"
+  ) |>
+  filter(year > 2020) |>
+  group_by(Name, year) |> 
+  slice_max(order_by = count, n = 5, with_ties = FALSE) |>  
+  ungroup() 
+
+
+graph_3_tree_plantings_year_neighborhood <-
+  figure_4_tree_neighborhoods_layer |>
+  st_drop_geometry() |>
+  left_join(
+    read_csv("../baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
+    by = "Name"
+  ) |>
+  rename(Year = year, Neighborhood = Name) |>
+  dplyr::select(Neighborhood, `Number of Trees` = count, Year)  |>
+  view()
+
+graph_3_tree_plantings_year_neighborhood <-
+  figure_4_tree_neighborhoods_layer |>
+  st_drop_geometry() |>
+  left_join(
+    read_csv("../baltimore_tree_partners/output_data/neighborhood_count_year_bwb.csv"),
+    by = "Name"
+  ) |>
+  rename(Year = year, Neighborhood = Name) |>
+  dplyr::select(Neighborhood, `Number of Trees` = count, Year) |>
+  dplyr::filter(Neighborhood %in% graph_3_filter_neighborhoods$Name) |>
+  pivot_wider(names_from = Neighborhood, values_from = `Number of Trees`) |>
+  add_row(Year = 2020) |>
+  arrange(Year) |>
+  pivot_longer(cols = c("Mount Washington","Hamilton","Lauraville","Westfield","Hampden"), 
+               names_to = "Neighborhood", 
+               values_to = "Number of Trees") |>
+  replace_na(list(`Number of Trees` = 0)) |>
+  mutate(Neighborhood = factor(Neighborhood, levels = graph_3_filter_neighborhoods$Name)) |>
+  ggplot(aes(x = Year, y = `Number of Trees`, color = Neighborhood, group = Neighborhood)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2013, 2023)) +
+  labs(title = "Top 5 Neighborhoods and Number of Trees", x = "Year", y = "Number of Trees") +
+  theme_minimal()
+
+ggsave(
+  filename = file.path("../baltimore_tree_partners/deliverables", "location_graph_tree_plantings_neighborhoods_top_5year.png"), 
+  plot = graph_3_tree_plantings_year_neighborhood,
+  width = 21,
+  height = 10
+)
+
+graph_3_tree_plantings_year_neighborhood
 #Maybe make a graph from Post-2020 COVID and see if and have different of the overall change. Percent of total distribution for that. 
 #TODO: Eduardo, do that above to standardize and see more vividily the changes
 
@@ -999,7 +1058,7 @@ ggsave(
 graph_2_tree_plantings_year
 ```
 
-## Host Location
+### Host Location
 
 ```{r include=FALSE}
 unique_provider <-
@@ -1083,7 +1142,7 @@ while still continuing answering previous questions, like where have
 these species gone to spatially and what was the most sucessful species
 given per each provider.
 
-## Species
+### Species
 
 ```{r include=FALSE}
 colors_species <- c(
@@ -1099,7 +1158,6 @@ colors_species <- c(
   "American Hornbeam" = "#8A2BE2" 
 )
 
-#TODO: Eduardo, choose beter colors
 ```
 
 The following map highlights the top ten species giveaway in the
@@ -1188,7 +1246,7 @@ graph_5_common_rare_species <-
   NULL
 
 # ggsave(
-#   filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_5_common_rare_species.svg"), #TODO: Fix to make more general file saving path
+#   filename = file.path("../baltimore_tree_partners/deliverables", "species_graph_5_common_rare_species.svg"), 
 #   plot = graph_5_common_rare_species,
 #   width = 22,
 #   height = 10
@@ -1243,6 +1301,8 @@ Of course, these change respective of time. The next part will
 underscore a graph of the top ten species within each jurisdiction:
 Baltimore City, Baltimore County, and neither.
 
+
+
 ```{r include=FALSE}
 # Graph 6. Graph of the Top Ten Species per each jurisdiction
 graph_6_jurisdiction_top_species <-
@@ -1257,7 +1317,7 @@ blue_water_giveaway_data |>
   group_by(jurisdiction) |>
   mutate(`Common Name` = fct_reorder(`Common Name`, Total, .desc = TRUE)) |>
   ggplot(aes(x = `Common Name`, y = Total)) +
-  geom_bar(stat = "identity", fill = "#519342") + #TODO: Fix the reordering to have it ascending/descending for both Baltimore County and Neither 
+  geom_bar(stat = "identity", fill = "#519342") +
   coord_flip() +
   facet_wrap(~ jurisdiction, scales = "free_y") +
   labs(title = "Top 10 Tree Species in Each jurisdiction",
@@ -1278,7 +1338,7 @@ graph_6_jurisdiction_top_species
 Again, it is also important to understand what were the most popular
 species given during each time of the year.
 
-Graph 7. Graph of the Top Ten Species per year
+#### Graph of the Top Ten Species per year
 
 ```{r}
 graph_7_year_top_species <-
@@ -1316,7 +1376,7 @@ giveaway in the top five (5) giveaway location. The following graph,
 like the others, will attempt to highlight this, specifically the top 10
 species in each one.
 
-Graph 8. Graph of the Top Ten Species per year
+#### Graph of the Top Ten Species per year
 
 ```{r}
 top_five_giveaway_locations <-
@@ -1368,12 +1428,12 @@ order
 In addition to species, information on where these tree giveaways have
 went relative to our watersheds is equally as important.
 
-## Watersheds
+### Watersheds
 
 To begin, here is a general map of the watersheds in the Baltimore
 jurisdiction and Baltimore City region.
 
-Figure 6. Map of Watersheds in BWB Service Area (In Respective to the
+#### Map of Watersheds in BWB Service Area (In Respective to the
 Counties)
 
 ```{r}
@@ -1405,7 +1465,7 @@ outside of Blue Water Baltimore Service's area. The following will show
 how this, relatively speaking, is a far lower margin that what we might
 previously have imagined.
 
-Table 8. Table of Watersheds per Giveaway Count
+#### Table of Watersheds per Giveaway Count
 
 ```{r}
 table_8_watershed_count_datatable <-
@@ -1429,7 +1489,7 @@ In terms of watersheds, it is important to see how many plants have gone
 to these areas over time. The following graph will highlight this and
 help distinguish if there is any statistical significance.
 
-Graph 8. Number of Counts per Watershed per Year (per Season)
+#### Number of Counts per Watershed per Year (per Season)
 
 ```{r}
 graph_8_watersheds_count <-
@@ -1500,7 +1560,7 @@ also important to understand the breakdown overall. In the following
 graph, it will highlight the total amount of plantings in each watershed
 per year.
 
-Graph 9. Number of Giveaway Counts per Watershed (per Year)
+#### Number of Giveaway Counts per Watershed (per Year)
 
 ```{r}
 graph_9_watersheds_count_year <-
@@ -1544,7 +1604,7 @@ ggsave(
 )
 ```
 
-Table 10. Table of Watersheds per Giveaway Count (per Year)
+#### Table of Watersheds per Giveaway Count (per Year)
 
 ```{r}
 table_10_watersheds_count_year <-
@@ -1564,7 +1624,7 @@ table_10_watersheds_count_year |>
    DT::datatable()
 ```
 
-Graph 10. Five (5) Popular Species per Watershed
+#### Five Popular Species per Watershed
 
 ```{r}
 graph_10_watersheds_species_count <-
@@ -1605,9 +1665,6 @@ ggsave(
 )
 ```
 
-As you can see here, the most common types of the
-
-## Distribution
 
 ### JEDI
 
@@ -1617,18 +1674,20 @@ look specifically at the census block scale to determine this. We will
 first look at a synced map
 
 #### Income 
-Figure 1. Synced Map of Household Income and Giveaway Count (Per Census
-Blocks)
+
 TODO: Check how you are defining the giveaway counts if by household or by area (should be household)
 TODO: Figure out how many trees are not in block groups with NA
+##### Synced Map of Household Income and Giveaway Count (Per Census
+Blocks)
 ```{r}
 ## Making the legend breaks
 legend_order_census_income_count <- 
   seq(0, 200000, length.out = 9) 
 
-## Makiing the census-income map
+## Making the census-income map
 census_income_map <-
   cbg |>
+  
   dplyr::select(-county) |>
   separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
   filter(County %in% c("Baltimore city","Baltimore County")) |>
@@ -1642,7 +1701,7 @@ census_income_map <-
 sync(census_income_map, census_count_map)
 ```
 
-Graph 1. Regression Income Graph of Income and Count
+##### Regression Income Graph of Income and Count
 ```{r}
 regression_income_count_graph <-
   cbg |>
@@ -1674,7 +1733,7 @@ regression_income_count_graph
 
 ```
 
-Graph 2. Ridgeline Graph of Income over Year
+##### Ridgeline Graph of Income over Year
 ```{r}
 gg_ridgeline_income_year_graph <-
 blue_water_giveaway_data |> 
@@ -1716,7 +1775,7 @@ ggsave(
 gg_ridgeline_income_year_graph
 ```
 
-Graph 3. Boxplot of the Income over Year
+##### Boxplot of the Income over Year
 ```{r echo=TRUE}
 boxplot_income_years <-
   blue_water_giveaway_data |>
@@ -1744,10 +1803,9 @@ boxplot_income_years <-
 boxplot_income_years
 ```
 
-Figure 2. Bivariate Map of Household Income and Giveaway Count (per
+##### Bivariate Map of Household Income and Giveaway Count (per
 Census Block)
 
-TODO: Lawrence Brown, Black Butterfly, White L
 ```{r}
 ## CBG Bivariate
 cbg_census_count <-
@@ -1810,9 +1868,8 @@ TODO: Insert this type of map. Would avtually be very helpful maybe in a bivaria
 
 #### Education
 
-Figure 1. Synced Map of Highschool Education and Giveaway Count (Per Census
+##### Synced Map of High School Education and Giveaway Count (Per Census
 Blocks)
-
 ```{r}
 ## Making the legend breaks
 legend_order_census_education_count <- 
@@ -1831,7 +1888,7 @@ census_education_map <-
 sync(census_education_map , census_count_map)
 ```
 
-Graph 1. Regression Education Graph and Count
+##### Regression Education Graph and Count
 ```{r}
 regression_education_count_graph <-
   cbg |>
@@ -1860,7 +1917,7 @@ regression_education_count_graph
 
 ```
 
-Graph 2. Ridgeline Graph of Education over Year
+##### Ridgeline Graph of Education over Year
 ```{r}
 gg_ridgeline_education_year_graph <-
 blue_water_giveaway_data |> 
@@ -1902,7 +1959,7 @@ ggsave(
 gg_ridgeline_education_year_graph 
 ```
 
-Graph 3. Boxplot of the Education over Year
+##### Boxplot of the Education over Year
 ```{r echo=TRUE}
 boxplot_education_years <-
   blue_water_giveaway_data |>
@@ -1930,7 +1987,7 @@ boxplot_education_years <-
 boxplot_education_years
 ```
 
-Figure 2. Bivariate Map of Education and Giveaway Count (per
+##### Bivariate Map of Education and Giveaway Count (per
 Census Block) ~ Baltimore City
 ```{r}
 ## CBG Bivariate
@@ -1989,7 +2046,7 @@ ggsave(
 )
 ```
 
-Figure 2. Bivariate Map of Education and Giveaway Count (per
+##### Bivariate Map of Education and Giveaway Count (per
 Census Block) ~ Baltimore County
 ```{r}
 ## CBG Bivariate
@@ -2050,7 +2107,7 @@ ggsave(
 
 #### Race
 
-Figure 1. Synced Map of Race and Giveaway Count (Per Census
+##### Synced Map of Race and Giveaway Count (Per Census
 Blocks)
 
 ```{r}
@@ -2072,7 +2129,7 @@ census_race_map <-
 sync(census_race_map , census_count_map)
 ```
 
-Graph 1. Regression Race Graph and Count
+##### Regression Race Graph and Count
 ```{r}
 regression_race_count_graph <-
   cbg |>
@@ -2101,7 +2158,7 @@ regression_race_count_graph <-
 regression_race_count_graph
 ```
 
-Graph 2. Ridgeline Graph of Race over Year
+##### Ridgeline Graph of Race over Year
 ```{r}
 gg_ridgeline_race_year_graph <-
 blue_water_giveaway_data |> 
@@ -2150,7 +2207,7 @@ gg_ridgeline_race_year_graph
 # Take that file group_by (location, by_year) |> summarize() |> mean = mean(education) DEXTER: list(mean_cl_normal) ~ makes a nested datafraem |> unnnest()
 ```
 
-Graph 3. Boxplot of the Race over Year
+##### Boxplot of the Race over Year
 ```{r include=FALSE}
 boxplot_race_years <-
   blue_water_giveaway_data |>
@@ -2179,7 +2236,7 @@ boxplot_race_years <-
 boxplot_race_years #DEXTER: 2018 and 2019 are very different. Did they do anything those years besides parterning with TreeBaltimore? Is there something to do with trust or along those lines?
 ```
 
-Figure 2. Bivariate Map of Race and Giveaway Count (per
+##### Bivariate Map of Race and Giveaway Count (per
 Census Block) ~ Baltimore City
 ```{r}
 ## CBG Bivariate
@@ -2240,7 +2297,7 @@ ggsave(
 ```
 
 
-Figure 3. Bivariate Map of Race and Giveaway Count (per
+##### Bivariate Map of Race and Giveaway Count (per
 Census Block) ~ Baltimore County
 ```{r}
 ## setting the bivariate count and race
@@ -2416,7 +2473,7 @@ population_by_lifemode <-
 #Read through the paper and the Phake city example made sense
 ```
 
-Graph 1. Lifemode Group and Jurisdiction
+#### Graph of Lifemode Group and Jurisdiction
 ```{r}
 lifemode_colors <- c(
     "Affluent Estates" = "#9e0142", 
@@ -2452,7 +2509,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
-Group 2. Lifemode Group and Total Giveaway Number
+#### Graph of Lifemode Group and Total Giveaway Number
 ```{r}
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
@@ -2468,30 +2525,65 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   theme_minimal()
 ```
 
-Graph 2. Lifemode Group and Every Year (Has there been changes to the types of people?)
+#### Graph of Lifemode Group and Every Year 
 ```{r}
 # Making a graph of the different lifegroups in Baltimore
-lifeogroup_baltimore_years_facet <-
-bwb_total_giveaway_with_Tapestry_2019 |>
-  st_drop_geometry() |>
-  add_row(year = "2020") |>
-  group_by(year, lifemode) |>
-  count() |>
-  rename(Count = n) |>
-  ggplot(aes(Count, lifemode, fill = lifemode)) +
-  geom_col() +
-  scale_fill_manual(values = lifemode_colors) +
-  labs(title = "Lifemode Groups and Total Giveaway Number Bar Graph",
-         x = "Count of Tree Giveaways",
-         y = "Lifemode Groups") +
-  theme_minimal() +
-  facet_wrap(~ year)
+lifeogroup_baltimore_years_facet <- 
+  bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  add_row(year = "2020") |> 
+  group_by(year, lifemode) |> 
+  count() |> 
+  rename(Count = n) |> 
+  ggplot(aes(x = year, y = Count, color = lifemode, group = lifemode)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_color_manual(values = lifemode_colors) + 
+  labs(
+    title = "Lifemode Groups and Total Giveaway Number Line Graph",
+    x = "Year",
+    y = "Count of Tree Giveaways"
+  ) + 
+  theme_minimal()
 
 lifeogroup_baltimore_years_facet
 ```
 
-#TODO: Search for snakey diagram
-Graph 3. Lifemode Groups in Top 10 Giveaway Locations
+#### Graph of Percentage Increase Every Year
+```{r}
+bwb_total_giveaway_with_Tapestry_2019 |> 
+  st_drop_geometry() |> 
+  add_row(year = "2020") |> 
+  group_by(year, lifemode) |> 
+  count() |> 
+  rename(Count = n) |> 
+  mutate(year = as.numeric(year)) |> 
+  arrange(lifemode, year) |> 
+  group_by(lifemode) |> 
+  mutate(
+    previous_count = lag(Count),
+    percentage_increase = (Count - previous_count) / previous_count * 100  
+  ) |> 
+  ungroup() |>
+ggplot(aes(x = year, y = percentage_increase, color = lifemode, group = lifemode)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_color_manual(values = lifemode_colors) + 
+  scale_x_continuous(
+    breaks = seq(2013, 2023, by = 2)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 1500, by = 250)
+  ) +
+  labs(
+    title = "Year-over-Year Percentage Increase of Lifemode Groups' Tree Giveaways",
+    x = "Year",
+    y = "Percentage Increase (%)"
+  ) + 
+  theme_minimal()
+```
+
+#### Graph of Lifemode Groups in Top 10 Giveaway Locations
 ```{r}
 # Making a graph of the different lifemode groups in the top ten location
 #finding the top the top 10
@@ -2523,7 +2615,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   facet_wrap(~ giveaway_location)
 ```
 
-#More information
+
 ```{r}
 #Go ahead to look at the example of phake City. What is the overall rate out of the population. Out of the entrie population, how many trees were given out. Total number of trees/Total number of household (We need that since that is the benchmark. We need to know the overall rate). We want to compare the rate:
 
@@ -2533,13 +2625,13 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 #TODO: Eduardo, look at Hard Word, Easy Place paper
 
-#Would page 13 be worth it?
+#Would page 13 be worth it? (tried doing this, however, confused on finding the population/shapefile of the original)
 
 # https://www.fs.usda.gov/research/treesearch/49227
 
 ```
 
-Graph 4. Top 5 Species for Each Lifemode Group
+#### Graph of Top 5 Species for Each Lifemode Group
 ```{r}
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
@@ -2560,8 +2652,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 ```
 
-Graph 5. Tapestry Box Plot (Compared to Affluent Estates)
-
+#### Box Plot of Tapestry Groups (Compared to Affluent Estates)
 ```{r}
 counts_per_cbg <- 
   bwb_total_giveaway_with_Tapestry_2019 |> 
@@ -2605,11 +2696,18 @@ bwb_total_giveaway_with_Tapestry_2019 |>
   ) + 
   NULL
 
-  222# https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html
+#DEXTER: Not sure sure what 
+## Warning message:
+# Computation failed in `stat_signif()`.
+# Caused by error in `wilcox.test.default()`:
+# ! not enough 'y' observations
+
+# https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html <- #tried doing this
 ```
 
 
-Figure 1. Map of Tapestry Groups in Baltimore
+#### Map of Tapestry Groups in Baltimore
 ```{r}
 baltimore_2019_layer
 ```
+
