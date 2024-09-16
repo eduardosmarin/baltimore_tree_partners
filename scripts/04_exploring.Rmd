@@ -258,20 +258,20 @@ bwb_total_giveaway <-
 # # tap_query <- 'SELECT * from TAP19_ADULT_bg limit 10' # NO
 # # tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TLIFENAME, TSEGNAME from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
 # 
-# tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TURBZCODE, TLIFENAME, TLIFECODE, TSEGNAME, TSEGNUM from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
+# tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TURBZCODE, TLIFENAME, TLIFECODE, TSEGNAME, TSEGNUM THHBASE from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
 # 
 # 
-# tap <- 
+# tap <-
 #   st_read(
 #       tap_path
 #     , query = tap_query
 #     , as_tibble = TRUE
-#   ) |> 
-#   rename(GEOID_2019 = ID) |> 
-#   st_transform(st_crs(bwb_total_giveaway)) |> 
-#   st_make_valid() |> 
+#   ) |>
+#   rename(GEOID_2019 = ID, households = THHBASE) |>
+#   st_transform(st_crs(bwb_total_giveaway)) |>
+#   st_make_valid() |>
 #   mutate(
-#     urbanization = 
+#     urbanization =
 #       factor(TURBZNAME
 #              , levels = c(
 #                  'Principal Urban Center'
@@ -281,7 +281,7 @@ bwb_total_giveaway <-
 #                , 'Semirural'
 #                , 'Rural'
 #                ))
-#     , lifemode = 
+#     , lifemode =
 #       factor(TLIFENAME
 #              , levels = c(
 #                  'Affluent Estates'
@@ -299,7 +299,7 @@ bwb_total_giveaway <-
 #                , 'Next Wave'
 #                , 'Scholars and Patriots')
 #              )
-#     , segment = 
+#     , segment =
 #       factor(TSEGNAME
 #              , levels = c(
 #                  'Top Tier'
@@ -373,19 +373,20 @@ bwb_total_giveaway <-
 #              ))
 #   )
 # 
-# tap |> 
-#   st_drop_geometry() |> 
+# tap |>
+#   st_drop_geometry() |>
 #   write_csv(file = paste0('output_data/MD_Tapestry_2019_', Sys.Date(), '.csv'))
 # 
 # tap_lu <-
-#   tap |> 
-#   st_drop_geometry() |> 
-#   distinct(urbanization, lifemode, segment) 
+#   tap |>
+#   st_drop_geometry() |>
+#   distinct(urbanization, lifemode, segment)
 # 
 # save(tap_lu, file = paste0('output_data/tap_lu_', Sys.Date(), '.RData'))
 
 # makes tap_lu a Look UP for the value
-load('output_data/tap_lu_2024-06-25.RData')
+# load('output_data/tap_lu_2024-06-25.RData')
+load('output_data/tap_lu_2024-09-16.RData')
 
 tap_lu |> map(~levels(.)) # order matters!
 
@@ -396,7 +397,8 @@ tap_lu |> map(~levels(.)) # order matters!
 # save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
 
 # makes 'bwb_total_giveaway_with_Tapestry_2019'
-load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
+# load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
+ load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-09-16.RData')
 
 bwb_total_giveaway_with_Tapestry_2019 |> 
   st_drop_geometry() |> 
