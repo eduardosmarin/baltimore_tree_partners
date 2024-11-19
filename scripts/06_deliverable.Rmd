@@ -267,7 +267,7 @@ neighborhood_layer <-
   mapview(alpha.regions = 0, lwd = 2, col.regions = "#525252", zcol = "Name", layer.name = "Baltimore's Neighborhood")
 
 ## Weighted Neighborhood data
-# weighted_neighborhood <- #TODO: Eduardo, save this out
+# weighted_neighborhood <- #TODO: DHL and Eduardo to figure out missing together, later.
 #   interpolate_pw (
 #     from = cbg                 
 #   , to = neighborhood_read    
@@ -278,6 +278,9 @@ neighborhood_layer <-
 #   , crs = 4326                 
 #   , extensive = FALSE
 #   )
+
+# weighted_neighborhood |> 
+#   st_write('output_data/weighted_neighborhood.gpkg')
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
