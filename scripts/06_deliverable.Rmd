@@ -79,6 +79,7 @@ packs <-c(
           , 'leafsync'  # linked maps
           , 'RColorBrewer'
           , 'DT'
+          , 'epitools'
           , 'openxlsx'
           , 'mapdeck'
           , 'biscale' #used with ggplot to make bivariate maps
@@ -562,11 +563,10 @@ throughout the year.
 #### Line Graph of Tree Giveaways over the Years
 
 ```{r echo=FALSE}
-jurisdiction_colors = c(
-   "Baltimore City" = "#008CCC",
-   "Baltimore County" = "#005273",
-   "Neither" = "#519342"
-)
+jurisdiction_colors <-
+  c("Baltimore City" = "#008CCC",
+    "Baltimore County" = "#005273",
+    "Neither" = "#519342")
 
 graph_tree_plantings_over_years <-
   blue_water_giveaway_data |>
@@ -664,7 +664,7 @@ you to search by year to find the largest entry and its exact amount.
 
 #### Table of Tree Giveaways over the Year (per Jurisdiction)
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning = FALSE}
  table_blue_water_baltimore_join <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -728,7 +728,7 @@ server <- function(input, output, session) {
     rv$selected_year <- input$year
     rv$selected_season <- input$season
     
-    rv$filtered_data <- blue_water_giveaway_data %>% 
+    rv$filtered_data <- blue_water_giveaway_data |> 
       filter(year == input$year, season == input$season)
   })
   
@@ -737,8 +737,8 @@ server <- function(input, output, session) {
     req(rv$filtered_data)  # Ensure data is available before rendering
     validate(need(nrow(rv$filtered_data) > 0, "No data available for selected filters."))
     
-    leaflet(data = rv$filtered_data) %>%
-      addProviderTiles(providers$CartoDB.Positron) %>%
+    leaflet(data = rv$filtered_data) |>
+      addProviderTiles(providers$CartoDB.Positron) |>
       addCircleMarkers(
         radius = 2,
         fillOpacity = 0.1,
@@ -784,7 +784,7 @@ have been changing significantly.
 
 #### Map of Tree Plantings in Baltimore Neighborhoods
 
-```{r echo=FALSE}
+```{r echo=FALSE, message = FALSE}
 figure_4_tree_neighborhoods_layer <-
 neighborhood_read |>
   left_join(
@@ -858,7 +858,7 @@ space over time.
 
 #### Line Graph of Tree Plantings in Each Neighborhood (Top 5) Over the Years
 
-```{r echo=FALSE}
+```{r echo=FALSE, message = FALSE}
 graph_3_filter_neighborhoods <-
   figure_4_tree_neighborhoods_layer |>
   dplyr::select(Name, `Number of Trees`) |>
@@ -901,7 +901,7 @@ graph_3_tree_plantings_year_neighborhood
 
 #### Line Graph of Tree Plantings in Each Neighborhood (Top 5), Post COVID-19
 
-```{r echo=FALSE}
+```{r echo=FALSE, message = FALSE}
 filter_post_covid <- 
   figure_4_tree_neighborhoods_layer |>
   st_drop_geometry() |>
@@ -1568,7 +1568,7 @@ per year.
 
 #### Number of Giveaway Counts per Watershed (per Year)
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 graph_9_watersheds_count_year <-
   blue_water_giveaway_data |>
   mutate(watershed = case_when(
@@ -1612,7 +1612,7 @@ ggsave(
 
 #### Table of Watersheds per Giveaway Count (per Year)
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 table_10_watersheds_count_year <-
   blue_water_giveaway_data |>
   mutate(watershed = case_when(
@@ -1632,7 +1632,7 @@ table_10_watersheds_count_year |>
 
 #### Five Popular Species per Watershed
 
-```{r}
+```{r echo=FALSE}
 graph_10_watersheds_species_count <-
   blue_water_giveaway_data |>
   mutate(watershed = case_when(
@@ -1685,7 +1685,7 @@ by area (should be household) TODO: Figure out how many trees are not in
 block groups with NA \##### Synced Map of Household Income and Giveaway
 Count (Per Census Blocks)
 
-```{r}
+```{r echo=FALSE}
 ## Making the legend breaks
 legend_order_census_income_count <- 
   seq(0, 200000, length.out = 9) 
@@ -1709,7 +1709,7 @@ sync(census_income_map, census_count_map)
 
 ##### Regression Income Graph of Income and Count
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 regression_income_count_graph <-
   cbg |>
   left_join(
@@ -1718,7 +1718,7 @@ regression_income_count_graph <-
   )   |>
   ggplot(aes(x = median_household_income, y = count)) +
   geom_point(color =  "#008CCC") +
-  geom_smooth(method = "lm", se = FALSE, color = "#519342") + #DEXTER: Should this be a different form of regression. Heard about poison
+  geom_smooth(method = "lm", se = FALSE, color = "#519342") +
   labs(
     title = "Scatter Plot of Giveaway Counts Compared with Median Household Income",
     x = "Median Household Income",
@@ -1732,10 +1732,6 @@ regression_income_count_graph <-
   theme_minimal() +
   NULL
 
-   "#008CCC"
-   "#005273"
-   "#519342"
-
 # Display the graph
 regression_income_count_graph
 
@@ -1743,7 +1739,7 @@ regression_income_count_graph
 
 ##### Ridgeline Graph of Income over Year
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 gg_ridgeline_income_year_graph <-
 blue_water_giveaway_data |> 
   st_drop_geometry() |> 
@@ -1786,7 +1782,7 @@ gg_ridgeline_income_year_graph
 
 ##### Boxplot of the Income over Year
 
-```{r echo=TRUE}
+```{r echo=TRUE, warning=FALSE}
 boxplot_income_years <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -1817,7 +1813,7 @@ boxplot_income_years
 
 Census Block)
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## CBG Bivariate
 cbg_census_count <-
   cbg |>
@@ -1875,17 +1871,13 @@ ggsave(
 
 ```
 
-TODO: Insert this type of map. Would avtually be very helpful maybe in a
-bivariate or singular setting to see change over time.
-[https://medium.com/\@lucas_bromerchenkel/choropleth-maps-with-time-sliders-using-plotly-df6e19e5f90c](https://medium.com/@lucas_bromerchenkel/choropleth-maps-with-time-sliders-using-plotly-df6e19e5f90c){.uri}
-
 #### Education
 
 ##### Synced Map of High School Education and Giveaway Count (Per Census
 
 Blocks)
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## Making the legend breaks
 legend_order_census_education_count <- 
   seq(0, 100, length.out = 9) 
@@ -1905,7 +1897,7 @@ sync(census_education_map , census_count_map)
 
 ##### Regression Education Graph and Count
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 regression_education_count_graph <-
   cbg |>
   left_join(
@@ -1935,7 +1927,7 @@ regression_education_count_graph
 
 ##### Ridgeline Graph of Education over Year
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 gg_ridgeline_education_year_graph <-
 blue_water_giveaway_data |> 
   st_drop_geometry() |> 
@@ -1978,7 +1970,7 @@ gg_ridgeline_education_year_graph
 
 ##### Boxplot of the Education over Year
 
-```{r echo=TRUE}
+```{r echo=FALSE, warning=FALSE}
 boxplot_education_years <-
   blue_water_giveaway_data |>
   st_drop_geometry() |>
@@ -2007,9 +1999,9 @@ boxplot_education_years
 
 ##### Bivariate Map of Education and Giveaway Count (per
 
-Census Block) \~ Baltimore City
+Census Block) ~ Baltimore City
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## CBG Bivariate
 cbg_census_count <-
   cbg |>
@@ -2068,9 +2060,9 @@ ggsave(
 
 ##### Bivariate Map of Education and Giveaway Count (per
 
-Census Block) \~ Baltimore County
+Census Block) ~ Baltimore County
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## CBG Bivariate
 cbg_census_count <-
   cbg |>
@@ -2133,7 +2125,7 @@ ggsave(
 
 Blocks)
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## Making the legend breaks
 legend_order_census_race_count <- 
   seq(0, 100, length.out = 9) 
@@ -2154,7 +2146,7 @@ sync(census_race_map , census_count_map)
 
 ##### Regression Race Graph and Count
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 regression_race_count_graph <-
   cbg |>
   left_join(
@@ -2184,7 +2176,7 @@ regression_race_count_graph
 
 ##### Ridgeline Graph of Race over Year
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 gg_ridgeline_race_year_graph <-
 blue_water_giveaway_data |> 
   mutate(pct_white_alone = 100*(white_alone/total_population)) |>
@@ -2228,7 +2220,7 @@ gg_ridgeline_race_year_graph
 
 ##### Boxplot of the Race over Year
 
-```{r include=FALSE}
+```{r echo=FALSE, warning=FALSE}
 boxplot_race_years <-
   blue_water_giveaway_data |>
   mutate(pct_white_alone = 100*(white_alone/total_population)) |>
@@ -2258,9 +2250,9 @@ boxplot_race_years #DEXTER: 2018 and 2019 are very different. Did they do anythi
 
 ##### Bivariate Map of Race and Giveaway Count (per
 
-Census Block) \~ Baltimore City
+Census Block) ~ Baltimore City
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## CBG Bivariate
 cbg_census_count <-
   cbg |>
@@ -2320,9 +2312,9 @@ ggsave(
 
 ##### Bivariate Map of Race and Giveaway Count (per
 
-Census Block) \~ Baltimore County
+Census Block) - Baltimore County
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 ## setting the bivariate count and race
 bivariate_count_race <-
   biscale::bi_class(cbg_census_count, x = pct_white_alone, y = count, style = "fisher", dim = 3)
@@ -2373,12 +2365,32 @@ ggsave(
 
 ### Tapestry
 
+Levels
+```{r warning=FALSE, include=FALSE}
+tapestry_levels <- rev(
+  c('Affluent Estates'
+  , 'Upscale Avenues'
+  , 'Uptown Individuals'
+  , 'Family Landscapes'
+  , 'GenXurban'
+  , 'Cozy Country Living'
+  , 'Ethnic Enclaves'
+  , 'Middle Ground'
+  , 'Senior Styles'
+  , 'Rustic Outposts'
+  , 'Midtown Singles'
+  , 'Hometown'
+  , 'Next Wave'
+  , 'Scholars and Patriots'
+))
+```
+
 Calculating the base rate
-```{r}
+```{r include=FALSE}
 #1. You first need the general ratio of the amount of trees per households
 ## a) Total households
 city_cbg_2019 <-
-  st_read("output_data/cbg_2019.gpkg") #CBG of 2019
+  st_read("output_data/cbg_2019.gpkg") 
 
 total_households_2019 <-
   city_cbg_2019$households |> #making a vector
@@ -2390,42 +2402,32 @@ total_tree_giveaways <-
   st_drop_geometry() |>
   filter(year == 2019) |>
   filter(jurisdiction %in% c("Baltimore County","Baltimore City")) |>
-  distinct(address) |> #TODO: Eduardo, there is an issue here if we do this...
+  distinct(address) |> 
   count() |>
-  pull(n)
+  pull(n) 
 
 ## c) Creating the base rate
 base_rate_baltimore <-
   total_tree_giveaways / total_households_2019 #our null
 
-#DEXTER:
-# - Should we only consider the year 2019 since that is the year of the tapestry
-#   or should I consider all?
-#
-# - An issue noted is that using distinct, although helpful, doesn't clarify 
-#   that there are addresses here that are double-counted. Like 110 Row Road and
-#   110 Row Rd are counted as two separate addresses with distinct although they
-#   are the same.
-#
-# - Is there anything else I need for this? Seems to be conducting a null hypot
 ```
 
 Calculating the odds ratio
-```{r}
+```{r include=FALSE}
 #1. Need to create a combined shapefile to get the counts of households and plantings
 ## a) Finding total households within each tapestry group
 join_tapestry_cbg <-
-  read_csv("output_data/MD_Tapestry_2019_2024-09-16.csv") |>
-  rename(GEOID = GEOID_2019) |>
-  mutate(GEOID = as.character(GEOID))
+  read_csv("output_data/MD_Tapestry_2019_2024-09-16.csv") |> # TODO get level DHL tk
+  mutate(GEOID = as.character(GEOID_2019))
 
+#The purpose of this to get the number of households per lifemode
 city_cbg_2019_tapestry <- 
   city_cbg_2019 |>
   left_join(join_tapestry_cbg, by = "GEOID") |>
   st_drop_geometry() |>
-  group_by(lifemode) |>
+  group_by(lifemode) |> 
   summarize(household_count = sum(households.x, na.rm = TRUE)) |>
-  filter(!is.na(lifemode))
+  filter(!is.na(lifemode)) 
 
 ## b) Finding total tree giveaways within each tapestry group
 city_tree_counts_tapestry <-  
@@ -2438,39 +2440,38 @@ city_tree_counts_tapestry <-
   summarize(giveaway_count = n()) |>
   filter(!is.na(lifemode))
 
-## c) Combining both dataframes to do further analysis
-df_odd_giveaway_tapestry <-
+#Finding out the odds ratio and expected rates
+df_odd_giveaway_tapestry_old <-
   city_cbg_2019_tapestry |>
-  left_join(city_tree_counts_tapestry, by = "lifemode") |>
-  mutate(giveaway_household_rate = giveaway_count/household_count) |>
-  mutate(odds_ratio = giveaway_household_rate/base_rate_baltimore) |>
-  mutate(
-    se = sqrt(1 / household_count), #Found this online but is this correct for SE?                        
-    ci_lower = odds_ratio - 1.96 * se,                     
-    ci_upper = odds_ratio + 1.96 * se                      
-  )
+  left_join(city_tree_counts_tapestry, by = "lifemode") |> 
+  mutate(giveaway_count = ifelse(is.na(giveaway_count), 0, giveaway_count)) |>
+  mutate(proportion_household = household_count/sum(household_count)) |>
+  mutate(proportion_trees = giveaway_count/sum(giveaway_count),
+         odds_ratio = proportion_trees/proportion_household) |>
+  mutate(expected_rate = household_count*base_rate_baltimore) 
 
-#DEXTER:
-# - Is this the correct method to figure out the odds ratio? Unsure if I should
-#   divide just by the base ratio, which I believe is what we have to do.
-#   
-# - The Rustic Outposts has NA for the giveaway counts so I filtered it out. 
-#   First, is that what I should do for this problem? Second, is there anything
-#   else I should do for this (tried looking but couldn't figure it out)?
-# 
-# - How do I fix so that these variables are leveled?
-#
-# - Is this how you calculate SE?
+# Creating the confidence intervals
+df_odd_giveaway_interval <-
+  pois.exact(df_odd_giveaway_tapestry_old$giveaway_count, df_odd_giveaway_tapestry_old$expected_rate) #gives us the confidence interval. 
+
+# Appending the confidence intervals
+df_odd_giveaway_tapestry <- 
+  df_odd_giveaway_tapestry_old |>
+  bind_cols(
+    lower_ci = df_odd_giveaway_interval$lower,
+    upper_ci = df_odd_giveaway_interval$upper
+  ) |>
+  mutate(lifemode = factor(lifemode, levels = tapestry_levels))
 
 ```
 
 Graph of the odds ratio
-```{r}
+```{r echo=FALSE}
 #2. Creating the graph like in the report
 df_odd_giveaway_tapestry |>
-ggplot(aes(x = lifemode, y = odds_ratio)) +
+  ggplot(aes(x = lifemode, y = odds_ratio)) +
   geom_point(color = "blue", size = 3) +                    
-  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),      
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci),      
                 width = 0.2, color = "gray") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") + #the odds base should be 1
   labs(title = "Odds Ratio of Tree Giveaways by Lifemode Group with 95% CI"
@@ -2478,35 +2479,169 @@ ggplot(aes(x = lifemode, y = odds_ratio)) +
          , y = "Odds Ratio") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
-#3. Trying a boxplot instead
-df_odd_giveaway_tapestry |>
+###### Doing the same but for counties and cities 
+```{r include=FALSE}
+# Total households for each jurisdiction
+total_households_city <- 
+  city_cbg_2019 |>
+  filter(county == "Baltimore City") |>
+  pull(households) |>
+  sum()
+
+total_households_county <- 
+  city_cbg_2019 |>
+  filter(county == "Baltimore County") |>
+  pull(households) |>
+  sum()
+
+# Total tree giveaways for each jurisdiction
+total_tree_giveaways_city <- 
+  blue_water_giveaway_data |>
+  filter(year == 2019, jurisdiction == "Baltimore City") |>
+  distinct(address) |>
+  count() |>
+  pull(n)
+
+total_tree_giveaways_county <- 
+  blue_water_giveaway_data |>
+  filter(year == 2019, jurisdiction == "Baltimore County") |>
+  distinct(address) |>
+  count() |>
+  pull(n)
+
+# Base rates
+base_rate_city <- 
+  total_tree_giveaways_city / total_households_city
+
+base_rate_county <- 
+  total_tree_giveaways_county / total_households_county
+
+# 2. Calculate household and tree counts for each lifemode, per jurisdiction
+# Join tapestry data with city data to get household counts
+join_tapestry_cbg <- 
+  read_csv("output_data/MD_Tapestry_2019_2024-09-16.csv") |>
+  mutate(GEOID = as.character(GEOID_2019))
+
+# Household count by lifemode for each jurisdiction
+city_cbg_2019_tapestry_city <- 
+  city_cbg_2019 |>
+  filter(county == "Baltimore City") |>
+  left_join(join_tapestry_cbg, by = "GEOID") |>
+  st_drop_geometry() |>
+  group_by(lifemode) |>
+  summarize(household_count = sum(households.x, na.rm = TRUE)) |>
+  filter(!is.na(lifemode))
+
+city_cbg_2019_tapestry_county <- 
+  city_cbg_2019 |>
+  filter(county == "Baltimore County") |>
+  left_join(join_tapestry_cbg, by = "GEOID") |>
+  st_drop_geometry() |>
+  group_by(lifemode) |>
+  summarize(household_count = sum(households.x, na.rm = TRUE)) |>
+  filter(!is.na(lifemode))
+
+# Tree giveaway count by lifemode for each jurisdiction
+city_tree_counts_tapestry_city <- 
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  filter(year == 2019, jurisdiction == "Baltimore City") |>
+  distinct(address, .keep_all = TRUE) |>
+  group_by(lifemode) |>
+  summarize(giveaway_count = n()) |>
+  filter(!is.na(lifemode))
+
+city_tree_counts_tapestry_county <-  
+  bwb_total_giveaway_with_Tapestry_2019 |>
+  filter(year == 2019, jurisdiction == "Baltimore County") |>
+  distinct(address, .keep_all = TRUE) |>
+  group_by(lifemode) |>
+  summarize(giveaway_count = n()) |>
+  filter(!is.na(lifemode))
+
+# 3. Calculate odds ratios and expected rates for each jurisdiction
+# For Baltimore City
+df_odd_giveaway_tapestry_city <- 
+  city_cbg_2019_tapestry_city |>
+  left_join(city_tree_counts_tapestry_city, by = "lifemode") |>
+  mutate(
+    giveaway_count = replace_na(giveaway_count, 0),
+    proportion_household = household_count / sum(household_count),
+    proportion_trees = giveaway_count / sum(giveaway_count),
+    odds_ratio = proportion_trees / proportion_household,
+    expected_rate = household_count * base_rate_city
+  )
+
+# For Baltimore County
+df_odd_giveaway_tapestry_county <- 
+  city_cbg_2019_tapestry_county |>
+  left_join(city_tree_counts_tapestry_county, by = "lifemode") |>
+  mutate(
+    giveaway_count = replace_na(giveaway_count, 0),
+    proportion_household = household_count / sum(household_count),
+    proportion_trees = giveaway_count / sum(giveaway_count),
+    odds_ratio = proportion_trees / proportion_household,
+    expected_rate = household_count * base_rate_county
+  )
+
+# 4. Calculate confidence intervals for each jurisdiction
+df_odd_giveaway_interval_city <- 
+  pois.exact(df_odd_giveaway_tapestry_city$giveaway_count, df_odd_giveaway_tapestry_city$expected_rate)
+
+df_odd_giveaway_interval_county <- 
+  pois.exact(df_odd_giveaway_tapestry_county$giveaway_count, df_odd_giveaway_tapestry_county$expected_rate)
+
+# 5. Append confidence intervals and set levels for each jurisdiction
+df_odd_giveaway_tapestry_city <- 
+  df_odd_giveaway_tapestry_city |>
+      bind_cols(
+        lower_ci = df_odd_giveaway_interval_city$lower,
+        upper_ci = df_odd_giveaway_interval_city$upper
+      ) |>
+  mutate(lifemode = factor(lifemode, levels = tapestry_levels))
+
+df_odd_giveaway_tapestry_county <- 
+  df_odd_giveaway_tapestry_county |>
+  bind_cols(
+    lower_ci = df_odd_giveaway_interval_county$lower,
+    upper_ci = df_odd_giveaway_interval_county$upper
+  ) |>
+  mutate(lifemode = factor(lifemode, levels = tapestry_levels))
+```
+
+```{r echo=FALSE}
+# Plot for Baltimore City
+df_odd_giveaway_tapestry_city |>
   ggplot(aes(x = lifemode, y = odds_ratio)) +
-  geom_boxplot(outlier.shape = NA) +                          
-  geom_jitter(color = "blue", size = 3, width = 0.1) +        
-  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(title = "Odds Ratio of Tree Giveaways by Lifemode Group"
-         , x = "Lifemode Group"
-         , y = "Odds Ratio") +
+  geom_point(color = "blue", size = 3) +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), 
+                width = 0.2, color = "gray") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  labs(title = "Odds Ratio of Tree Giveaways by Lifemode Group with 95% CI (Baltimore City)",
+       x = "Lifemode Group",
+       y = "Odds Ratio") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
-#DEXTER:
-# - Why are the confidence intervals so small here?
-#
-# - One of the sugesstions you made was a boxplot but it is not working
-# 
-# - Any suggestions for improvement?
-#
-# - Should we look at other years besides 2019?
-#
-# - Trying to replicate this: 
-#   https://www.fs.usda.gov/nrs/pubs/jrnl/2014/nrs_2014_locke_002.pdf
+# Plot for Baltimore County
+df_odd_giveaway_tapestry_county |>
+  ggplot(aes(x = lifemode, y = odds_ratio)) +
+  geom_point(color = "blue", size = 3) +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), 
+                width = 0.2, color = "gray") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  labs(title = "Odds Ratio of Tree Giveaways by Lifemode Group with 95% CI (Baltimore County)",
+       x = "Lifemode Group",
+       y = "Odds Ratio") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+
+
 The map of Baltimore and tree giveaways
-```{r}
+```{r echo=FALSE}
 baltimore_giveaway_layer <-
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_zm(drop = TRUE, what = "ZM") |>
@@ -2521,7 +2656,7 @@ baltimore_giveaway_layer
 ```
 
 #### Graph of Lifemode Group and Jurisdiction
-```{r}
+```{r echo=FALSE}
 lifemode_colors <- c(
     "Affluent Estates" = "#9e0142", 
     "Upscale Avenues" = "#d53e4f", 
@@ -2554,17 +2689,13 @@ bwb_total_giveaway_with_Tapestry_2019 |>
          y = "Lifemode Groups") +
   theme_minimal()
 
-#DEXTER
-# - I know I need to standardize to see an actual trend. How should I do this,
-#   is it through making it for households, similar to conducting an odds ratio?
-#   
-# - Would I filter out to make sure there is only 2019 being taken account?
-
 ```
 
 #### Graph of Lifemode Group and Total Giveaway Number
 
-```{r}
+```{r echo=FALSE}
+#This is followed by the odds ratio. 
+
 bwb_total_giveaway_with_Tapestry_2019 |>
   st_drop_geometry() |>
   group_by(lifemode) |>
@@ -2584,8 +2715,8 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 ```
 
 #### Graph of Lifemode Group and Every Year
-
-```{r}
+####
+```{r echo=FALSE}
 # Making a graph of the different lifegroups in Baltimore
 lifeogroup_baltimore_years_facet <- 
   bwb_total_giveaway_with_Tapestry_2019 |> 
@@ -2650,7 +2781,7 @@ ggplot(aes(x = year, y = percentage_increase, color = lifemode, group = lifemode
 
 #### Graph of Lifemode Groups in Top 10 Giveaway Locations
 
-```{r}
+```{r echo=FALSE}
 # Making a graph of the different lifemode groups in the top ten location
 #finding the top the top 10
 giveaway_location_top_10 <-
@@ -2686,7 +2817,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 
 #### Graph of Top 5 Species for Each Lifemode Group
 
-```{r}
+```{r echo=FALSE}
 library(plotly)
 
 # https://plotly.com/r/ #found this cool package and need to know when best to use it
@@ -2716,7 +2847,7 @@ ggplotly(plotly_graph)
 
 #### Box Plot of Tapestry Groups (Compared to Affluent Estates)
 
-```{r}
+```{r echo=FALSE}
 counts_per_cbg <- 
   bwb_total_giveaway_with_Tapestry_2019 |> 
   st_drop_geometry() |> 
@@ -2765,14 +2896,7 @@ bwb_total_giveaway_with_Tapestry_2019 |>
 ```
 
 
-```{r}
-#LAST THING I NEED TO DO
-
-#TODO: Eduardo, fit a generalized linear model and your outcome would be a giveaway. You need to get the background rate (overall) in there. ~ look into Epidemeology (instead of trees, you want cases) ~ Look at the Epidimeology Textbook of R
-
-#TODO: Eduardo, figure out and save the shapefile of the neihgborhoods with household information to use for some standardization
-
-#TODO: Eduardo, clean up the document since everything is finished, including the odds ratios. 
+ 
 
 
 ```
