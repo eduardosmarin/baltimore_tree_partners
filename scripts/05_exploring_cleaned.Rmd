@@ -251,10 +251,11 @@ watershed_to_keep <-  #DEXTER: From your changes to 04_exploring
     , '02130903' # Baltimore Harbor
     , '02130905' # Gwynns Falls
     , '02130904' # Jones Falls
+    , '02130906' # Patapsco River L N Br
     )
 
 ## Making the Watershed Layer
-watershed_data <-
+watershed_data <- 
   blue_water_watershed_data |>
   filter(mde8digt %in% watershed_to_keep) |>
   dplyr::select(mde6digt,mde6name,mde8digt,mde8name,geometry) |>
