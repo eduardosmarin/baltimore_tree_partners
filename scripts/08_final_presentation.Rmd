@@ -73,11 +73,7 @@ There are five main topics of inquiry for this analysis:
 
 By focusing on these categories, the goal is to gain a clearer understanding of Blue Water Baltimore's tree distribution over the past decade. Additionally, this analysis aims to highlight key findings and meaningful contributions from Blue Water Baltimore, particularly regarding the environmental services it provides to our community.
 
-<<<<<<< HEAD
-This work builds on the foundation laid by Morgan Grove and Dexter H. Locke in their paper, [*"A Market Analysis of Opt-In Tree Planting and Rain Barrel Installation in Baltimore, MD, 2008–2012."*](https://research.fs.usda.gov/sites/default/files/2023-05/locke_morgan_2015_a_market_analysis_of_opt-in_tree_planting_and_rain_barrel_installation_in_baltimore_md_2008_-_2012.pdf)
-=======
 This work builds on the foundation laid by Dexter H. Locke and Morgan Grove in their paper, [*"A Market Analysis of Opt-In Tree Planting and Rain Barrel Installation in Baltimore, MD, 2008–2012."*](https://research.fs.usda.gov/sites/default/files/2023-05/locke_morgan_2015_a_market_analysis_of_opt-in_tree_planting_and_rain_barrel_installation_in_baltimore_md_2008_-_2012.pdf){target="_blank"}
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 </p>
 
@@ -283,26 +279,6 @@ block_group_counts <-
   dplyr::select(year, season, common_name, jurisdiction, giveaway_location, block_group_name, geoid) |>
   rename(NAME = block_group_name, GEOID = geoid) |>
   st_join(cbg[, c("NAME","GEOID")]) |>
-<<<<<<< HEAD
-  group_by(NAME.y, GEOID.y, year) |>
-  summarise(count = n()) |>
-  rename(NAME = NAME.y, GEOID = GEOID.y) |>
-  st_drop_geometry()
-  
-census_count_map_layer <-
-  cbg |>
-  left_join(block_group_counts, by = c("NAME", "GEOID")) |>
-  mutate(count = case_when(
-    is.na(count) ~ 0,
-    TRUE ~ count
-  )) 
-
-legend_order_census_count <- 
-  classIntervals(
-  census_count_map_layer$`count`,
-  n = 8, # number of classes
-  style = "fisher"
-=======
   group_by(NAME.y, GEOID.y) |>
   summarise(count = n()) |>
   rename(NAME = NAME.y, GEOID = GEOID.y) |>
@@ -324,19 +300,11 @@ legend_order_census_count <-
   n = 5, # number of classes
   # style = "fisher"
   style = "jenks"
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 )$brks
 
 census_count_map <-
   census_count_map_layer |>
-<<<<<<< HEAD
-  dplyr::select(-county) |>
-  separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
-  filter(County %in% c("Baltimore city","Baltimore County")) |>
-  mapview(zcol = "count", layer.name = "Giveaway Count and CBG", at = legend_order_census_count)
-=======
   mapview(zcol = "counts_per_hh", layer.name = "Giveaways per<br>Household", at = legend_order_census_count)
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 ```
 
 ```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
@@ -362,12 +330,6 @@ load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
    "#519342"
    
 ```
-
-<<<<<<< HEAD
-![Blue Water Baltimore partnered with Baltimore County Department of Environmental Protection and Sustainability, TreeBaltimore, the Department of Public Works (DPW) for Tree Giveaways (October, 2021)](images/location_free_trees.jpg){width="2050"}
-=======
-![Blue Water Baltimore partnered with Baltimore County Department of Environmental Protection and Sustainability, TreeBaltimore, the Department of Public Works (DPW) for Tree Giveaways (October, 2021)](images/location_free_trees.jpg)
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 <p style="font-size:18px;">
 
@@ -660,11 +622,7 @@ tree_plantings_giveaway_cbg_weighted_legend <-
 
 # 3. Making the neighborhood weighted map
 tree_plantings_giveaway_cbg_weighted_layer |>
-<<<<<<< HEAD
-  mapview(zcol = "Density", layer.name = "Tree Giveaways per Household", at = tree_plantings_giveaway_cbg_weighted_legend) 
-=======
   mapview(zcol = "Density", layer.name = "Tree Giveaways<br>per Household", at = tree_plantings_giveaway_cbg_weighted_legend) 
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 ```
 
 ### Giveaway Location
@@ -811,11 +769,7 @@ datatable_6_giveaway_top_10 <-
   slice(1:10)
 ```
 
-<<<<<<< HEAD
-As you can see, there is a fair distribution of the highest `r paste(datatable_6_giveaway_top_10$'Common Name'[1:9], collapse = ", ")`, and `r datatable_6_giveaway_top_10$'Common Name'[10]`. As this is shown in descending order, the most popular species for tree giveaways is `r datatable_6_giveaway_top_10$'Common Name'[1]`. Investing more time and energy into securing this species may be worthwhile for future tree giveaways.
-=======
 As you can see, there is no clear spatial pattern for the most popular species (in descending order): `r paste(datatable_6_giveaway_top_10$'Common Name'[1:9], collapse = ", ")`, and `r datatable_6_giveaway_top_10$'Common Name'[10]`. The most popular species for tree giveaways is `r datatable_6_giveaway_top_10$'Common Name'[1]`. Investing more time and energy into securing this species may be worthwhile for future tree giveaways.
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 The following table will show you more in-depth the breakdown of the different types of species given away.
 
@@ -858,11 +812,7 @@ graph_jurisdiction_top_species <-
     `Common Name` = fct_reorder(`Common Name`, Overall_Total, .desc = TRUE) 
   ) |> 
   ggplot(aes(y = `Common Name`, x = Total, fill = jurisdiction)) + 
-<<<<<<< HEAD
-  geom_bar(stat = "identity", position = "stack") +  
-=======
   geom_bar(stat = "identity", position = "dodge") +  
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
   scale_fill_manual(values = jurisdiction_colors) + 
   labs(
     y = "Common Name", 
@@ -938,11 +888,7 @@ DT::datatable()
 
 Besides understanding the breakdown of each watershed by season, it is also important to understand the breakdown overall. In the following graph, it will highlight the total amount of plantings in each watershed per year.
 
-<<<<<<< HEAD
-## JEDI
-=======
 ## JEDI: Justice, Equity, Diversity & Inclusion
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 We will first begin looking at income to see if there is any correlation between that and the number of giveaways. In terms of the scale, we will look specifically at the census block scale to determine this. We will first look at a synced map
 
@@ -951,11 +897,7 @@ We will first begin looking at income to see if there is any correlation between
 ```{r echo=FALSE}
 ## Making the legend breaks
 legend_order_census_income_count <- 
-<<<<<<< HEAD
-  seq(0, 200000, length.out = 5) 
-=======
   seq(0, 200000, length.out = 6) 
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 ## Making the census-income map
 census_income_map <-
@@ -964,16 +906,6 @@ census_income_map <-
   separate(NAME, into = c("Block Group","Census Tract","County","State"), sep = ", ") |>
   filter(County %in% c("Baltimore city","Baltimore County")) |>
   rename("Median Household Income" = median_household_income) |>
-<<<<<<< HEAD
-  mapview(zcol = "Median Household Income", layer.name = "Income and CBG", at = legend_order_census_income_count)
-
-## The Sync Map of Count and Income
-sync(census_income_map, census_count_map, options = list(nrow = 2))
-
-#TODO: Dexter, I cannot make this vertical, have been tryign to nrow
-```
-
-=======
   mapview(zcol = "Median Household Income", layer.name = "Median Household<br>Income", at = legend_order_census_income_count)
 
 ## The Sync Map of Count and Income
@@ -983,7 +915,6 @@ sync(census_income_map, census_count_map, ncol = 1)
 
 The spatial association between giveaways per household and income is not strong. Statistically, the relationship is also weak.
 
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 #### Regression Income Graph of Income and Count
 
 ```{r echo=FALSE, warning=FALSE}
@@ -1021,11 +952,7 @@ int_regression_income_count_graph
 
 ```
 
-<<<<<<< HEAD
-#### Giveaway Counts by Median Household Income, Ridgeline Graph
-=======
 #### Giveaway Counts by Median Household Income over Time, Ridgeline Graph
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 ```{r echo=FALSE, warning=FALSE}
 gg_ridgeline_income_year_graph <-
@@ -1096,24 +1023,6 @@ tapestry_levels <- rev(
 #### Tree Giveaways by Lifemode Group and Jurisdiction, Bar Graph
 
 ```{r echo=FALSE}
-<<<<<<< HEAD
-lifemode_colors <- c(
-        "Affluent Estates" = "#d7cd86", 
-        "Upscale Avenues" = "#bbd57f", 
-        "Uptown Individuals" =  "#a4d990", 
-        "Family Landscapes" =   "#97db9c", 
-        "GenXurban" = "#93dab3", 
-        "Cozy Country Living" = "#8ed9cf", 
-        "Ethnic Enclaves" = "#add0e2", 
-        "Middle Ground"  = "#c1cbe8", 
-        "Senior Styles" = "#cac8ea", 
-        "Rustic Outposts" = "#d4c5e9", 
-        "Midtown Singles" = "#e2c0e8", 
-        "Hometown" =  "#e8c0da", 
-        "Next Wave"=  "#e8c1cb", 
-        "Scholars and Patriots" = "#e8c3c0"
-            )
-=======
 # lifemode_colors <- c(
 #         "Affluent Estates" = "#d7cd86", 
 #         "Upscale Avenues" = "#bbd57f", 
@@ -1148,7 +1057,6 @@ lifemode_colors <- c(
     "NA" = "#FFFFFF"
 )
 
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
 
 lifemode_graph_count <-
 bwb_total_giveaway_with_Tapestry_2019 |>
@@ -1275,16 +1183,9 @@ df_odd_giveaway_tapestry <-
 df_odd_giveaway_tapestry |>
   rename(Lifemode = lifemode) |>
   ggplot(aes(x = Lifemode, y = odds_ratio, color = Lifemode)) + 
-<<<<<<< HEAD
-  geom_point(size = 3) +                     
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci),       
-                width = 0.2, color = "gray") + 
-  geom_hline(yintercept = 1, linetype = "dashed", color = "gray") +
-=======
   geom_hline(yintercept = 1, linetype = "dashed", color = "gray") +
   geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci)) +       
   geom_point(size = 3) + 
->>>>>>> e8b40c4f68331e8b572ffe3e34060de0fa18f3af
   labs(
     x = "Lifemode Group",
     y = "Odds Ratio"
@@ -1309,3 +1210,5 @@ df_odd_giveaway_tapestry |>
 This preliminary analysis of over a decade of Blue Water Baltimore’s tree giveaway data reveals significant trends in Baltimore City and Baltimore County. By investigating patterns in tree distribution across locations, species, watershed areas, and socioeconomic factors, we gain valuable insights into the program’s impact on promoting equitable urban forestry. Ongoing collaboration with our partner organization, Blue Water Baltimore, aims to refine this data and integrate it into an expanded webpage featuring similar data-driven infographics to improve public understanding and engagement.
 
 ![](images/Tree-maintenance.jpg)
+
+# Questions
