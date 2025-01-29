@@ -272,7 +272,6 @@ watershed_layer <-
             , '#3182bd'
             , '#08519c')
           , layer.name = "Watersheds")
-
 ```
 
 ```{r include=FALSE}
@@ -339,10 +338,11 @@ Where did these trees end up in Maryland?
 
 This section aims to answer this question by examining the regions within Maryland, Baltimore County, and Baltimore City where tree giveaways were most heavily distributed. The analysis relies on the address information provided by applicants when requesting a tree. While this data offers insights into areas of the city where tree distribution occurred, it is important to acknowledge the potential for human error in the provided address information.
 
-
 </p>
 
 #### Tree Giveaway Plantings in Maryland, Heatmap
+
+You can zoom and pan around the dynamic map.
 
 ```{r echo=FALSE}
 # 1. Defining colors for the heatmap
@@ -598,8 +598,7 @@ unique_provider_na <-
 
 ```
 
-The number of giveaway trees per location varies, from `r unique_provider |> slice_min(n) |> pull(n)` at `r unique_provider |> slice_min(n) |> pull(giveaway_location)` to  `r unique_provider |> slice_max(n) |> pull(n)` at `r unique_provider |> slice_max(n) |> pull(giveaway_location)`. The table below can be dynamically sorted and filtered.
-
+The number of giveaway trees per location varies, from `r unique_provider |> slice_min(n) |> pull(n)` at `r unique_provider |> slice_min(n) |> pull(giveaway_location)` to `r unique_provider |> slice_max(n) |> pull(n)` at `r unique_provider |> slice_max(n) |> pull(giveaway_location)`. The table below can be dynamically sorted and filtered.
 
 #### Giveaway Locations by Count, Table
 
@@ -618,7 +617,7 @@ The number of giveaway trees per location varies, from `r unique_provider |> sli
   DT::datatable()
 ```
 
-In the case of the amount of tree giveaway locations, the most giveaways originated at Stillmeadow Community Fellowship. However, please note that `r unique(unique_provider_na$n)` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded. 
+In the case of the amount of tree giveaway locations, the most giveaways originated at Stillmeadow Community Fellowship. **However, please note that `r unique(unique_provider_na$n)` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.**
 
 ## Species
 
@@ -637,7 +636,7 @@ colors_species <- c(
 )
 ```
 
-The following map highlights the top ten species given away from 2013 to 2023. 
+The following map highlights the top ten species given away from 2013 to 2023.
 
 #### Top 10 Species Giveaway, Map
 
@@ -683,7 +682,7 @@ datatable_6_giveaway_top_10 <-
 
 There is no clear spatial pattern for the most popular species (in descending order of popularity): `r paste(datatable_6_giveaway_top_10$'Common Name'[1:9], collapse = ", ")`, and `r datatable_6_giveaway_top_10$'Common Name'[10]`. The most popular species for tree giveaways is `r datatable_6_giveaway_top_10$'Common Name'[1]`. Note many of these species are smaller, ornamental species, many of which provide fruit for wildlife.
 
-Again, the following table can be sorted and filtered dynamically. 
+Again, the following table can be sorted and filtered dynamically.
 
 #### Species per Giveaway, Table
 
@@ -749,10 +748,11 @@ int_graph_jurisdiction_top_species
 
 Here is a general map of the watersheds in the Baltimore jurisdiction and Baltimore City region.
 
-#### Watersheds in Blue Water Baltimore Service Area, Map
+#### Watersheds in Blue Water Baltimore Service Area
 
 ```{r echo=FALSE}
 jurisdiction_layer + watershed_layer
+
 ```
 
 ```{r echo=FALSE}
@@ -791,7 +791,6 @@ table_8_watershed_count_datatable <-
 table_8_watershed_count_datatable |>
 DT::datatable()
 ```
-
 
 ## JEDI: Justice, Equity, Diversity & Inclusion
 
@@ -908,11 +907,13 @@ gg_ridgeline_income_year_graph
 
 ```
 
-We can also visualize giveaway counts versus income per year. The above is a ridgeline graph showing the distribution of giveaways versus median household income. Lumps to the right indicate higher incomes while lumps to the left indicate lower income. Overall, the median (quantile 3) is shifting left and the distribution is becoming more equitable. 
+We can also visualize giveaway counts versus income per year. The above is a ridgeline graph showing the distribution of giveaways versus median household income. Lumps to the right indicate higher incomes while lumps to the left indicate lower income. Overall, the median (quantile 3) is shifting left and the distribution is becoming more equitable.
 
 ## Tapestry
 
 ### General
+
+Rather than analyze a single sociodemographic or economic variable like median household income, it can be useful to categorize places based on multiple dimensions simultaneously. Geodemographic market segmentation is a suite of techniques ideally suited categorizing neighborhoods or Census block groups. Briefly, multiple characteristics are  
 
 ```{r warning=FALSE, include=FALSE}
 tapestry_levels <- rev(
@@ -933,7 +934,7 @@ tapestry_levels <- rev(
 ))
 ```
 
-#### Tree Giveaways by Lifemode Group and Jurisdiction, Bar Graph
+#### Tree Giveaways by Lifemode Group and Jurisdiction
 
 ```{r echo=FALSE}
 # lifemode_colors <- c(
