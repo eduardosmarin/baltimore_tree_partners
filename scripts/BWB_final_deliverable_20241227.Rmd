@@ -339,7 +339,6 @@ Where did these trees end up in Maryland?
 
 This section aims to answer this question by examining the regions within Maryland, Baltimore County, and Baltimore City where tree giveaways were most heavily distributed. The analysis relies on the address information provided by applicants when requesting a tree. While this data offers insights into areas of the city where tree distribution occurred, it is important to acknowledge the potential for human error in the provided address information.
 
-#TODO: Eduardo, Please make a visual guide on how to use the maps and the clickable charts and graphs.
 
 </p>
 
