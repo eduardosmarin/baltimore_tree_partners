@@ -114,7 +114,8 @@ my_vars <- c(  'median_household_income' = 'B19013_001'
     , output = 'wide'
     , moe_level = 95
     ) |>
-   st_transform(crs = st_crs(4326))) 
+   st_transform(crs = st_crs(4326))) |>
+  rename(jursdiction = NAME) 
 
 cbg <-
   tidycensus::get_acs(
@@ -285,11 +286,217 @@ blue_water_baltimore_data |>
 
 blue_water_baltimore_data_new |>
   st_write(paste0("output_data/blue_water_baltimore_data_", Sys.Date(), ".gpkg"), append = FALSE)
+
 ```
+
+
+```{r}
+# 1. Making other temporary table
+temp_table <- 
+  tribble(
+  ~common_name,        ~genus_species,        ~itree_sp_code,
+  "Black Walnut",      "Juglans nigra",         "FRPE",
+  "Persimmon",         "Diospyros sp.",         "DIVI"
+)
+
+
+# 2. Makng the index table of species
+index_table_species <- 
+  blue_water_baltimore_data_new %>%
+  st_drop_geometry() %>%
+  dplyr::select(itree_sp_code, genus_species, common_name) %>%
+  distinct() %>%
+  dplyr::select(common_name, genus_species, itree_sp_code) %>%
+  filter(!genus_species %in% c("prunus_americana", "Diospyros viginiana")) %>%
+  mutate(common_name = if_else(common_name == "Serviceberry" &
+                                 genus_species == "Amelanchier canadensis",
+                               "Serviceberry (CAN)",
+                               common_name)) %>%
+  bind_rows(temp_table)
+ 
+
+# 3. Reading the BWB data
+pre_bwb_data_2024 <- 
+  st_read("/Users/eduardosmarin/Desktop/baltimore_tree_partners/input_data/BWB_2024_TreeGiveaways.gpkg") |>
+   mutate(common_name = str_to_title(common_name)) |>
+  mutate(common_name = case_when(
+    common_name == "Hop Hornbeam" ~ "American Hophornbeam",
+    common_name == "Witch Hazel" ~ "American Witchhazel",
+    common_name == "Canadian Serviceberry" ~ "Serviceberry (CAN)",
+    common_name == "Allegheny Serviceberry" ~ "Smooth Service Berry",
+    TRUE ~ common_name
+  )) |>
+  dplyr::select(-genus_species, -itree_sp_code) |>
+  left_join(index_table_species, by = "common_name") |>
+dplyr::select(-watershed_id         
+, -watershed               
+, -geoid                   
+, -block_group_name        
+, -total_population        
+, -total_population_over_25
+, -white_alone             
+, -median_household_income 
+, -median_age              
+, -pct_at_least_hs         
+, -pct_at_least_college )
+
+
+# 4. Adding the watershed and Census Data
+cbg_renamed <- 
+  cbg |>
+  rename(cbg_geoid = GEOID, cbg_name = NAME)
+
+watershed_renamed <- 
+  watershed_data |>
+  rename(watershed_name = `Watershed Name (6)`)
+
+bwb_data_2024 <- 
+  pre_bwb_data_2024 |>
+  st_join(cbg_renamed, join = st_intersects) |>
+  st_join(watershed_renamed, join = st_intersects) |>
+  dplyr::select(-jurisdiction.y) |>
+  rename(jurisdiction = jurisdiction.x) |>
+  mutate(wateshed = ifelse(is.na(watershed), "Other", watershed)) |>
+  rename(geoid = cbg_geoid
+       , block_group_name = cbg_name) |>
+  rename(geom = Shape) |>
+  dplyr::select(year                
+, season                  
+, date                    
+, genus_species           
+, common_name             
+, itree_sp_code           
+, address                 
+, city                    
+, state                   
+, jurisdiction
+, first_name              
+, last_name               
+, phone                   
+, email                   
+, giveaway_location       
+, watershed_id            
+, watershed               
+, geoid                   
+, block_group_name        
+, total_population        
+, total_population_over_25
+, white_alone             
+, median_household_income 
+, median_age              
+, pct_at_least_hs         
+, pct_at_least_college
+, geom
+  ) |>
+  mutate(
+    phone_clean = str_replace_all(phone, "[^0-9]", ""),
+    phone_number = case_when(
+      nchar(phone_clean) == 10 ~ str_replace(phone_clean, "(\\d{3})(\\d{3})(\\d{4})", "\\1-\\2-\\3"),
+      nchar(phone_clean) == 11 & str_starts(phone_clean, "1") ~ str_replace(substr(phone_clean, 2, 11), "(\\d{3})(\\d{3})(\\d{4})", "\\1-\\2-\\3"),
+      TRUE ~ NA_character_
+    )
+  ) |>
+  dplyr::select(-phone, -phone_clean) |>
+  rename(phone = phone_number)
+
+
+# 6. Reading the entire year data 
+bwb_all <-
+  st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-12-27.gpkg")
+
+# 6. Combinig and writing out the new one
+bwb_giveaway_data_2013_2024 <-
+  rbind(bwb_all, bwb_data_2024) |>
+  mutate(genus_species = case_when(
+    genus_species == "prunus_americana" ~ "Prunus americana",
+  TRUE ~ genus_species
+  )) |> 
+  mutate(jurisdiction = str_to_title(jurisdiction)) |>
+  mutate(jurisdiction = ifelse(jurisdiction == "Carroll County", "Neither", jurisdiction)) |>
+  mutate(genus_species = ifelse(genus_species == "Diospyros viginiana", "Diospyros virginiana", genus_species)) |>
+mutate(genus_species = ifelse(genus_species == "Gymnocladus dioicus", "Gymnocladus dioicusa", genus_species)) |>
+  mutate(genus_species = ifelse(genus_species == "Cladrastis kentuckea", "	
+Cladrastis kentuckea", genus_species)) |>
+  mutate(genus_species = ifelse(common_name == "Serviceberry (CAN)", "Serviceberry", genus_species)) |>
+  mutate(city = str_to_title(city)) |>
+  mutate(city = case_when(
+    city == "Elliott City" ~ "Ellicott City"
+  , city == "Eldridge" ~ "Elkridge"
+  , city == "Lutherville Timonium" ~ "Lutherville-Timonium"
+  , city == "Randalstown" ~ "Randallstown"
+  , city %in% c("Reisterstown", "Reisterstwon", "Reistertown") ~ "Reisterstown"
+  , TRUE ~ city
+  )) |> 
+ dplyr::select(-jurisdiction) |>
+ st_join(baltimore_city_counties) |>
+ dplyr::select(-GEOID
+, -median_household_incomeE     
+, -median_household_incomeM     
+, -total_populationE            
+, -total_populationM            
+, -householdsE                  
+, -householdsM                  
+, -white_aloneE                 
+, -white_aloneM                 
+, -median_ageE                  
+, -median_ageM                  
+, -total_population_over_25E    
+, -total_population_over_25M    
+, -ed_hs_degreeE                
+, -ed_hs_degreeM                
+, -ed_ged_degreeE               
+, -ed_ged_degreeM               
+, -ed_college_less_1_yearE      
+, -ed_college_less_1_yearM      
+, -ed_college_more_1_yearE      
+, -ed_college_more_1_yearM      
+, -ed_associate_degreeE         
+, -ed_associate_degreeM         
+, -ed_plus_bachelor_degreeE     
+, -ed_plus_bachelor_degreeM     
+, -ed_plus_master_degreeE       
+, -ed_plus_master_degreeM       
+, -ed_plus_professional_degreeE 
+, -ed_plus_professional_degreeM 
+, -ed_plus_doctorate_degreeE    
+, -ed_plus_doctorate_degreeM) |>
+  mutate(jurisdiction = case_when(
+    NAME == "Baltimore County, Maryland" ~ "Baltimore County"
+  , NAME == "Baltimore city, Maryland" ~ "Baltimore City"
+  , TRUE ~ "Other"
+  )) |>
+  dplyr::select(-NAME)
+
+# 7. FINAL SAVE OUT :D
+bwb_giveaway_data_2013_2024 |>
+  filter(year == "2024") |>
+  st_write(paste0("output_data/year_2024_bwb_giveaway_", Sys.Date(), ".gpkg"), append = FALSE)
+
+bwb_giveaway_data_2013_2024 |>
+  st_write(paste0("output_data/year_2013_to_2024_bwb_giveaway_", Sys.Date(), ".gpkg"), append = FALSE)
+  
+```
+
+
+```{r}
+# 1. Within residential, front and back comparison
+# 2. Cross city comparison,
+# 3. Is the gap in survivorship biger or lower in higher-income and 
+# 4. Summarize the neighborhood level
+# 5. Do higher income neighborhoods smaller gap wolevel gap
+# 6. Do higher income neighborhoods smaller 
+# 7. A third level question that will be constriained
+# 8. Double check the geopackage.... :D :;-;-;-;-; |P
+
+```
+
+
+
 
 ```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
 blue_water_baltimore_data_check <- 
-  st_read("output_data/blue_water_baltimore_data_2024-08-23.gpkg") #DEXTER: Change whenver your sys.date does it
+  bwb_giveaway_data_2013_2024
+  # st_read("output_data/blue_water_baltimore_data_2024-08-23.gpkg") #DEXTER: Change whenver your sys.date does it
 
 blue_water_baltimore_data_check |> glimpse()
 blue_water_baltimore_data_check |> summary()
