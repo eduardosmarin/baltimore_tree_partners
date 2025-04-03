@@ -39,9 +39,9 @@ The following is an analysis of Blue Water Baltimore's tree giveaway program. Th
 
 <p style="font-size:18px;">
 
-The data was consolidated from various sources, including Excel spreadsheets, CSV files, and shapefiles spanning from 2013 to 2023. After extensive data wrangling, the information was successfully integrated into a single geodatabase, which we returned to Blue Water Baltimore.
+The data was consolidated from various sources, including Excel spreadsheets, CSV files, and shapefiles spanning from 2013 to 2023. After extensive data wrangling, the information was successfully integrated into a single single geopackage (\*.gpkg), which was returned to Blue Water Baltimore.
 
-This data reconciliation effort of Blue Water Baltimore is part of a broader discussion on data integrity and collaboration among partner organizations, such as TreeBaltimore, Baltimore City's urban and community forestry initiative, and Baltimore Tree Trust, an environmental nonprofit focused on urban forestry in Baltimore. Through these partnerships, we aim to facilitate seamless data sharing among organizations to address the region's environmental challenges more effectively.
+This data reconciliation effort of Blue Water Baltimore is part of a broader discussion on data integrity and collaboration among partner organizations, such as TreeBaltimore, Baltimore City's urban and community forestry umbrella organization, and Baltimore Tree Trust, an environmental nonprofit focused on urban forestry in Baltimore. Through these partnerships, we aim to facilitate seamless data sharing among organizations to address the region's environmental challenges more effectively.
 
 </p>
 
@@ -57,13 +57,21 @@ There are five main topics of inquiry for this analysis:
 
 -   *Watershed*
 
--   *JEDI: Justice, Equity, Diversity, and Inclusion*
+-   *Median Household Income*
 
 -   [*Tapestry Groups*](https://doc.arcgis.com/en/esri-demographics/latest/regional-data/tapestry-segmentation.htm)
 
 By focusing on these categories, the goal is to gain a clearer understanding of Blue Water Baltimore's tree distribution over the past decade. Additionally, this analysis aims to highlight key findings and meaningful contributions from Blue Water Baltimore, particularly regarding the environmental services it provides to our community.
 
-This work builds on the foundation laid by Dexter H. Locke and Morgan Grove in their report, ["A Market Analysis of Opt-In Tree Planting and Rain Barrel Installation in Baltimore, MD, 2008–2012"](https://research.fs.usda.gov/sites/default/files/2023-05/locke_morgan_2015_a_market_analysis_of_opt-in_tree_planting_and_rain_barrel_installation_in_baltimore_md_2008_-_2012.pdf)*,* and their peer-reviewed paper, ["Doing the hard work where it's easiest? Examining the relationships between urban greening programs and social and ecological characteristics."](#0)
+This work builds on the foundation laid in an earlier report, ["A Market Analysis of Opt-In Tree Planting and Rain Barrel Installation in Baltimore, MD, 2008–2012"](https://research.fs.usda.gov/sites/default/files/2023-05/locke_morgan_2015_a_market_analysis_of_opt-in_tree_planting_and_rain_barrel_installation_in_baltimore_md_2008_-_2012.pdf)*,* and peer-reviewed paper, ["Doing the hard work where it's easiest? Examining the relationships between urban greening programs and social and ecological characteristics."](#0)
+
+Similar research has been conducted in
+
+Philadelphia: [A Market Analysis of TreePhilly’s Yard Tree Program, Spring 2012—Spring 2014](https://treephilly.org/wp-content/uploads/2015/03/MarketAnalysis_Report_TreePhillyGiveaways20150120.pdf)
+
+New York City: [A Market Analysis of New York Restoration Project’s Tree Giveaway Program, Spring 2008—Fall 2013](https://dexterlocke.com/wp-content/uploads/2023/01/giveawaymarketanalysis_d_locke_m_mitchell_june2014.pdf)
+
+with some cross-site synthesis emerging in the peer reviewed literature "[Branching out to residential lands: missions and strategies of five tree distribution programs in the U.S.](https://research.fs.usda.gov/treesearch/53733)" and in an Arborist News article, "[Best practices for yard tree distribution programs](https://research.fs.usda.gov/treesearch/56979)".
 
 </p>
 
@@ -228,8 +236,11 @@ weighted_neighborhood_layer <-
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
    # st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-30.gpkg"
-  st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-12-27.gpkg"
-           , as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
+  # st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-12-27.gpkg"
+  st_read('../baltimore_tree_partners_data_to_big/shapefiles/year_2013_to_2024_bwb_giveaway_2025-03-28.gpkg'
+           , as_tibble = TRUE) %>%  #FINAL GEOPACKAGE!:) 
+  # TODO add as_tibble everytime you do st_read
+  filter(!st_is_empty(.))
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -319,15 +330,6 @@ save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total
 load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
 ```
 
-```{r Color Palette, eval=FALSE, include=FALSE}
-
-## Branding (Shades of Blue)
-   "#008CCC"
-   "#005273"
-   "#519342"
-   
-```
-
 <p style="font-size:18px;">
 
 Blue Water Baltimore has operated its tree giveaway service for over 15 years. In the past decade alone, between 2013 and 2023, they were able to give away `r scales::comma(round(nrow(blue_water_giveaway_data)))` trees.
@@ -337,6 +339,8 @@ One question that arises, however, is:
 Where did these trees end up in Maryland?
 
 This section aims to answer this question by examining the regions within Maryland, Baltimore County, and Baltimore City where tree giveaways were most heavily distributed. The analysis relies on the address information provided by applicants when requesting a tree. While this data offers insights into areas of the city where tree distribution occurred, it is important to acknowledge the potential for human error in the provided address information.
+
+**Please note that `r unique(unique_provider_na$n)` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.**
 
 </p>
 
@@ -372,7 +376,7 @@ leaflet(blue_water_giveaway_data) |>
 
 <p style="font-size:18px;">
 
-As anticipated, there is a high concentration of plantings in Baltimore County and Baltimore City over the past decade, with fewer plantings occurring in peripheral areas, including Howard, Anne Arundel, Carroll, and Harford counties.
+As anticipated, there is a high concentration of plantings in Baltimore County and Baltimore City over the past decade where giveaways occur, with fewer plantings occurring in peripheral areas, including Howard, Anne Arundel, Carroll, and Harford counties where BWB does not opperate.
 
 </p>
 
@@ -406,7 +410,7 @@ graph_plantings_maryland_year_season <-
       labels = scales::comma  
     ) +
     scale_x_continuous (
-      breaks = seq(2013, 2023) 
+      breaks = seq(2013, 2024) 
     ) +
     labs(x = "Year"
       ,  y = "Total Giveaways"
@@ -434,7 +438,7 @@ Giveaways are more common in the Spring than Fall Planting seasons except for 20
 
 Years to note:
 
--   In years 2018 and 2019, Blue Water Baltimore and TreeBaltimore partnered on their Fall giveaways. The data here is unusually high because they combined their counts together.
+-   In years 2018 and 2019, Blue Water Baltimore and TreeBaltimore partnered on their Fall giveaways. The values are were unusually high because they combined their counts together.
 
 -   In year 2020, due to COVID-19 pandemic, there were no giveaways.
 
@@ -488,7 +492,7 @@ graph_tree_jur_plantings_over_years <-
    geom_line() +
    geom_point() +
     scale_x_continuous(
-      breaks = seq(2013, 2023)
+      breaks = seq(2013, 2024)
     ) +
      scale_y_continuous(
       limits = c(0, 1500),
@@ -515,10 +519,7 @@ int_graph_tree_jur_plantings_over_years <-
 int_graph_tree_jur_plantings_over_years
 ```
 
-In addition to parsing giveaways by seasons per year, it is helpful to examine where the trees have gone over time, by jurisdiction. There were more giveaways in Baltimore City in years 2018 and 2019 than Baltimore County, largely due to the previously mentioned partnership with Tree Baltimore.
-
-\
-TODO: Add remark on recent trends after 2024 data
+In addition to parsing giveaways by seasons per year, it is helpful to examine where the trees have gone over time, by jurisdiction. There were more giveaways in Baltimore City in years 2018 and 2019 than Baltimore County, largely due to the previously mentioned partnership with Tree Baltimore. Since the pandemic there has been a steady increase in County giveaways.
 
 ```{r echo=FALSE}
 table_bwb_data <-
@@ -531,6 +532,8 @@ table_bwb_data <-
 ### Baltimore City and County
 
 Baltimore City has a total of `r table_bwb_data |> filter(jurisdiction == "Baltimore City") |> pull(n)` tree planting from 2013 — 2023, while Baltimore County is not far off with `r table_bwb_data |> filter(jurisdiction == "Baltimore County") |> pull(n)`. We should take into consideration that Baltimore City has more households, and Baltimore County has more open space.
+
+Census block groups have different sizes, shapes, and range of households. Therefore, we calculated the number of giveaways per household in each census block group to account for those differences. Lighter colors in the map indicate fewer trees per household while darker colors signify more trees per household. There are few block groups without any households shown in gray.
 
 #### Tree Plantings per Household in Baltimore City and County per Block Group
 
@@ -569,8 +572,6 @@ tree_plantings_giveaway_cbg_weighted_layer |>
           ) )
 
 ```
-
-Census block groups have different sizes, shapes, and range of households. Therefore, we calculated the number of giveaways per household in each census block group to account for those differences. Lighter colors in the map indicate fewer trees per household while darker colors signify more trees per household. There are few block groups without any households shown in gray.
 
 Northern parts of Baltimore City, around Harford Road, and near Towson have the most giveaways per household. Another apparent hotspot is around Catonsville and Ellicott City.
 
@@ -758,7 +759,7 @@ jurisdiction_layer + watershed_layer
 ```{r echo=FALSE}
 #prepping for the statistic mentioned later
 table_8_watershed_count <-
-blue_water_giveaway_data |>
+  blue_water_giveaway_data |>
   st_drop_geometry() |>
   group_by(watershed) |>
   count() |>
@@ -780,21 +781,22 @@ table_8_watershed_count_datatable <-
   st_drop_geometry() |>
   tabyl(watershed) |>
   arrange(desc(n)) |>
-  mutate(percent = round(100 * percent, 2)) |>
-  rename(Count = n, Percent = percent) |>
-  mutate(watershed = case_when(
+  mutate(  Percent = round(100 * percent, 2)
+         , `Valid Percent` = round(100 * valid_percent, 2)
+         ) |>
+  mutate(Watershed = case_when(
     is.na(watershed) ~ "Outside BWB Service Area",
     TRUE ~ watershed
   )) |>
-  rename(Watershed = watershed)
+  select(Watershed, Count = n, Percent, `Valid Percent`)
 
 table_8_watershed_count_datatable |>
-DT::datatable()
+  DT::datatable()
 ```
 
-## JEDI: Justice, Equity, Diversity & Inclusion
+## Median Household Income
 
-For this part of the analysis, we will look at income to see if it has any correlation with number of giveaways. In terms of the scale, we will look specifically at the census block group scale to determine this. We will first look at a synced map
+For this part of the analysis, we will look at median household income at the block group scale to see if it has any correlation with number of giveaways. In terms of the scale, we will look specifically at the census block group scale to determine this. We will first look at synced maps.
 
 ### Income
 
@@ -823,11 +825,10 @@ data_regression_income_graph <-
 correlation_income_household_count <-
 data_regression_income_graph %$% 
   cor.test(median_household_income, Density) |> 
-  broom::tidy() |>
-  mutate_if(is.double, round, 3)
+  broom::tidy() # |>  mutate_if(is.double, round, 3)
 ```
 
-The spatial association between giveaways per household and income is not strong. There is apparent relationship from these maps. Statistically, the relationship is also weak (`r correlation_income_household_count$estimate`) but significant (p-value = `r correlation_income_household_count$p.value`), as shown below in the scatterplot with a linear regression.
+The spatial association between giveaways per household and income is not strong. There is apparently weak relationship visible from these two maps. Statistically, the relationship is also weak (`r correlation_income_household_count$estimate`) but significant (p-value = `r correlation_income_household_count$p.value`), as shown below in the scatterplot with a linear regression.
 
 #### Regression Income Graph of Income and Count per Household
 
@@ -907,21 +908,13 @@ gg_ridgeline_income_year_graph
 
 ```
 
-We can also visualize giveaway counts versus income per year. The above is a ridgeline graph showing the distribution of giveaways versus median household income. Lumps to the right indicate higher incomes while lumps to the left indicate lower income. Overall, the median (quantile 3) is shifting left and the distribution is becoming more equitable.
+We can also visualize giveaway counts versus income per year. The above is a ridgeline graph showing the distribution of giveaways versus median household income. Lumps to the right indicate higher incomes while lumps to the left indicate lower income. Overall, the median (quantile 3) is shifting left and the distribution is becoming more flatter.
 
 ## Tapestry
 
 ### General
 
-Rather than analyze a single socio-demographic or economic variable like median household income, it can be useful to categorize places based on multiple dimensions simultaneously. Geo-demographic market segmentation is a suite of techniques ideally suited categorizing neighborhoods or Census block groups. Briefly, multiple characteristics are clustered to form these categories. Although not all individuals will match the profile exactly, the average would be similar to the tapestry level described. The geo-demographic dataset we used here is through Esri's Tapestry. For more details, please read the following [link](https://doc.arcgis.com/en/esri-demographics/latest/regional-data/tapestry-segmentation.htm%20%7Br%20warning=FALSE,%20include=FALSE%7D%20tapestry_levels%20%3C-%20rev(%20c('Affluent%20Estates'%20,%20'Upscale%20Avenues'%20,%20'Uptown%20Individuals'%20,%20'Family%20Landscapes'%20,%20'GenXurban'%20,%20'Cozy%20Country%20Living'%20,%20'Ethnic%20Enclaves'%20,%20'Middle%20Ground'%20,%20'Senior%20Styles'%20,%20'Rustic%20Outposts'%20,%20'Midtown%20Singles'%20,%20'Hometown'%20,%20'Next%20Wave'%20,%20'Scholars%20and%20Patriots'%20))%20Tree%20Giveaways%20by%20Lifemode%20Group%20and%20Jurisdiction%20%7Br%20echo=FALSE%7D%20#%20lifemode_colors%20%3C-%20c(%20#%20%22Affluent%20Estates%22%20=%20%22#d7cd86%22,%20#%20%22Upscale%20Avenues%22%20=%20%22#bbd57f%22,%20#%20%22Uptown%20Individuals%22%20=%20%22#a4d990%22,%20#%20%22Family%20Landscapes%22%20=%20%22#97db9c%22,%20#%20%22GenXurban%22%20=%20%22#93dab3%22,%20#%20%22Cozy%20Country%20Living%22%20=%20%22#8ed9cf%22,%20#%20%22Ethnic%20Enclaves%22%20=%20%22#add0e2%22,%20#%20%22Middle%20Ground%22%20=%20%22#c1cbe8%22,%20#%20%22Senior%20Styles%22%20=%20%22#cac8ea%22,%20#%20%22Rustic%20Outposts%22%20=%20%22#d4c5e9%22,%20#%20%22Midtown%20Singles%22%20=%20%22#e2c0e8%22,%20#%20%22Hometown%22%20=%20%22#e8c0da%22,%20#%20%22Next%20Wave%22=%20%22#e8c1cb%22,%20#%20%22Scholars%20and%20Patriots%22%20=%20%22#e8c3c0%22%20#%20)%20lifemode_colors%20%3C-%20c(%20%22Affluent%20Estates%22%20=%20%22#9e0142%22,%20%22Upscale%20Avenues%22%20=%20%22#d53e4f%22,%20%22Senior%20Styles%22%20=%20%22#f46d43%22,%20%22Middle%20Ground%22%20=%20%22#fdae61%22,%20%22Hometown%22%20=%20%22#e6f598%22,%20%22GenXurban%22%20=%20%22#abdda4%22,%20%22Uptown%20Individuals%22%20=%20%22#92b1e2%22,%20%22Scholars%20and%20Patriots%22%20=%20%22#3288bd%22,%20%22Midtown%20Singles%22%20=%20%22#5e4fa2%22,%20%22Family%20Landscapes%22%20=%20%22#E83F6F%22,%20%22Next%20Wave%22%20=%20%22#2274A5%22,%20%22Cozy%20Country%20Living%22%20=%20%22#FFBF00%22,%20%22Ethnic%20Enclaves%22%20=%20%22#32936F%22,%20%22Rustic%20Outposts%22%20=%20%22#9F9F92%22,%20%22NA%22%20=%20%22#FFFFFF%22%20)%20lifemode_graph_count%20%3C-%20bwb_total_giveaway_with_Tapestry_2019%20%7C%3E%20rename(Lifemode%20=%20lifemode)%20%7C%3E%20mutate(jurisdiction%20=%20ifelse(is.na(jurisdiction),%20%22Neither%22,%20jurisdiction))%20%7C%3E%20group_by(jurisdiction,%20Lifemode)%20%7C%3E%20count()%20%7C%3E%20rename(%60Number%20of%20Giveaways%60%20=%20n)%20%7C%3E%20filter(!is.na(Lifemode))%20%7C%3E%20filter(jurisdiction%20!=%20%22Neither%22)%20%7C%3E%20ggplot(aes(x%20=%20jurisdiction,%20y%20=%20%60Number%20of%20Giveaways%60,%20fill%20=%20Lifemode))%20+%20geom_bar(position%20=%20%22dodge%22,%20stat%20=%20%22identity%22)%20+%20scale_y_continuous(%20limits%20=%20c(0,%202000),%20breaks%20=%20seq(0,%202000,%20by%20=%20500),%20labels%20=%20scales::comma%20)%20+%20scale_fill_manual(values%20=%20lifemode_colors)%20+%20labs(x%20=%20%22Jurisdiction%22,%20y%20=%20%22Count%22)%20+%20theme_minimal()%20+%20theme(%20plot.background%20=%20element_rect(fill%20=%20%22transparent%22,%20color%20=%20NA),%20panel.background%20=%20element_rect(fill%20=%20%22transparent%22,%20color%20=%20NA),%20axis.title%20=%20element_text(size%20=%2014),%20axis.text%20=%20element_text(size%20=%2012),%20legend.title%20=%20element_text(size%20=%2014),%20legend.text%20=%20element_text(size%20=%2012),%20strip.text%20=%20element_text(size%20=%2014,%20face%20=%20%22bold%22,%20hjust%20=%200.5)%20)%20+%20NULL%20int_lifemode_graph_count%20%3C-%20ggplotly(lifemode_graph_count)%20int_lifemode_graph_count%20%7Br%20include=FALSE%7D%20#1.%20You%20first%20need%20the%20general%20ratio%20of%20the%20amount%20of%20trees%20per%20households%20##%20a) Total households city_cbg_2019 \<- st_read("output_data/cbg_2019.gpkg") total_households_2019 \<- city_cbg_2019$households |> #making a vector sum() #summing the vector for the total ## b) Total number of trees total_tree_giveaways <- blue_water_giveaway_data |> st_drop_geometry() |> filter(year == 2019) |> filter(jurisdiction %in% c("Baltimore County","Baltimore City")) |> distinct(address) |> count() |> pull(n) ## c) Creating the base rate base_rate_baltimore <- total_tree_giveaways / total_households_2019 #our null Odds Ratios {r include=FALSE} #1. Need to create a combined shapefile to get the counts of households and plantings ## a) Finding total households within each tapestry group join_tapestry_cbg <- read_csv("output_data/MD_Tapestry_2019_2024-09-16.csv") |> # TODO get level DHL tk mutate(GEOID = as.character(GEOID_2019)) #The purpose of this to get the number of households per lifemode city_cbg_2019_tapestry <- city_cbg_2019 |> left_join(join_tapestry_cbg, by = "GEOID") |> st_drop_geometry() |> group_by(lifemode) |> summarize(household_count = sum(households.x, na.rm = TRUE)) |> filter(!is.na(lifemode)) ## b) Finding total tree giveaways within each tapestry group city_tree_counts_tapestry <- bwb_total_giveaway_with_Tapestry_2019 |> st_drop_geometry() |> filter(year == 2019) |> filter(jurisdiction %in% c("Baltimore County", "Baltimore City")) |> distinct(address, .keep_all = TRUE) |> group_by(lifemode) |> summarize(giveaway_count = n()) |> filter(!is.na(lifemode)) #Finding out the odds ratio and expected rates df_odd_giveaway_tapestry_old <- city_cbg_2019_tapestry |> left_join(city_tree_counts_tapestry, by = "lifemode") |> mutate(giveaway_count = ifelse(is.na(giveaway_count), 0, giveaway_count)) |> mutate(proportion_household = household_count/sum(household_count)) |> mutate(proportion_trees = giveaway_count/sum(giveaway_count), odds_ratio = proportion_trees/proportion_household) |> mutate(expected_rate = household_count*base_rate_baltimore) # Creating the confidence intervals df_odd_giveaway_interval <- pois.exact(df_odd_giveaway_tapestry_old$giveaway_count, df_odd_giveaway_tapestry_old$expected_rate) #gives us the confidence interval. # Appending the confidence intervals df_odd_giveaway_tapestry <- df_odd_giveaway_tapestry_old |> bind_cols( lower_ci = df_odd_giveaway_interval$lower, upper_ci = df_odd_giveaway_interval\$upper ) \|\> mutate(lifemode = factor(lifemode, levels = tapestry_levels)) Tree Giveaways by Lifemode Group, 95% Confidence Interval Graph {r echo=FALSE} \# 1. Creating the graph like in the report df_odd_giveaway_tapestry \|\> rename(Lifemode = lifemode) \|\> ggplot(aes(x = Lifemode, y = odds_ratio, color = Lifemode)) + geom_hline(yintercept = 1, linetype = "dashed", color = "gray") + geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci)) + geom_point(size = 3) + labs( x = "Lifemode Group", y = "Odds Ratio" ) + scale_color_manual(values = lifemode_colors) + theme_minimal() + theme( axis.text.x = element_text(angle = 45, hjust = 1), plot.background = element_rect(fill = "#FAFAF9", color = "#FAFAF9"), panel.background = element_rect(fill = "#FAFAF9", color = "#FAFAF9"), axis.title = element_text(size = 14), axis.text = element_text(size = 8), legend.title = element_text(size = 14), legend.text = element_text(size = 12), strip.text = element_text(size = 14, face = "bold", hjust = 0.5) ) Conclusion This preliminary analysis of over a decade of Blue Water Baltimore’s tree giveaway data reveals significant trends in Baltimore City and Baltimore County. By investigating patterns in tree distribution across locations, species, watershed areas, and socioeconomic factors, we gain valuable insights into the program’s impact on promoting equitable urban forestry. Ongoing collaboration with our partner organization, Blue Water Baltimore, aims to refine this data and integrate it into an expanded webpage featuring similar data-driven infographics to improve public understanding and engagement. Authors
-
-<p style="font-size:18px;">
-
-Eduardo Marin, an intern with the USDA Forest Service Baltimore Field Station, worked under the leadership of Dexter Locke, a research geographer with the USDA Forest Service Baltimore Field Station, to prepare the presentation, reconcile the data, and perform preliminary analysis for Blue Water Baltimore.
-
-</p>
-
-).
+Rather than analyze a single socio-demographic or economic variable like median household income, it can be useful to categorize places based on multiple dimensions simultaneously. Geo-demographic market segmentation is a suite of techniques ideally suited categorizing neighborhoods or Census block groups. Briefly, multiple characteristics are clustered to form these categories. Although not all individuals will match the profile exactly, the mix of individuals in the same category will be similar. We used ESRI's Tapestry geo-demographic segmentation dataset here. For more details, please read the following [link](https://www.esri.com/en-us/arcgis/products/data/data-portfolio/tapestry-segmentation).
 
 ```{r warning=FALSE, include=FALSE}
 tapestry_levels <- rev(
@@ -981,7 +974,7 @@ lifemode_colors <- c(
 
 
 lifemode_graph_count <-
-bwb_total_giveaway_with_Tapestry_2019 |>
+  bwb_total_giveaway_with_Tapestry_2019 |>
   rename(Lifemode = lifemode) |>
   mutate(jurisdiction = ifelse(is.na(jurisdiction), "Neither", jurisdiction)) |>
   group_by(jurisdiction, Lifemode) |>
@@ -1042,6 +1035,8 @@ base_rate_baltimore <-
   total_tree_giveaways / total_households_2019 #our null
 
 ```
+
+Above demonstrates that some segments received more free trees than others. But these counts per category do not take into account that the number of households per category also varies. By taking the ratio of the two fractions: 1 the fraction of households per category that receive a free trees, and 2 the fraction of households in that category, we can calculate the odds ratio. Values between 0 and 1 mean that fewer giveaway trees were received than if giveaway trees were proportional to the number of households in that Tapestry segment. Values greater than one mean that there were more giveaways than would have been expected under a scenario where both proportions were the same.
 
 ### Odds Ratios
 
