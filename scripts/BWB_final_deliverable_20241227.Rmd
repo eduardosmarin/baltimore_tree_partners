@@ -1,6 +1,6 @@
 ---
 title: "Analyzing Tree Adoption Trends"
-subtitle: "A Preliminary Analysis of 10+ Years of Blue Water Baltimore Giveaway Data Using R"
+subtitle: "An Analysis of 10+ Years of Blue Water Baltimore Giveaway Data Using R"
 author: "Eduardo Marin and Dexter H Locke"
 date: "October, 2024"
 output:
@@ -1130,6 +1130,8 @@ df_odd_giveaway_tapestry |>
   ) 
 
 ```
+
+The analysis of tree giveaway distributions using odds ratios shows no significant association with the likelihood of receiving trees and their respective tapestry group for most groups. Exceptions includes Middle Ground and Uptown Individuals who have higher odds ratios, suggesting they are more likely to receive trees than their population percentage. Conversely, Senior Styles, Family Landscapes, Upscale Avenues, and Affluent Estates have lower odds of having received a tree. Overall, however, this where and for whom Blue Water's Baltimore are working to increase tree canopy cover.
 
 # Conclusion
 
