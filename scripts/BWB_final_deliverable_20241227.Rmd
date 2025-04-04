@@ -1,8 +1,8 @@
 ---
 title: "Analyzing Tree Adoption Trends"
 subtitle: "A Preliminary Analysis of 10+ Years of Blue Water Baltimore Giveaway Data Using R"
-author: "Eduardo Marin (with Dexter H Locke)"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+author: "Eduardo Marin and Dexter H Locke"
+date: "October, 2024"
 output:
   prettydoc::html_pretty:
     theme: architect
@@ -315,19 +315,21 @@ legend_order_census_count <-
 )$brks
 ```
 
-```{r Loading Tapestry, eval=FALSE, message=FALSE, include=FALSE}
-load('output_data/tap_lu_2024-06-25.RData')
-
-load()
-
-tap_lu |> map(~levels(.)) # order matters!
-
-save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
-```
-
 ```{r Loading Tapestry Data, echo=FALSE, message=FALSE}
 # makes 'bwb_total_giveaway_with_Tapestry_2019'
-load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
+# load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-06-25.RData')
+# load('output_data/bwb_total_giveaway_with_Tapestry_2019_2024-09-16.RData')
+load('output_data/bwb_total_giveaway_with_Tapestry_2019_2025-04-03.RData')
+
+
+unique_provider_na <- 
+ blue_water_giveaway_data |>
+  st_drop_geometry() |>
+  tabyl(giveaway_location) |> 
+  as_tibble() |> 
+  arrange(desc(n)) |>
+  slice(1)  |>
+  mutate(percent = 100*percent)
 ```
 
 <p style="font-size:18px;">
@@ -340,9 +342,10 @@ Where did these trees end up in Maryland?
 
 This section aims to answer this question by examining the regions within Maryland, Baltimore County, and Baltimore City where tree giveaways were most heavily distributed. The analysis relies on the address information provided by applicants when requesting a tree. While this data offers insights into areas of the city where tree distribution occurred, it is important to acknowledge the potential for human error in the provided address information.
 
-**Please note that `r unique(unique_provider_na$n)` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.**
+Please note that `r scales::comma(unique(unique_provider_na$n))` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.
 
 </p>
+
 
 #### Tree Giveaway Plantings in Maryland, Heatmap
 
@@ -376,7 +379,7 @@ leaflet(blue_water_giveaway_data) |>
 
 <p style="font-size:18px;">
 
-As anticipated, there is a high concentration of plantings in Baltimore County and Baltimore City over the past decade where giveaways occur, with fewer plantings occurring in peripheral areas, including Howard, Anne Arundel, Carroll, and Harford counties where BWB does not opperate.
+As anticipated, there is a high concentration of plantings in Baltimore County and Baltimore City over the past decade where giveaways occur, with fewer plantings occurring in peripheral areas, including Howard, Anne Arundel, Carroll, and Harford counties where BWB does not operate.
 
 </p>
 
@@ -550,7 +553,7 @@ tree_plantings_giveaway_cbg_weighted_layer <-
     TRUE ~ count),
     Density = round(count/`households`, 3)
   ) |>
-  dplyr::select(NAME,Density,count, households) |>
+  dplyr::select(NAME, Density, count, households) |>
   rename(`Number of Giveaways` = count, `Households` = households, `Name` = NAME) |>
   filter(
     str_detect(Name, "Baltimore city") | str_detect(Name, "Baltimore County")
@@ -618,7 +621,7 @@ The number of giveaway trees per location varies, from `r unique_provider |> sli
   DT::datatable()
 ```
 
-In the case of the amount of tree giveaway locations, the most giveaways originated at Stillmeadow Community Fellowship. **However, please note that `r unique(unique_provider_na$n)` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.**
+In the case of the amount of tree giveaway locations, the most giveaways originated at Stillmeadow Community Fellowship. **However, please note that `r scales::comma(unique(unique_provider_na$n))` trees or `r round(unique(unique_provider_na$percent), 2)`% do not have a giveaway location recorded.**
 
 ## Species
 
@@ -823,12 +826,15 @@ data_regression_income_graph <-
   )
 
 correlation_income_household_count <-
-data_regression_income_graph %$% 
+  data_regression_income_graph %$% 
   cor.test(median_household_income, Density) |> 
-  broom::tidy() # |>  mutate_if(is.double, round, 3)
+  broom::tidy() |> 
+  mutate(estimate = round(estimate, 2))
+# |>  mutate_if(is.double, round, 3)
 ```
 
-The spatial association between giveaways per household and income is not strong. There is apparently weak relationship visible from these two maps. Statistically, the relationship is also weak (`r correlation_income_household_count$estimate`) but significant (p-value = `r correlation_income_household_count$p.value`), as shown below in the scatterplot with a linear regression.
+The spatial association between giveaways per household and income is not strong. There is apparently weak relationship visible from these two maps.
+
 
 #### Regression Income Graph of Income and Count per Household
 
@@ -862,6 +868,9 @@ int_regression_income_count_graph <-
 
 int_regression_income_count_graph
 ```
+
+Statistically, the relationship is also weak (Pearson's r = `r correlation_income_household_count$estimate`) and significant (p-value = `r correlation_income_household_count$p.value`), as shown below in the scatterplot with a linear regression.
+
 
 #### Giveaway Counts by Median Household Income over Time, Ridgeline Graph
 
@@ -1036,7 +1045,7 @@ base_rate_baltimore <-
 
 ```
 
-Above demonstrates that some segments received more free trees than others. But these counts per category do not take into account that the number of households per category also varies. By taking the ratio of the two fractions: 1 the fraction of households per category that receive a free trees, and 2 the fraction of households in that category, we can calculate the odds ratio. Values between 0 and 1 mean that fewer giveaway trees were received than if giveaway trees were proportional to the number of households in that Tapestry segment. Values greater than one mean that there were more giveaways than would have been expected under a scenario where both proportions were the same.
+Above demonstrates that some segments received more free trees than others. But these counts per category do not take into account that the number of households per category also varies. By taking the ratio of the two fractions: 1 the fraction of households per category that receive a free trees, and 2 the fraction of households in that category, we can calculate the odds ratio. Values between 0 and less than 1 mean that fewer giveaway trees were received than if giveaway trees were proportional to the number of households in that Tapestry segment. Values greater than 1 mean that there were more giveaways than would have been expected under a scenario where both proportions were the same. These analyses only pertain to year 2019 giveaway data to correspond to the year 2019 Tapestry classification.
 
 ### Odds Ratios
 
@@ -1044,7 +1053,7 @@ Above demonstrates that some segments received more free trees than others. But 
 #1. Need to create a combined shapefile to get the counts of households and plantings
 ## a) Finding total households within each tapestry group
 join_tapestry_cbg <-
-  read_csv("output_data/MD_Tapestry_2019_2024-09-16.csv") |> # TODO get level DHL tk
+  read_csv("output_data/MD_Tapestry_2019_2025-04-03.csv") |> # TODO get level DHL tk
   mutate(GEOID = as.character(GEOID_2019))
 
 #The purpose of this to get the number of households per lifemode
@@ -1053,7 +1062,7 @@ city_cbg_2019_tapestry <-
   left_join(join_tapestry_cbg, by = "GEOID") |>
   st_drop_geometry() |>
   group_by(lifemode) |> 
-  summarize(household_count = sum(households.x, na.rm = TRUE)) |>
+  summarize(household_count = sum(households, na.rm = TRUE)) |>
   filter(!is.na(lifemode)) 
 
 ## b) Finding total tree giveaways within each tapestry group
@@ -1124,7 +1133,7 @@ df_odd_giveaway_tapestry |>
 
 # Conclusion
 
-This preliminary analysis of over a decade of Blue Water Baltimore’s tree giveaway data reveals significant trends in Baltimore City and Baltimore County. By investigating patterns in tree distribution across locations, species, watershed areas, and socioeconomic factors, we gain valuable insights into the program’s impact on promoting equitable urban forestry. Ongoing collaboration with our partner organization, Blue Water Baltimore, aims to refine this data and integrate it into an expanded webpage featuring similar data-driven infographics to improve public understanding and engagement.
+This preliminary analysis of over a decade of Blue Water Baltimore’s tree giveaway data reveals patterns and trends in Baltimore City and Baltimore County. By investigating patterns in tree distribution across locations, species, watershed areas, and socioeconomic factors, we gain valuable insights into the program’s impact on promoting urban forestry through the distribution of trees on residential lands. Ongoing collaboration with Blue Water Baltimore seeks to refine these data and analytics to support their decision making and goals to improve public understanding and engagement.
 
 ![](images/Tree-maintenance.jpg)
 
@@ -1134,6 +1143,6 @@ This preliminary analysis of over a decade of Blue Water Baltimore’s tree give
 
 <p style="font-size:18px;">
 
-Eduardo Marin, an intern with the USDA Forest Service Baltimore Field Station, worked under the leadership of Dexter Locke, a research geographer with the USDA Forest Service Baltimore Field Station, to prepare the presentation, reconcile the data, and perform preliminary analysis for Blue Water Baltimore.
+Eduardo Marin, an intern with the USDA Forest Service Baltimore Field Station, worked alongside Dexter Locke, a Research Geographer with the USDA Forest Service Baltimore Field Station, to acquire, standardize, integrate, reconcile, and visualize these data. Eduardo then conducted theses analyses and created the presentation with Blue Water Baltimore.
 
 </p>

@@ -285,7 +285,12 @@ neighborhood_layer <-
 
 ## Reading in the Blue Water Giveaway data
 blue_water_giveaway_data <-
-   st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-30.gpkg", as_tibble = TRUE) #FINAL GEOPACKAGE!:) # TODO add as_tibble everytime you do st_read
+   # st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-08-30.gpkg"
+  # st_read("../baltimore_tree_partners/output_data/blue_water_baltimore_data_2024-12-27.gpkg"
+  st_read('../baltimore_tree_partners_data_to_big/shapefiles/year_2013_to_2024_bwb_giveaway_2025-03-28.gpkg'
+           , as_tibble = TRUE) %>%  #FINAL GEOPACKAGE!:) 
+  # TODO add as_tibble everytime you do st_read
+  filter(!st_is_empty(.))
 
 ## Making the Blue Water Giveaway layer
 giveaway_layer <-
@@ -355,15 +360,15 @@ census_count_map <-
 # # 2019
 # tap_path <- '/Users/dlocke/TAP/Tap2019/2019 Tapestry Complete.gdb/'
 # st_layers(tap_path)
-#
+# 
 # # a few test queries
 # # tap_query <- 'SELECT * from TAP19_HH_bg limit 10'
 # # tap_query <- 'SELECT * from TAP19_ADULT_bg limit 10' # NO
 # # tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TLIFENAME, TSEGNAME from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
-#
+# 
 # tap_query <- "SELECT ID, ST_ABBREV, TURBZNAME, TURBZCODE, TLIFENAME, TLIFECODE, TSEGNAME, TSEGNUM from TAP19_HH_bg WHERE ST_ABBREV = 'MD'"
-#
-#
+# 
+# 
 # tap <-
 #   st_read(
 #       tap_path
@@ -371,7 +376,8 @@ census_count_map <-
 #     , as_tibble = TRUE
 #   ) |>
 #   rename(GEOID_2019 = ID) |>
-#   st_transform(st_crs(bwb_total_giveaway)) |>
+#   # st_transform(st_crs(bwb_total_giveaway)) |>
+#   st_transform(st_crs(blue_water_giveaway_data)) |> # is this right?
 #   st_make_valid() |>
 #   mutate(
 #     urbanization =
@@ -475,26 +481,26 @@ census_count_map <-
 #                , 'Unclassified'
 #              ))
 #   )
-# load("output_data/MD_Tapestry_2019_2024-09-16.csv")
+# 
 # tap |>
 #   st_drop_geometry() |>
 #   write_csv(file = paste0('output_data/MD_Tapestry_2019_', Sys.Date(), '.csv'))
-#
+# 
 # tap_lu <-
 #   tap |>
 #   st_drop_geometry() |>
 #   distinct(urbanization, lifemode, segment)
-#
+# 
 # save(tap_lu, file = paste0('output_data/tap_lu_', Sys.Date(), '.RData'))
 # 
 # # makes tap_lu a Look UP for the value
-load('output_data/tap_lu_2024-06-25.RData')
-
-load()
-
-tap_lu |> map(~levels(.)) # order matters!
-
-save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
+# # load('output_data/tap_lu_2024-06-25.RData')
+# load('output_data/tap_lu_2024-04-03.RData')
+# 
+# 
+# tap_lu |> map(~levels(.)) # order matters!
+# 
+# save(bwb_total_giveaway_with_Tapestry_2019, file = paste0('output_data/bwb_total_giveaway_with_Tapestry_2019_', Sys.Date(), '.RData'))
 ```
 
 ```{r Loading Tapestry Data, echo=FALSE, message=FALSE}
